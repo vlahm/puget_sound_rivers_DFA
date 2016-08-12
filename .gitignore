@@ -1,0 +1,6 @@
+*.pptx
+*.db
+*.Rhistory
+/model_objects
+/model_outputs
+*.rda

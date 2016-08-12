@@ -1,0 +1,65 @@
+baseflow (contributed by groundwater) as catchment %
+
+density of national pollutant discharge elimination systems within 100m buffer of stream
+
+density of toxic release inventory sites within 100m of stream
+
+mean catchment elevation
+
+impervious surfaces
+
+kffactor (susceptibility to soil detachment and runoff)
+
+lithology types: carbonate residual, non-carb resid, alkaline intrusive volcanic, silicic residual, extrusive volcanic,
+colluvial, glacial till (loamy, clayey, coarse), glacial outwash (coarse, fine), peat and muck, eolian sediment, 
+saline sediment, alluvium, coastal zone sediment, water
+
+precipitation-weighted mean deposition for ammonium ion concentration wet deposition for 2008
+
+landcover types (2011):
+developed, high-intensity land use
+developed, open space land use
+crop land use
+hay land use
+deciduous forest
+evergreen forest
+mixed
+barren
+open water
+ice/snow
+herbaceous wetland
+woody wetland
+scrub
+grassland
+
+road density (in general and within riparian buffer)
+
+mean runoff
+
+soil characteristics:
+mean seasonal water table depth
+soil organic matter content
+soil permeability
+soil depth
+%clay
+%sand
+
+population density (2010)
+housing unit density (2010)
+
+---
+
+data sources:
+DEM - Aster Global DEM (GDEM) (jk)
+DEM and associated watershed/catchment files (NHDPlusV2)
+sites, N and P - department of energy
+some geo/hydro/land use - StreamCat
+historical land use - NWALT
+
+---
+
+working with streamcat region 17b
+get NHDplus stuff here: http://www.horizon-systems.com/NHDPlus/NHDPlusV2_17.php
+NHDPlus guide here: ftp://ftp.horizon-systems.com/NHDplus/NHDPlusV21/Documentation/NHDPlusV2_User_Guide.pdf
+StreamCat definitions here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/VariableList-QuickReference.html
+StreamCat data here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/HydroRegions/

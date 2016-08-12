@@ -1,0 +1,27 @@
+next project:
+use Dynamic Factor Analysis (related to MARSS, or Dynamic linear models) to predict nutrient concentrations (nitrate, phosphate, N:P ratio) 
+based on monthly average air T, monthly average precip, annual snowpack?
+
+Eric, Mark, and Eli wrote the MARSS package, and they can give me the material for the course.  Tim Cline did something similar already, so he can 
+give me his code
+
+the idea with Tim's thing (which daniel just presented) was that they modeled stream temperature as a function of air temp and 
+snowmelt, and found that some streams were mainly influenced by air temp, and so fluctuated together through time
+while other streams were more controlled by snowmelt temperature, and these varied together on a different cycle.  
+Gordon doesn't think they had forward predictions with their model, and they also didn't include a term for reduced snowmelt in the future, which would
+presumably make streams fluctuate together even more closely.  
+
+so my goal would be to do the same style of model, but add in that term and predict it forward for stream nutrients, which gordon thinks will also be a function
+of precipitation (because N just runs right off the landscape, etc.)
+
+tim cline rewrote MARSS in TMB, so it's wicked fast
+the idea is that you have different drivers of some response, like stream temp, and some streams are more heavily influences by one subset and other
+	streams are influenced by another.  So one function of temp over time might be a parabola and another a sine wave.  those are the two major components that
+	come out of the dfa.  then you can look at each stream independently and ask which trend it looks like.  (this is certainly wrong in some ways.)
+
+it will be the residuals after the climate covariates have been included that i will regress against non-climate factors
+
+May, or may not, doesn’t really matter for your analysis.  The goal is simply to find out:
+1) are there trends and are they shared among some subset of rivers?
+2) Is there a link to climate?  If so, are the climate-linked systems similar in their watershed morphology, glaciers, vegetation, etc…
+3) Does the non-climate trends link to thinks like land use, watershed type, etc….
