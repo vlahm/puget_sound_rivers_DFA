@@ -4,7 +4,7 @@
 #last edit: 8/11/2016
 
 # 0 - setup ####
-covs <- load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\chem_dfs.rda")
+load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\chem_dfs.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
@@ -58,7 +58,7 @@ sd(dat.z[,1], na.rm=TRUE)
 dat.z <- t(dat.z)
 
 # state equation params
-mm <- 3 #number of hidden processes (trends)
+mm <- 1 #number of hidden processes (trends)
 BB <- "identity"  #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
 uu <- "zero"  # 'uu' is a column vector of 0's (not part of DFA)
 CC <- "zero"  # 'CC' and 'cc' are for covariates in the state process equation, which we do not have
@@ -67,23 +67,30 @@ QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing ac
 
 # observation equation params
 nn <- length(names(obs.ts)) # number of obs time series
-ZZ <- matrix(list(0),nn,mm) # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
-ZZ[,1] <- paste("z",names(obs.ts),1,sep="_")
-ZZ[2:nn,2] <- paste("z",names(obs.ts)[-1],2,sep="_")
-
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
              #(we want zero because we're not interested in what the offsets actually are)
 DD <- "zero"  # 'DD' and 'd' are for covariates
 dd <- "zero"
 RR <- "equalvarcov" # 'RR' is var-cov matrix for obs errors (tune this)
+ZZgen <- function(){
+    ZZ <- matrix(list(0),nn,mm)
+    ZZ[,1] <- paste0("z",names(obs.ts),1)
+    if(mm > 1){
+        for(i in 2:mm){
+            ZZ[i:nn,i] <- paste0("z",names(obs.ts)[-(1:(i-1))],i)
+        }
+    }
+    return(ZZ)
+}
+ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
 # 4 - run DFA ####
 dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
-             control=list(maxit=200, allow.degen=TRUE))
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
-              inits=dfa$par,
-              control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
+             control=list(maxit=25, allow.degen=TRUE))
+# dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
+#               inits=dfa$par,
+#               control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 names(dfa)
 
 # 5 - plot estimated state processes, loadings, and model fits####
@@ -198,19 +205,23 @@ model_out <- data.frame()
 for(RRR in R_strucs){
     for(mmm in ntrends){
 
+        #create loadings matrix
+        mm <- mmm
+        ZZZ <- ZZgen()
+
         #fit model with EM algorithm
         print(paste(RRR,mmm))
 
         if(mmm == 1){
             print(paste('should be 1', mmm))
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                            inits=list(x0=0),# silent=TRUE,
                            control=list(maxit=25, allow.degen=TRUE))
         } else {
             print(mmm)
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                          inits=list(x0=matrix(rep(0,mmm),mmm,1)),# silent=TRUE,
                          control=list(maxit=25, allow.degen=TRUE))
         }
@@ -219,8 +230,9 @@ for(RRR in R_strucs){
         if(RRR != 'equalvarcov'){
             print(paste(RRR,mmm,'BFGS'))
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                            inits=dfa$par,# silent=TRUE,
+                         # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
                            control=list(dfa$control$maxit), method='BFGS')
         }
 
@@ -236,23 +248,27 @@ for(RRR in R_strucs){
         saveRDS(dfa, file=paste0('C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/model_objects/',
                                  R_names[R_strucs == RRR], '_', mmm, 'm', '.rds'))
 
-        #open plot device
-        pdf(file=paste0('C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/model_outputs/',
-                       R_names[R_strucs == RRR], '_', mmm, 'm', '.pdf'), onefile=TRUE)
+        if(mmm > 1){
 
-        # varimax rotation to get Z loadings
-        Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
-        H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
-        Z_rot = Z_est %*% H_inv # rotate factor loadings
-        proc_rot = solve(H_inv) %*% dfa$states # rotate processes
+            #open plot device
+            pdf(file=paste0('C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/model_outputs/',
+                           R_names[R_strucs == RRR], '_', mmm, 'm', '.pdf'), onefile=TRUE)
 
-        #plot hidden processes, loadings, and model fits for each parameter combination
-        process_plotter()
-        loading_plotter()
-        mod_fit <- get_DFA_fits(dfa)
-        fits_plotter()
+            # varimax rotation to get Z loadings
+            Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
+            H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
+            Z_rot = Z_est %*% H_inv # rotate factor loadings
+            proc_rot = solve(H_inv) %*% dfa$states # rotate processes
 
-        #close plot device
-        dev.off()
+            #plot hidden processes, loadings, and model fits for each parameter combination
+            process_plotter()
+            loading_plotter()
+
+            mod_fit <- get_DFA_fits(dfa)
+            fits_plotter()
+
+            #close plot device
+            dev.off()
+        }
     }
 }
