@@ -5,13 +5,19 @@
 
 # 0 - setup ####
 load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\chem_dfs.rda")
+# load("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/data/chem_dfs.rda")
+load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\climate.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# 1 - choose and subset response variable dataframe ####
-# chices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
+# 1 - choose and subset response and covs ####
+# response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice <- 'TEMP'
+# cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought
+    # meteoDrought_anom ZDrought ZDrought_anom
+cov_choices <- c('meantemp')
+
 yy <- eval(parse(text=y_choice))
 
 # subset by year and exclude columns with >= na_thresh proportion of NAs
@@ -29,11 +35,15 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-yy <- subsetter(yy, start=1990, end=2014, na_thresh=0.7)
+startyr <- 1980
+endyr <- 2014
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.7)
 
 names(yy)
 years <- as.numeric(format(yy[,1], '%Y')) #could use as dates if necessary, as integer years for now
 obs.ts <- yy[,-1]
+
+covs <- climate[climate$Date >= startyr & climate$Date <= endyr, colnames(climate) %in% cov_choices]
 
 # 2 - plot response variable time series ####
 series_plotter <- function(){
@@ -50,15 +60,12 @@ series_plotter <- function(){
 series_plotter()
 
 # 3 - Set up input matrics to MARSS function call ####
-# scale and center y data
-dat <- as.matrix(obs.ts)
-dat.z <- scale(dat)
-mean(dat.z[,1], na.rm=TRUE)
-sd(dat.z[,1], na.rm=TRUE)
-dat.z <- t(dat.z)
+# scale and center y and cov data
+dat.z <- t(scale(as.matrix(obs.ts)))
+covs <- t(scale(as.matrix(covs)))
 
 # state equation params
-mm <- 1 #number of hidden processes (trends)
+mm <- 2 #number of hidden processes (trends)
 BB <- "identity"  #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
 uu <- "zero"  # 'uu' is a column vector of 0's (not part of DFA)
 CC <- "zero"  # 'CC' and 'cc' are for covariates in the state process equation, which we do not have
@@ -69,8 +76,8 @@ QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing ac
 nn <- length(names(obs.ts)) # number of obs time series
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
              #(we want zero because we're not interested in what the offsets actually are)
-DD <- "zero"  # 'DD' and 'd' are for covariates
-dd <- "zero"
+DD <- "unconstrained"  # 'DD' and 'd' are for covariates
+dd <- covs
 RR <- "equalvarcov" # 'RR' is var-cov matrix for obs errors (tune this)
 ZZgen <- function(){
     ZZ <- matrix(list(0),nn,mm)
@@ -87,7 +94,7 @@ ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifia
 # 4 - run DFA ####
 dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
-             control=list(maxit=25, allow.degen=TRUE))
+             control=list(maxit=2000, allow.degen=TRUE), silent=FALSE)
 # dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
 #               inits=dfa$par,
 #               control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
@@ -197,10 +204,21 @@ fits_plotter <- function(){
 # model fitting - 6 - tune parameters without covs included ####
 #should repeat this in entirety with covs included
 
-R_strucs <- c('diagonal and equal', 'unconstrained', 'diagonal and unequal', 'equalvarcov')
-R_names <- c('DiagAndEq', 'Unconst', 'DiagAndUneq', 'EqVarCov')
+R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
+R_names <- c('DiagAndEq', 'DiagAndUneq', 'EqVarCov')
 ntrends <- 1:4
 model_out <- data.frame()
+
+# ntrends <- 5
+# model_out <- data.frame()
+# R_strucs <- c('diagonal and unequal')
+# R_strucs <- c('unconstrained')
+# RRR='diagonal and unequal'
+# RRR='unconstrained'
+# R_names <- c('DiagAndUneq')
+# R_names <- c('Unconst')
+# mmm=1
+
 
 for(RRR in R_strucs){
     for(mmm in ntrends){
@@ -212,28 +230,32 @@ for(RRR in R_strucs){
         #fit model with EM algorithm
         print(paste(RRR,mmm))
 
+
         if(mmm == 1){
             print(paste('should be 1', mmm))
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                           inits=list(x0=0),# silent=TRUE,
-                           control=list(maxit=25, allow.degen=TRUE))
+            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+                           inits=list(x0=0), silent=FALSE,
+                           control=list(maxit=20000, allow.degen=TRUE)))
+            if(isTRUE(class(dfa)=='try-error')) {next}
         } else {
             print(mmm)
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                         inits=list(x0=matrix(rep(0,mmm),mmm,1)),# silent=TRUE,
-                         control=list(maxit=25, allow.degen=TRUE))
+            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+                         inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
+                         control=list(maxit=20000, allow.degen=TRUE)))
+            if(isTRUE(class(dfa)=='try-error')) {next}
         }
 
         #where possible, polish EM estimate with BFGS
         if(RRR != 'equalvarcov'){
             print(paste(RRR,mmm,'BFGS'))
 
-            dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                           inits=dfa$par,# silent=TRUE,
+            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+                           inits=dfa$par, silent=FALSE,
                          # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
-                           control=list(dfa$control$maxit), method='BFGS')
+                           control=list(dfa$control$maxit), method='BFGS'))
+            if(isTRUE(class(dfa)=='try-error')) {next}
         }
 
         #store params, etc. in dataframe
@@ -245,14 +267,14 @@ for(RRR in R_strucs){
                                                  stringsAsFactors=FALSE))
 
         #save model object
-        saveRDS(dfa, file=paste0('C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/model_objects/',
-                                 R_names[R_strucs == RRR], '_', mmm, 'm', '.rds'))
+        saveRDS(dfa, file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_objects/",
+                                 R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
 
         if(mmm > 1){
 
             #open plot device
-            pdf(file=paste0('C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/model_outputs/',
-                           R_names[R_strucs == RRR], '_', mmm, 'm', '.pdf'), onefile=TRUE)
+            pdf(file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_outputs/",
+                           R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
 
             # varimax rotation to get Z loadings
             Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
@@ -269,6 +291,10 @@ for(RRR in R_strucs){
 
             #close plot device
             dev.off()
+
         }
     }
 }
+#save data frame
+write.csv(model_out, file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_objects/",
+                         'param_tuning_dataframe_', startyr, y_choice, '.csv'))

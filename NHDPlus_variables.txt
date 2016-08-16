@@ -63,3 +63,28 @@ get NHDplus stuff here: http://www.horizon-systems.com/NHDPlus/NHDPlusV2_17.php
 NHDPlus guide here: ftp://ftp.horizon-systems.com/NHDplus/NHDPlusV21/Documentation/NHDPlusV2_User_Guide.pdf
 StreamCat definitions here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/VariableList-QuickReference.html
 StreamCat data here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/HydroRegions/
+
+department of ecology ecy gis will have hax by state - this might work except that I need that piece of canada (or i could throw that point out of the set)
+NLCB?
+
+streamcat approach: sreamlines (NHD snapshot?), watershed boudaries (WDB snapshot) - mostly for making a site map, 
+	(all from nhdplus website)
+download streamcat layers and join to streamlines for determining statistics - could also join separately to boundaires
+	and then use that to color watersheds by attributes for the map
+
+
+download NHDsnapshot (probably just the local one), WBDsnapshot, and NHDPlusAttributes
+in streamline file (which will be buried in NHDnapshot?):
+find atttribute name of interest (might need streams and connectors, but get rid of canals etc)...
+in attribute table, then go to properties > definition query > query builder > and isolate just the type im intereted in
+may also just have to select by attributes like i usually do in the attributes table
+if i need soil stuff, FAO is the place
+if I need straight-up, no bullshit data layers, nlcd is the place - though it wont include canada
+NED is 1/3 arcsecond
+to get the citation for a specific dataset, dig into its metadata - won't end up citing just streamcat, for example
+NED should have elevation data if i still need dems
+
+when joining, keep only matching records
+say yes to improve performance during join!!
+check number of records for each file before joining, make sure the end result is reasonable, and export data afterward so that i have a 
+separate file with the joined data

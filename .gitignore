@@ -4,3 +4,5 @@
 /model_objects
 /model_outputs
 *.rda
+/obsolete
+*.pdf
