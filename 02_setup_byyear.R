@@ -4,14 +4,14 @@
 #last edit: 8/11/2016
 
 # 0 - setup ####
-load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\chem_dfs.rda")
-# load("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/data/chem_dfs.rda")
+load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\response_var_dfs_byyear.rda")
+# load("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/data/response_var_dfs_byyear.rda")
 load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\climate.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# 1 - choose and subset response and covs ####
+# 1 - choose and subset response and covs####
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice <- 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought

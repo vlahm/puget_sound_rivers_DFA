@@ -11,26 +11,58 @@ nutsfull[,3:(ncol(nutsfull)-2)] <- apply(nutsfull[,3:(ncol(nutsfull)-2)], 2, as.
 
 #fix a few date errors ####
 for(i in c(5084:5531,11063:11447)){
-  if(as.numeric(str_match(nutsfull$dateTime[i], "\\d+/\\d+/(\\d+)")[2]) > 50){
-    nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
-                                         '19\\3-\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+yr <- as.numeric(str_match(nutsfull$dateTime[i], "\\d+/\\d+/(\\d+)")[2])
+mo <- as.numeric(str_match(nutsfull$dateTime[i], "(\\d+)/\\d+/\\d+")[2])
+da <- as.numeric(str_match(nutsfull$dateTime[i], "\\d+/(\\d+)/\\d+")[2])
+
+  if(yr > 50){
+      if(nchar(mo) == 1 & nchar(da) == 1){
+        nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                             '19\\3-0\\1-0\\2 \\4:\\5:00', nutsfull$dateTime[i])
+      } else {
+          if(nchar(mo) == 1 & nchar(da) == 2){
+              nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                           '19\\3-0\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+          } else {
+              if(nchar(mo) == 2 & nchar(da) == 1){
+                  nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                               '19\\3-\\1-0\\2 \\4:\\5:00', nutsfull$dateTime[i])
+              } else {
+                  nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                               '19\\3-\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+              }
+          }
+      }
   } else {
-    nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
-                                         '20\\3-\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+      if(nchar(mo) == 1 & nchar(da) == 1){
+          nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                       '20\\3-0\\1-0\\2 \\4:\\5:00', nutsfull$dateTime[i])
+      } else {
+          if(nchar(mo) == 1 & nchar(da) == 2){
+              nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                           '20\\3-0\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+          } else {
+              if(nchar(mo) == 2 & nchar(da) == 1){
+                  nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                               '20\\3-\\1-0\\2 \\4:\\5:00', nutsfull$dateTime[i])
+              } else {
+                  nutsfull$dateTime[i] <- gsub('(\\d+)/(\\d+)/(\\d+) (\\d+):(\\d+)',
+                                               '20\\3-\\1-\\2 \\4:\\5:00', nutsfull$dateTime[i])
+              }
+          }
+      }
   }
 }
 
-# 1 choose here - the rest proceeds assuming aggregation by year,
-
-# but may work for month as well through step 4####
+# 1 CHOOSE whether to aggregate by month or year####
 
 # 1a aggregate by month
-# nuts <- aggregate(nutsfull[,seq(3,35,2)], by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,7)),
-#           FUN=mean, na.action=na.omit)
+nuts <- aggregate(nutsfull[,seq(3,35,2)], by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,7)),
+          FUN=mean, na.rm=TRUE, na.action=NULL)
 # 1b aggregate by year
-nuts <- aggregate(nutsfull[,seq(3,35,2)],
-                  by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,4)),
-                  FUN=mean, na.rm=TRUE, na.action=NULL)
+# nuts <- aggregate(nutsfull[,seq(3,35,2)],
+#                   by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,4)),
+#                   FUN=mean, na.rm=TRUE, na.action=NULL)
 
 #replace NaNs with NA
 nuts[,3:ncol(nuts)][apply(nuts[,3:ncol(nuts)], 2, is.nan)] <- NA
@@ -47,7 +79,7 @@ checkNA <- function(){
 checkNA()
 
 # 3 throw away columns with lots of NAs####
-nuts <- nuts[,-c(5,15,16,17,19)]
+nuts <- nuts[,-c(5,15,16,17,19)] #works for both year and month
 colnames(nuts)[1:2] <- c('site', 'date')
 
 # 4 assemble response dataframes####
@@ -62,7 +94,7 @@ moreLETTERS <- c(LETTERS,'ZA','ZC','ZD','ZE')
 assembler <- function(colname){
     colnum <- which(colnames(nuts)==colname)
     for(i in unique(nuts$site)){
-        assign(paste('site', i, sep=''), nuts[which(nuts$site == i), c(2,colnum)])
+        assign(paste0('site', i), nuts[which(nuts$site == i), c(2,colnum)])
     }
 
     #some day find a way to do this elegantly. a separate 'assign' call runs, but doesn't work
@@ -78,7 +110,7 @@ assembler <- function(colname){
     colnames(siteZC)[2] <- 'ZC'; colnames(siteZD)[2] <- 'ZD'; colnames(siteZE)[2] <- 'ZE'
 
     for(i in 2:length(moreLETTERS)){
-        siteA <- merge(siteA, eval(parse(text=paste('site', moreLETTERS[i], sep=''))), by='date', all=TRUE)
+        siteA <- merge(siteA, eval(parse(text=paste0('site', moreLETTERS[i]))), by='date', all=TRUE)
     }
 
     #format dates and set to middle of the year for plotting
@@ -103,9 +135,9 @@ TURB <- assembler('TURB')
 # 5 dump to disk ####
 save(COND, FC, NH3_N, NO2_NO3, OP_DIS, OXYGEN, PH, PRESS, SUSSOL, TEMP, TP_P, TURB,
      list=c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN', 'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB'),
-     file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/chem_dfs.rda")
+     file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/response_var_dfs_bymonth.rda")
 
-# 6 add temp, precip, moisture####
+# 6 add temp, precip, moisture GET THESE BY MONTH AND AGGREGATE REGIONS 3,4,(5?) ####
 #data from http://www.ncdc.noaa.gov/cag/time-series/us/45/3/zndx/ytd/12/1970-2014?base_prd=true&firstbaseyear=1970&lastbaseyear=2014
 #hydro drought is PHDI, meteor drought is PMDI, shortTerm is Z-index
 

@@ -63,6 +63,7 @@ get NHDplus stuff here: http://www.horizon-systems.com/NHDPlus/NHDPlusV2_17.php
 NHDPlus guide here: ftp://ftp.horizon-systems.com/NHDplus/NHDPlusV21/Documentation/NHDPlusV2_User_Guide.pdf
 StreamCat definitions here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/VariableList-QuickReference.html
 StreamCat data here: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/HydroRegions/
+climate data: http://www.ncdc.noaa.gov/cag/time-series/us/45/3/tavg/ytd/12/1895-2016?base_prd=true&firstbaseyear=1901&lastbaseyear=2000
 
 department of ecology ecy gis will have hax by state - this might work except that I need that piece of canada (or i could throw that point out of the set)
 NLCB?
