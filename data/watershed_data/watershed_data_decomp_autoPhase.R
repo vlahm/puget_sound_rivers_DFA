@@ -1,5 +1,8 @@
 sites <- read.csv('../file_ffs2_csv.csv')
 
+#this has all been made obsolete by my batch_file_reader() function
+
+
 files <- dir(pattern='.csv')
 obj_names <- vector(length=length(files))
 for(i in 1:length(files)){
@@ -17,7 +20,7 @@ out <- Reduce(function(x,y){merge(x,y, by='COMID')}, list(sites,
 write.csv(t(out), "C:/Users/vlahm/Desktop/sites.csv")
 
 #in excel I:
-#removed .x from first instance of 
+#removed .x from first instance of
 #CatAreaSqKm.x WsAreaSqKm.x CatPctFull.x WsPctFull.x AND CatAreaSqKmRp100.x WsAreaSqKmRp100.x CatPctFullRp100.x WsPctFullRp100.x
 #deleted all the rest
 
