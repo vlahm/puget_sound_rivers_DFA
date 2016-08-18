@@ -54,18 +54,24 @@ da <- as.numeric(str_match(nutsfull$dateTime[i], "\\d+/(\\d+)/\\d+")[2])
   }
 }
 
-# 1 CHOOSE whether to aggregate by month or year####
+# 1 CHOOSE whether to aggregate by month or year (and then mean or max) ####
 
 # 1a aggregate by month
 nuts <- aggregate(nutsfull[,seq(3,35,2)], by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,7)),
           FUN=mean, na.rm=TRUE, na.action=NULL)
-# 1b aggregate by year
-# nuts <- aggregate(nutsfull[,seq(3,35,2)],
-#                   by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,4)),
-#                   FUN=mean, na.rm=TRUE, na.action=NULL)
+# 1b aggregate by year (means)
+nuts <- aggregate(nutsfull[,seq(3,35,2)],
+                  by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,4)),
+                  FUN=mean, na.rm=TRUE, na.action=NULL)
+# 1c aggregate by year (maxes)
+nuts <- aggregate(nutsfull[,seq(3,35,2)],
+                  by=list(nutsfull$siteCode, substr(nutsfull$dateTime, 1,4)),
+                  FUN=max, na.rm=TRUE, na.action=NULL)
 
-#replace NaNs with NA
+
+#replace NaNs and -Infs with NA
 nuts[,3:ncol(nuts)][apply(nuts[,3:ncol(nuts)], 2, is.nan)] <- NA
+nuts[,3:ncol(nuts)][apply(nuts[,3:ncol(nuts)], 2, is.infinite)] <- NA
 
 # 2 find out proportions of NAs in each column####
 checkNA <- function(){
@@ -135,7 +141,7 @@ TURB <- assembler('TURB')
 # 5 dump to disk ####
 save(COND, FC, NH3_N, NO2_NO3, OP_DIS, OXYGEN, PH, PRESS, SUSSOL, TEMP, TP_P, TURB,
      list=c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN', 'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB'),
-     file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/response_var_dfs_bymonth.rda")
+     file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/yys_byyear_max.rda")
 
 # 6 add temp, precip, moisture GET THESE BY MONTH AND AGGREGATE REGIONS 3,4,(5?) ####
 #data from http://www.ncdc.noaa.gov/cag/time-series/us/45/3/zndx/ytd/12/1970-2014?base_prd=true&firstbaseyear=1970&lastbaseyear=2014

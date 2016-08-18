@@ -1,50 +1,54 @@
-baseflow (contributed by groundwater) as catchment %
+Xbaseflow (contributed by groundwater) as catchment %
 
-density of national pollutant discharge elimination systems within 100m buffer of stream
+Xdensity of national pollutant discharge elimination systems within 100m buffer of stream
 
 density of toxic release inventory sites within 100m of stream
 
-mean catchment elevation
+Xmean catchment elevation
 
-impervious surfaces
+Ximpervious surfaces
 
 kffactor (susceptibility to soil detachment and runoff)
 
-lithology types: carbonate residual, non-carb resid, alkaline intrusive volcanic, silicic residual, extrusive volcanic,
-colluvial, glacial till (loamy, clayey, coarse), glacial outwash (coarse, fine), peat and muck, eolian sediment, 
-saline sediment, alluvium, coastal zone sediment, water
+Xlithology types: carbonate residual, non-carb resid, alkaline intrusive volcanic, silicic residual, extrusive volcanic,
+Xcolluvial, glacial till (loamy, clayey, coarse), glacial outwash (coarse, fine), peat and muck, eolian sediment, 
+Xsaline sediment, alluvium, coastal zone sediment, water
 
-precipitation-weighted mean deposition for ammonium ion concentration wet deposition for 2008
+Xprecipitation-weighted mean deposition for ammonium ion concentration wet deposition for 2008
 
-landcover types (2011):
-developed, high-intensity land use
-developed, open space land use
-crop land use
-hay land use
-deciduous forest
-evergreen forest
-mixed
-barren
-open water
-ice/snow
-herbaceous wetland
-woody wetland
-scrub
-grassland
+Xlandcover types (2011):
+Xdeveloped, high-intensity land use
+Xdeveloped, open space land use
+Xcrop land use
+Xhay land use
+Xdeciduous forest
+Xevergreen forest
+Xmixed
+Xbarren
+Xopen water
+Xice/snow
+Xherbaceous wetland
+Xwoody wetland
+Xscrub
+Xgrassland
 
-road density (in general and within riparian buffer)
+Xpercent ice cover (get 2011)
+Xmean catchment elevation
+Xriparian buffer
 
-mean runoff
+Xroad density (in general and within riparian buffer)
+
+Xmean runoff
 
 soil characteristics:
-mean seasonal water table depth
-soil organic matter content
-soil permeability
-soil depth
+Xmean seasonal water table depth
+Xsoil organic matter content
+Xsoil permeability
+Xsoil depth
 %clay
 %sand
 
-population density (2010)
+Xpopulation density (2010)
 housing unit density (2010)
 
 ---
@@ -86,6 +90,32 @@ to get the citation for a specific dataset, dig into its metadata - won't end up
 NED should have elevation data if i still need dems
 
 when joining, keep only matching records
-say yes to improve performance during join!!
+say yes to improve performance during join (i think)
 check number of records for each file before joining, make sure the end result is reasonable, and export data afterward so that i have a 
 separate file with the joined data
+
+
+
+StreamCat can be cited as: Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh, 2016. The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. Journal of the American Water Resources Association (JAWRA) 1-9. DOI: 10.1111/1752-1688.12372.
+
+NHDflowline has 272341 entries
+streamcat datasets all have 231699
+there are 856 -80000 COMIDs in impervioussurfaces, elevation, STATSGO
+
+original attribute table ends at column: Notes
+NHDFlowline addition ends at column: COMID
+BFI: BFIWs
+Elevation:ElevWs
+
+first new sheet
+EPA_FRS: tridensWS
+imperv
+impervbuf
+lith
+
+second.. ugh, doing it in R
+
+
+
+
+

@@ -3,17 +3,19 @@
 #created: 8/10/2016
 #last edit: 8/11/2016
 
-# 0 - setup ####
-load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\response_var_dfs_byyear.rda")
+# setup - 0 - CHOOSE yy maxes or means ####
+load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\yys_byyear_mean.rda")
 # load("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/data/response_var_dfs_byyear.rda")
 load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\climate.rda")
 library(MARSS)
 library(viridis)
-if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
+# if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# 1 - choose and subset response and covs####
+# pdf("C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/time_series_maxes.pdf", onefile=T)
+
+# 1 - CHOOSE and subset response and covs####
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice <- 'TEMP'
+y_choice <- 'TURB'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought
     # meteoDrought_anom ZDrought ZDrought_anom
 cov_choices <- c('meantemp')
@@ -35,7 +37,7 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-startyr <- 1980
+startyr <- 1978
 endyr <- 2014
 yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.7)
 
