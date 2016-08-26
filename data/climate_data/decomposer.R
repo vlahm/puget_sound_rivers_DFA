@@ -45,8 +45,8 @@ batch_file_reader <- function(dir_args=list(path='./', pattern='.csv'),
 
 #by month####
 #read in raw csvs
-batch_file_reader(dir_args=list(path="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate_data/by_month/raw/",
-                                pattern='pc4.+\\.csv'),
+batch_file_reader(dir_args=list(path="C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/raw/",
+                                pattern='hdr3.+\\.csv'), #only read in one metric and region at a time
                   merge=FALSE)
 
 #get rid of function object for next step
@@ -58,7 +58,11 @@ binder <- function(){
     x <- data.frame()
     for(i in 1:length(filenames)){
         y <- eval(parse(text=filenames[i]), envir=.GlobalEnv)
-        y <- y[-(1:3),-4]
+        if(substr(filenames[i], 1, 3) == 'hdr'){
+            y <- y[-(1:2),-4]
+        } else {
+            y <- y[-(1:3),-4]
+        }
         x <- rbind(x, y)
     }
     return(x)
@@ -68,7 +72,7 @@ rm(binder)
 
 #sort by date and rename stuff
 out <- as.data.frame(apply(out, 2, as.numeric))
-metric <- substr(ls(name='.GlobalEnv')[2], 1, 2)
+metric <- substr(ls(name='.GlobalEnv')[2], 1, 3) #set this to 1, 3 for hdr
 colnames(out) <- c('date', metric, paste(metric, 'anom_1900-99', sep='_'))
 sorted <- out[order(out$date),]
 rownames(sorted) <- 1:nrow(sorted)
@@ -100,10 +104,10 @@ sorted[,3] <- sorted[,2] - base #get anomalies in cm
 
 #write output csv
 write.csv(sorted, row.names=FALSE, file=
-  'C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate_data/by_month/precip4.csv')
+              "C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/hydroDrought3.csv") #change name
 
 
-#by year####
+#by year (obsolete?) ####
 
 #read in raw csvs
 batch_file_reader(dir_args=list(path="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate_data/by_year/raw/",

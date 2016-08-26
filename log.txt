@@ -1,0 +1,3 @@
+20160826
+yes, it's cool to average the anomalies.  didn't save calculations, but just compare the mean of anomalies across
+regions 3 and 4 to the calculated anomaly from their corresponding temperatures and base levels

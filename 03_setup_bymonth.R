@@ -1,27 +1,47 @@
 #Puget Sound rivers DFA
 #Mike Vlah (vlahm13@gmail.com)
 #created: 8/10/2016
-#last edit: 8/11/2016
+#last edit: 8/22/2016
+
+###
+#change the names of DDgen and ddgen if it turns out that seasonal effects go in the process eqn
+###
+
+#haven't set up fourier CC matrix yet. adding monthly effects in cc but not CC doesn't do what i need.
+rm(list=ls()); cat('\014')
 
 # 0 - setup ####
-# load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\response_var_dfs_bymonth.rda")
-# load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\climate.rda")
-load("Z:\\stream_nuts_DFA\\data\\response_var_dfs_bymonth.rda")
-load("Z:\\stream_nuts_DFA\\data\\climate.rda")
+load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
+# load("Z:\\stream_nuts_DFA\\data\\response_var_dfs_bymonth.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# 1 - choose and subset response and covs (get covs by month and aggregate regions 3,4,(5?) ####
+# 1 - CHOICES ####
+
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice <- 'TEMP'
-# cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought
-    # meteoDrought_anom ZDrought ZDrought_anom
-cov_choices <- c('meantemp')
+y_choice = 'TEMP'
+# cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
+    # maxtemp maxtemp_anom hdd hdd_anom
+cov_choices = c('meantemp')
+#region choices: '3' (downstream), '4' (upstream), '3_4' (average of 3 and 4)
+region = '3_4'
+#average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
+average_regions = TRUE #only used if region = '3_4'
+#seasonality model choices: 'fixed_collective', 'fixed_individual', 'fourier'
+method = 'fixed_collective'
+#which years to include?
+startyr = 1978
+endyr = 2014
+#model params
+ntrends = 2
+obs_err_var_struc = 'equalvarcov'
 
-yy <- eval(parse(text=y_choice))
+# 1.5 - subset datasets according to choices ####
 
+#chem/phys data manipulations
 # subset by year and exclude columns with >= na_thresh proportion of NAs
+yy <- eval(parse(text=y_choice))
 subsetter <- function(yy, start, end, na_thresh=1){
 
     #extract year subset
@@ -36,9 +56,16 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-startyr <- 1978
-endyr <- 2014
-yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75)
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75) #beware reducing threshold, may add sites and break stuff
+
+# subset by region
+if(region == 3){
+    yy <- yy[,colnames(yy) %in% c('date','K','J','A','B','ZA','Q','H','T','G','F','E','C')]
+} else {
+    if(region == 4){
+        yy <- yy[,colnames(yy) %in% c('date','Z','I','L','M','N','O','P','S','U','X','V','W')]
+    }
+}
 
 #convert dates to integers
 months <- as.numeric(format(yy[,1], '%m'))
@@ -47,21 +74,46 @@ int_dates <- (years - startyr) * 12 + months
 
 #create objects for response variables and covariates
 obs.ts <- yy[,-1]
-covs <- climate[climate$Date >= startyr & climate$Date <= endyr, colnames(climate) %in% cov_choices]
+
+covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt',
+                'maxtemp_anom'='mt_anom_1900.99','precip'='pc','precip_anom'='pc_anom_1900.99',
+                'hydroDrought'='hdr','hydroDrought_anom'='hdr_anom_1900.99','hdd'='hd',
+                'hdd_anom'='hd_anom_1900.99')
+
+if(region=='3_4' & average_regions==FALSE){
+    load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
+    load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate4.rda')
+    covs3 <- as.matrix(climate3[substr(climate3$date,1,4) >= startyr &
+                           substr(climate3$date,1,4) <= endyr,
+                           colnames(climate3) %in%
+                           covdict[names(covdict)==cov_choices][[1]]])
+    covs4 <- as.matrix(climate4[substr(climate4$date,1,4) >= startyr &
+                           substr(climate4$date,1,4) <= endyr,
+                           colnames(climate4) %in%
+                           covdict[names(covdict)==cov_choices][[1]]])
+} else {
+    load(file=paste0('C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate',
+        region, '.rda'))
+    covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
+    covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
+                      substr(covs$date,1,4) <= endyr,
+                      colnames(covs) %in%
+                      covdict[names(covdict)==cov_choices][[1]]])
+}
 
 # 2 - plot response variable time series (unintelligible by month)####
-series_plotter <- function(){
-    colors1 <- viridis(ncol(yy)-1, end=1)
-    ymin <- min(yy[,-1], na.rm=TRUE)
-    ymax <- max(yy[,-1], na.rm=TRUE)
-
-    plot(int_dates, yy[,2], type='l', col=colors1[1], ylim=c(ymin,ymax), xlab='time', ylab=paste(y_choice), xaxt='n')
-    for(i in 3:ncol(yy)){
-        lines(int_dates, yy[,i], type='l', col=colors1[i-1])
-    }
-    axis(side=1, at=int_dates[c(T,F)], labels=int_dates[c(T,F)])
-}
-series_plotter()
+# series_plotter <- function(){
+#     colors1 <- viridis(ncol(yy)-1, end=1)
+#     ymin <- min(yy[,-1], na.rm=TRUE)
+#     ymax <- max(yy[,-1], na.rm=TRUE)
+#
+#     plot(int_dates, yy[,2], type='l', col=colors1[1], ylim=c(ymin,ymax), xlab='time', ylab=paste(y_choice), xaxt='n')
+#     for(i in 3:ncol(yy)){
+#         lines(int_dates, yy[,i], type='l', col=colors1[i-1])
+#     }
+#     axis(side=1, at=int_dates[c(T,F)], labels=int_dates[c(T,F)])
+# }
+# series_plotter()
 
 # 3 - Set up input matrices to MARSS function call ####
 # scale and center y and cov data
@@ -69,38 +121,54 @@ dat.z <- t(scale(as.matrix(obs.ts)))
 covs <- t(scale(as.matrix(covs)))
 
 # state equation params
-mm <- 1 #number of hidden processes (trends)
-BB <- "identity"  #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
-uu <- "zero"  # 'uu' is a column vector of 0's (not part of DFA)
-CC <- matrix(month.abb, mm, 12, byrow=TRUE) #coeffs for covariates in state process equation (cc)
-ccgen <- function(method='fixed'){
-    if(method=='fixed'){
-        year_block <- diag(12)
-        nyears <- endyr-startyr+1
-
-        cc <- Reduce(function(x,y) {cbind(x,y)},
-               eval(parse(text=paste0('list(',
-                                      paste(rep('year_block', nyears,), sep=', ', collapse=', '),
-                                      ')'))))
-        rownames(cc) <- month.abb
-    } else { #fourier method
-        cos.t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
-        sin.t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
-        cc = rbind(cos.t,sin.t)
-    }
-
-    return(cc)
-}
-cc <- ccgen() #covariates for each month of each year in the state process equation
+mm <- ntrends #number of hidden processes (trends)
+BB <- "identity" #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
+uu <- "zero" # 'uu' is a column vector of 0's (not part of DFA)
+CC <- "zero" #coeffs for covariates on state processes
+cc <- "zero" #covariates
 QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing actual marss)
 
 # observation equation params
 nn <- length(names(obs.ts)) # number of obs time series
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
              #(we want zero because we're not interested in what the offsets actually are)
-DD <- "zero"  # 'DD' and 'd' are for covariates
-dd <- "zero"
-RR <- "diagonal and equal" # 'RR' is var-cov matrix for obs errors (tune this)
+DDgen <- function(){
+    if(method %in% c('fixed_collective', 'fourier_collective')){
+        out <- matrix(month.abb, mm, 12, byrow=TRUE)
+        rownames(out) <- NULL
+    } else {
+        if(method %in% c('fixed_individual', 'fourier_individual')){
+            # out <- paste0(month.abb, 1)
+            # if(mm > 1){
+            #     for(i in 2:mm){
+            #         out <- rbind(out, paste0(month.abb, i))
+            #     }
+            # }
+            out <- 'unconstrained'
+        }
+    }
+    return(out)
+}
+DD <- DDgen() #coeffs for covariates in observation equation (dd)
+ddgen <- function(){
+    if(method %in% c('fixed_collective', 'fixed_individual')){
+        year_block <- diag(12)
+        nyears <- endyr-startyr+1
+
+        dd <- Reduce(function(x,y) {cbind(x,y)},
+                     eval(parse(text=paste0('list(',
+                                            paste(rep('year_block', nyears,), sep=', ', collapse=', '),
+                                            ')'))))
+        rownames(dd) <- month.abb
+    } else { #fourier method
+        cos_t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
+        sin_t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
+        dd = rbind(cos_t,sin_t)
+    }
+    return(dd)
+}
+dd <- ddgen() #covariates for the observed processes (seasonal and climatic)
+RR <- obs_err_var_struc # 'RR' is var-cov matrix for obs errors (tune this)
 ZZgen <- function(){
     ZZ <- matrix(list(0),nn,mm)
     ZZ[,1] <- paste0("z",names(obs.ts),1)
@@ -114,10 +182,10 @@ ZZgen <- function(){
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
 # 4 - run DFA ####
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
+dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
              control=list(maxit=20000, allow.degen=TRUE), silent=2)
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
+dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
               inits=dfa$par,
               control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 names(dfa)
@@ -149,11 +217,14 @@ process_plotter <- function(){
            ylim=ylm, xlab="", ylab="", xaxt="n")
       abline(h=0, col="gray")
       lines(y_ts,proc_rot[i,], lwd=2)
+      lines(y_ts,proc_rot[i,] * seas[i,], lwd=2, col='green')
       mtext(paste("Process",i), side=3, line=0.5)
       axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
 process_plotter()
+
+
 
 # plot loadings
 loading_plotter <- function(){

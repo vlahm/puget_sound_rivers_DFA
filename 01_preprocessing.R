@@ -3,7 +3,7 @@ rm(list=ls())
 
 library(stringr)
 
-nutsfull <- read.csv("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\nutsdata.csv",
+nutsfull <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/nutsdata.csv",
                      stringsAsFactors=FALSE)
 # nutsfull <- read.csv("~/Desktop/grad/Projects/Thesis/stream_nuts_DFA/data/nutsdata.csv",
 #                      stringsAsFactors=FALSE)
@@ -141,49 +141,41 @@ TURB <- assembler('TURB')
 # 5 dump to disk ####
 save(COND, FC, NH3_N, NO2_NO3, OP_DIS, OXYGEN, PH, PRESS, SUSSOL, TEMP, TP_P, TURB,
      list=c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN', 'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB'),
-     file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/yys_byyear_max.rda")
+     file="C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_byyear_max.rda")
 
-# 6 add temp, precip, moisture GET THESE BY MONTH AND AGGREGATE REGIONS 3,4,(5?) ####
+# 6 add temp, precip, drought, heating degree days ####
 #data from http://www.ncdc.noaa.gov/cag/time-series/us/45/3/zndx/ytd/12/1970-2014?base_prd=true&firstbaseyear=1970&lastbaseyear=2014
 #hydro drought is PHDI, meteor drought is PMDI, shortTerm is Z-index
 
+#by year
+
 #read in temp and convert to C
-meantemp <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\temp_byYear.csv",
-         skip=3)
-meantemp$Date <- 1970:2014
-meantemp$Value <- round((meantemp$Value - 32) * (5/9), 2)
-meantemp$Anomaly <- meantemp$Value - mean(meantemp$Value)
-colnames(meantemp)[2:3] <- c('meantemp', 'meantemp_anom')
+# meantemp <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_year/ hdd3 .csv",
+#          skip=3)
+# meantemp$Date <- 1970:2014
+# meantemp$Value <- round((meantemp$Value - 32) * (5/9), 2)
+# meantemp$Anomaly <- meantemp$Value - mean(meantemp$Value)
+# colnames(meantemp)[2:3] <- c('meantemp', 'meantemp_anom')
+#
+# #read in precip (unit = inches)
+# precip <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\precip_byYear.csv",
+#          skip=3)
+# precip$Date <- 1970:2014
+# colnames(precip)[2:3] <- c('precip', 'precip_anom')
+#
+# #hydrological drought (PHDI)
+# hydroDrought <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\hydrol_drought_byYear.csv",
+#          skip=2)
+# hydroDrought$Date <- 1970:2014
+# colnames(hydroDrought)[2:3] <- c('hydroDrought', 'hydroDrought_anom')
+#
+# #combine
+# climate <- Reduce(function(x,y) merge(x,y, by='Date'),
+#                   x=list(meantemp, precip, hydroDrought, meteoDrought, ZDrought))
+#
+# save(climate, list='climate', file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate.rda")
 
-#read in precip (unit = inches)
-precip <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\precip_byYear.csv",
-         skip=3)
-precip$Date <- 1970:2014
-colnames(precip)[2:3] <- c('precip', 'precip_anom')
 
-#hydrological drought (PHDI)
-hydroDrought <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\hydrol_drought_byYear.csv",
-         skip=2)
-hydroDrought$Date <- 1970:2014
-colnames(hydroDrought)[2:3] <- c('hydroDrought', 'hydroDrought_anom')
-
-#meteorological drought (PMDI)
-meteoDrought <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\meteor_drought_byYear.csv",
-         skip=2)
-meteoDrought$Date <- 1970:2014
-colnames(meteoDrought)[2:3] <- c('meteoDrought', 'meteoDrought_anom')
-
-#short term drought (Palmer Z-Index)
-ZDrought <- read.csv("C:\\Users\\Mike\\Desktop\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\shortTerm_drought_byYear.csv",
-         skip=2)
-ZDrought$Date <- 1970:2014
-colnames(ZDrought)[2:3] <- c('ZDrought', 'ZDrought_anom')
-
-#combine
-climate <- Reduce(function(x,y) merge(x,y, by='Date'),
-                  x=list(meantemp, precip, hydroDrought, meteoDrought, ZDrought))
-
-save(climate, list='climate', file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate.rda")
 
 # 7 add landscape chars####
 
