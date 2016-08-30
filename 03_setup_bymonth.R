@@ -11,8 +11,8 @@
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
-load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
-# load("Z:\\stream_nuts_DFA\\data\\response_var_dfs_bymonth.rda")
+# load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
+load("Z:\\stream_nuts_DFA\\data\\chemPhys_data\\yys_bymonth_mean.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
@@ -81,8 +81,10 @@ covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt'
                 'hdd_anom'='hd_anom_1900.99')
 
 if(region=='3_4' & average_regions==FALSE){
-    load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
-    load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate4.rda')
+    # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
+    # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate4.rda')
+    load(file="Z:/stream_nuts_DFA/data/climate_data/by_month/climate3.rda")
+    load(file="Z:/stream_nuts_DFA/data/climate_data/by_month/climate4.rda")
     covs3 <- as.matrix(climate3[substr(climate3$date,1,4) >= startyr &
                            substr(climate3$date,1,4) <= endyr,
                            colnames(climate3) %in%
@@ -92,7 +94,9 @@ if(region=='3_4' & average_regions==FALSE){
                            colnames(climate4) %in%
                            covdict[names(covdict)==cov_choices][[1]]])
 } else {
-    load(file=paste0('C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate',
+#     load(file=paste0('C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate',
+#         region, '.rda'))
+    load(file=paste0('Z:/stream_nuts_DFA/data/climate_data/by_month/climate',
         region, '.rda'))
     covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
     covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
@@ -124,50 +128,55 @@ covs <- t(scale(as.matrix(covs)))
 mm <- ntrends #number of hidden processes (trends)
 BB <- "identity" #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
 uu <- "zero" # 'uu' is a column vector of 0's (not part of DFA)
-CC <- "zero" #coeffs for covariates on state processes
-cc <- "zero" #covariates
+CCgen <- function(){
+  if(method %in% c('fixed_collective', 'fourier_collective')){
+    out <- matrix(month.abb, mm, 12, byrow=TRUE)
+    rownames(out) <- NULL
+  } else {
+    if(method %in% c('fixed_individual', 'fourier_individual')){
+      # out <- paste0(month.abb, 1)
+      # if(mm > 1){
+      #     for(i in 2:mm){
+      #         out <- rbind(out, paste0(month.abb, i))
+      #     }
+      # }
+      # rownames(out) <- NULL
+      out <- 'unconstrained'
+    }
+  }
+  return(out)
+}
+CC <- CCgen() #coeffs for covariates in process equation (cc)
+# CC <- "zero" #use zero if not including seasonality
+ccgen <- function(){
+  if(method %in% c('fixed_collective', 'fixed_individual')){
+    year_block <- diag(12)
+    nyears <- endyr-startyr+1
+    
+    cc <- Reduce(function(x,y) {cbind(x,y)},
+                 eval(parse(text=paste0('list(',
+                                        paste(rep('year_block', nyears,), sep=', ', collapse=', '),
+                                        ')'))))
+    rownames(cc) <- month.abb
+  } else { #fourier method
+    cos_t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
+    sin_t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
+    cc = rbind(cos_t,sin_t)
+  }
+  return(cc)
+}
+cc <- ccgen() #covariates for the state processes (seasonal and climatic)
+# cc <- "zero" #use zero if not including seasonality
 QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing actual marss)
 
 # observation equation params
 nn <- length(names(obs.ts)) # number of obs time series
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
              #(we want zero because we're not interested in what the offsets actually are)
-DDgen <- function(){
-    if(method %in% c('fixed_collective', 'fourier_collective')){
-        out <- matrix(month.abb, mm, 12, byrow=TRUE)
-        rownames(out) <- NULL
-    } else {
-        if(method %in% c('fixed_individual', 'fourier_individual')){
-            # out <- paste0(month.abb, 1)
-            # if(mm > 1){
-            #     for(i in 2:mm){
-            #         out <- rbind(out, paste0(month.abb, i))
-            #     }
-            # }
-            out <- 'unconstrained'
-        }
-    }
-    return(out)
-}
-DD <- DDgen() #coeffs for covariates in observation equation (dd)
-ddgen <- function(){
-    if(method %in% c('fixed_collective', 'fixed_individual')){
-        year_block <- diag(12)
-        nyears <- endyr-startyr+1
-
-        dd <- Reduce(function(x,y) {cbind(x,y)},
-                     eval(parse(text=paste0('list(',
-                                            paste(rep('year_block', nyears,), sep=', ', collapse=', '),
-                                            ')'))))
-        rownames(dd) <- month.abb
-    } else { #fourier method
-        cos_t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
-        sin_t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
-        dd = rbind(cos_t,sin_t)
-    }
-    return(dd)
-}
-dd <- ddgen() #covariates for the observed processes (seasonal and climatic)
+DD <- 'unconstrained'
+# DD <- 'zero' #use zero if not including climate covs
+dd <- covs
+# dd <- 'zero' #use zero if not including climate covs
 RR <- obs_err_var_struc # 'RR' is var-cov matrix for obs errors (tune this)
 ZZgen <- function(){
     ZZ <- matrix(list(0),nn,mm)
@@ -182,13 +191,28 @@ ZZgen <- function(){
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
 # 4 - run DFA ####
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
+dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
-             control=list(maxit=20000, allow.degen=TRUE), silent=2)
+             control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
 dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
               inits=dfa$par,
-              control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
+              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 names(dfa)
+
+dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal'),
+             inits=list(x0=matrix(rep(0,mm),mm,1)),
+             control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2, form='dfa', covariates=rbind(cc,covs))
+dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal'),
+             inits=ldfa$par, method='BFGS',
+             control=list(minit=200, maxit=20000), silent=2, form='dfa', covariates=rbind(cc,covs))
+
+par(mfrow=c(5,3))
+D_out <- coef(dfa, type='matrix')$D
+rownames(D_out) <- colnames(yy)[-1]
+plot(1:25,D_out[,1],type='l')
+for(i in 2:ncol(D_out)){
+  plot(1:25,D_out[,i], type='l')
+} 
 
 #get seasonal effects
 CC_out = coef(dfa, type="matrix")$C
@@ -197,6 +221,10 @@ seas = CC_out %*% cc[,1:12]
 rownames(seas) = 1:mm
 colnames(seas) = month.abb
 seas
+
+#covariate shiz
+dfa$par
+
 
 # 5 - plot estimated state processes, loadings, and model fits####
 
@@ -217,7 +245,7 @@ process_plotter <- function(){
            ylim=ylm, xlab="", ylab="", xaxt="n")
       abline(h=0, col="gray")
       lines(y_ts,proc_rot[i,], lwd=2)
-      lines(y_ts,proc_rot[i,] * seas[i,], lwd=2, col='green')
+      # lines(y_ts,proc_rot[i,] * seas[i,], lwd=2, col='green')
       mtext(paste("Process",i), side=3, line=0.5)
       axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
