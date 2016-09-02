@@ -8,3 +8,6 @@
 *.pdf
 /data/climate_data/by_year/raw
 /data/climate_data/by_month/raw
+
+*.rds
+*.csv
