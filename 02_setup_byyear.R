@@ -4,9 +4,9 @@
 #last edit: 8/11/2016
 
 # setup - 0 - CHOOSE yy maxes or means ####
-load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\yys_byyear_mean.rda")
-# load("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/data/response_var_dfs_byyear.rda")
-load("C:\\Users\\Mike\\Dropbox\\Grad\\Projects\\Thesis\\stream_nuts_DFA\\data\\climate.rda")
+load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_byyear_mean.rda")
+meantemp <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_year/ meantemp3 .csv")
+precip <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_year/ precip3 .csv")
 library(MARSS)
 library(viridis)
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
@@ -48,18 +48,42 @@ obs.ts <- yy[,-1]
 covs <- climate[climate$Date >= startyr & climate$Date <= endyr, colnames(climate) %in% cov_choices]
 
 # 2 - plot response variable time series ####
+par(mar=c(4,4,4,4))
 series_plotter <- function(){
     colors1 <- viridis(ncol(yy)-1, end=1)
     ymin <- min(yy[,-1], na.rm=TRUE)
     ymax <- max(yy[,-1], na.rm=TRUE)
 
-    plot(years, yy[,2], type='l', col=colors1[1], ylim=c(ymin,ymax), xlab='time', ylab=paste(y_choice), xaxt='n')
+    plot(years, yy[,2], type='l', col=colors1[1], ylim=c(ymin,ymax), xlab='Time',
+         # main=paste(y_choice),
+         ylab='Turbidity (NTU)', xaxt='n', xaxs='i', yaxs='i')
     for(i in 3:ncol(yy)){
         lines(years, yy[,i], type='l', col=colors1[i-1])
     }
     axis(side=1, at=years[c(T,F)], labels=years[c(T,F)])
 }
 series_plotter()
+
+# fit Lowess line
+xxx <- as.numeric(format(rep(yy[,1], ncol(yy)-1), '%Y'))
+yyy <- as.vector(as.matrix(yy[,-1]))
+xxx <- xxx[which(!is.na(yyy))]
+yyy <- yyy[!is.na(yyy)]
+agg <- aggregate(yyy, by=list(xxx), FUN=mean)
+loess_out <- loess(agg$x ~ agg$Group.1, span=.2, degree=2)
+lines(agg$Group.1, loess_out$fit, col='blue', lwd=3)
+#overlay air temp trend
+# lines(agg$Group.1, meantemp$at[which(as.numeric(substr(meantemp$date,1,4)) %in% agg$Group.1)],
+#       col='red', lwd=3)
+# legend(x='bottomleft', legend=c('Water Temp', 'Air temp'), lwd=3, col=c('blue','red'))
+#overlay precip trend
+par(new=TRUE)
+plot(agg$Group.1, precip$pc[which(as.numeric(substr(precip$date,1,4)) %in% agg$Group.1)],
+      col='red', lwd=3, type='l', axes=F, xlab='', ylab='')
+legend(x='topleft', legend=c('Mean Turbidity', 'Precip'), lwd=3, col=c('blue','red'))
+axis(side=4)
+mtext(text='Precipitation (cm)', side=4, line=2.5)
+
 
 # 3 - Set up input matrics to MARSS function call ####
 # scale and center y and cov data

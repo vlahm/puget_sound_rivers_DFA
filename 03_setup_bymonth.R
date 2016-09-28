@@ -11,8 +11,7 @@
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
-# load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
-load("Z:\\stream_nuts_DFA\\data\\chemPhys_data\\yys_bymonth_mean.rda")
+load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
 library(MARSS)
 library(viridis)
 if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
@@ -43,17 +42,17 @@ obs_err_var_struc = 'diagonal and equal'
 # subset by year and exclude columns with >= na_thresh proportion of NAs
 yy <- eval(parse(text=y_choice))
 subsetter <- function(yy, start, end, na_thresh=1){
-    
+
     #extract year subset
     years <- as.numeric(format(yy$date, '%Y'))
     yy <- yy[years >= start & years <= end, ]
-    
+
     #extract subset of columns with <= na_thresh proportion of NAs
     col_na_prop <- apply(yy, 2, function(x) sum(is.na(x)) / length(x))
     yy <- yy[,col_na_prop <= na_thresh]
-    
+
     rownames(yy) <- 1:nrow(yy)
-    
+
     return(yy)
 }
 yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75) #beware reducing threshold, may add sites and break stuff
@@ -158,7 +157,7 @@ ccgen <- function(){
     if(method %in% c('fixed_collective', 'fixed_individual')){
         year_block <- diag(12)
         nyears <- endyr-startyr+1
-        
+
         cc <- Reduce(function(x,y) {cbind(x,y)},
                      eval(parse(text=paste0('list(',
                                             paste(rep('year_block', nyears,), sep=', ', collapse=', '),
@@ -359,42 +358,42 @@ model_out <- data.frame()
 
 for(RRR in R_strucs){
     for(mmm in ntrends){
-        
+
         #create loadings matrix
         mm <- mmm
         ZZZ <- ZZgen()
-        
+
         #fit model with EM algorithm
         print(paste(RRR,mmm))
-        
-        
+
+
         if(mmm == 1){
             print(paste('should be 1', mmm))
-            
+
             dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=0), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
         } else {
             print(mmm)
-            
+
             dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
         }
-        
+
         #where possible, polish EM estimate with BFGS
         if(RRR != 'equalvarcov'){
             print(paste(RRR,mmm,'BFGS'))
-            
+
             dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=dfa$par, silent=FALSE,
                              # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
                              control=list(dfa$control$maxit), method='BFGS'))
             if(isTRUE(class(dfa)=='try-error')) {next}
         }
-        
+
         #store params, etc. in dataframe
         model_out <- rbind(model_out, data.frame(R=RRR, m=mmm, LogLik=dfa$logLik,
                                                  K=dfa$num.params, AICc=dfa$AICc,
@@ -402,33 +401,33 @@ for(RRR in R_strucs){
                                                  filter=dfa$fun.kf, method=dfa$method,
                                                  iter=unname(dfa$numIter), n=dfa$samp.size,
                                                  stringsAsFactors=FALSE))
-        
+
         #save model object
         saveRDS(dfa, file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_objects/",
                                  R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
-        
+
         if(mmm > 1){
-            
+
             #open plot device
             pdf(file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_outputs/",
                             R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
-            
+
             # varimax rotation to get Z loadings
             Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
             H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
             Z_rot = Z_est %*% H_inv # rotate factor loadings
             proc_rot = solve(H_inv) %*% dfa$states # rotate processes
-            
+
             #plot hidden processes, loadings, and model fits for each parameter combination
             process_plotter()
             loading_plotter()
-            
+
             mod_fit <- get_DFA_fits(dfa)
             fits_plotter()
-            
+
             #close plot device
             dev.off()
-            
+
         }
     }
 }
