@@ -11,10 +11,21 @@
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
-load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_bymonth_mean.rda")
+setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('Z:/stream_nuts_DFA/data/')
+load('chemPhys_data/yys_bymonth_mean.rda')
+
 library(MARSS)
 library(viridis)
-if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
+if (!require("manipulateR")) {
+    if (!require("devtools")) install.packages('devtools')
+    library(devtools)
+    install_github('vlahm/manipulateR')
+}
+library(manipulateR)
+library(imputeTS)
+
+# if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
 # 1 - CHOICES ####
 
@@ -82,8 +93,8 @@ covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt'
 if(region=='3_4' & average_regions==FALSE){
     # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
     # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate4.rda')
-    load(file="Z:/stream_nuts_DFA/data/climate_data/by_month/climate3.rda")
-    load(file="Z:/stream_nuts_DFA/data/climate_data/by_month/climate4.rda")
+    load(file="climate_data/by_month/climate3.rda")
+    load(file="climate_data/by_month/climate4.rda")
     covs3 <- as.matrix(climate3[substr(climate3$date,1,4) >= startyr &
                                     substr(climate3$date,1,4) <= endyr,
                                 colnames(climate3) %in%
@@ -95,7 +106,7 @@ if(region=='3_4' & average_regions==FALSE){
 } else {
     #     load(file=paste0('C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate',
     #         region, '.rda'))
-    load(file=paste0('Z:/stream_nuts_DFA/data/climate_data/by_month/climate',
+    load(file=paste0('climate_data/by_month/climate',
                      region, '.rda'))
     covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
     covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
@@ -103,6 +114,33 @@ if(region=='3_4' & average_regions==FALSE){
                            colnames(covs) %in%
                                covdict[names(covdict) %in% cov_choices]])
 }
+
+# identify seasons (cluster time points into 4 groups by water temp) ####
+
+#check for outliers and excessive noise
+fivenum(obs.ts, na.rm=TRUE)
+sum(obs.ts > 20, na.rm=TRUE)
+sd(as.matrix(obs.ts), na.rm=TRUE)
+#no outliers detected; reasonable noise; proceeding with k-means clustering
+
+#remove columns with lots of NAs before imputing values
+matfilter(obs.ts, fun=is.na, na.rm=FALSE, filter=FALSE)
+obs_sub <- obs.ts[,-c(2,8,16,18,21,24,25)]
+
+#impute values
+for(i in 1:ncol(obs_sub)){
+    y <- obs_sub[,i]
+    yts <- ts(y, int_dates[1], int_dates[length(y)], frequency=12)
+    yimp <- na.seasplit(yts, 'interpolation')
+    plot(int_dates, yimp[1:length(y)], col='green', type='l', lwd=2)
+    lines(int_dates, y, lwd=2)
+    obs_sub[,i] <- yimp[1:length(y)]
+}
+
+#k-means clustering
+source('http://www.umass.edu/landeco/teaching/ecodata/labs/biostats.R')
+
+
 
 # 2 - plot response variable time series (unintelligible by month)####
 # series_plotter <- function(){
@@ -403,13 +441,13 @@ for(RRR in R_strucs){
                                                  stringsAsFactors=FALSE))
 
         #save model object
-        saveRDS(dfa, file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_objects/",
+        saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
                                  R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
 
         if(mmm > 1){
 
             #open plot device
-            pdf(file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_outputs/",
+            pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
                             R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
 
             # varimax rotation to get Z loadings
@@ -432,5 +470,5 @@ for(RRR in R_strucs){
     }
 }
 #save data frame
-write.csv(model_out, file=paste0("C:/Users/vlahm/Desktop/stream_nuts_DFA/stream_nuts_DFA/model_objects/",
+write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
