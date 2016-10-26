@@ -17,13 +17,17 @@ load('chemPhys_data/yys_bymonth_mean.rda')
 
 library(MARSS)
 library(viridis)
+library(imputeTS)
+library(vegan)
+library(cluster)
+library(fpc)
+library(RColorBrewer)
 if (!require("manipulateR")) {
     if (!require("devtools")) install.packages('devtools')
     library(devtools)
     install_github('vlahm/manipulateR')
 }
 library(manipulateR)
-library(imputeTS)
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
@@ -47,7 +51,7 @@ endyr = 2014
 ntrends = 2
 obs_err_var_struc = 'diagonal and equal'
 
-# 1.5 - subset datasets according to choices ####
+# 1.1 - subset datasets according to choices ####
 
 #chem/phys data manipulations
 # subset by year and exclude columns with >= na_thresh proportion of NAs
@@ -115,7 +119,7 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
-# identify seasons (cluster time points into 4 groups by water temp) ####
+# 1.2 - identify seasons (cluster time points into 4 groups by water temp) ####
 
 #check for outliers and excessive noise
 fivenum(obs.ts, na.rm=TRUE)
@@ -132,15 +136,36 @@ for(i in 1:ncol(obs_sub)){
     y <- obs_sub[,i]
     yts <- ts(y, int_dates[1], int_dates[length(y)], frequency=12)
     yimp <- na.seasplit(yts, 'interpolation')
-    plot(int_dates, yimp[1:length(y)], col='green', type='l', lwd=2)
-    lines(int_dates, y, lwd=2)
-    obs_sub[,i] <- yimp[1:length(y)]
+    # plot(int_dates, yimp[1:length(y)], col='green', type='l', lwd=2)
+    # lines(int_dates, y, lwd=2)
+    obs_sub[,i] <- round(yimp[1:length(y)], 2)
 }
 
-#k-means clustering
-source('http://www.umass.edu/landeco/teaching/ecodata/labs/biostats.R')
+#k-means clustering (based on euclidean distance)
+euc <- vegdist(obs_sub, method='euclidean')
+kmns3 <- kmeans(obs_sub, centers=3, iter.max=10000, nstart=25)
 
+#plot cluster output (jul-sep at one end, dec-feb at the other, mar-jun continuous, oct-nov continuous)
+cols <- brewer.pal(12, 'Paired')
+pchvec <- as.numeric(as.vector(factor(kmns3$cluster, labels=c(15,16,17))))
+par(bg='black')
+plotcluster(obs_sub, kmns3$cluster, col=cols, pch=pchvec)
+legend('topleft', legend=month.abb, fill=cols, bg='white')
+# kmns4 <- kmeans(obs_sub, centers=4, iter.max=10000, nstart=25)
+# plotcluster(obs_sub, kmns4$cluster)
 
+#aggregate data by season
+seas_bymo <- rep(c(4,4,1,1,1,1,2,2,2,3,3,4), length.out=444) #spr-win = 1-4
+
+obs_seas <- aggregate(obs.ts, list(seas_bymo, years), mean, na.rm=TRUE)
+obs_seas[is.na(obs_seas)] <- NA #replace NaNs with NAs
+colnames(obs_seas)[1] <- 'season'
+
+cov_seas <- aggregate(covs, list(seas_bymo, years), mean)
+colnames(cov_seas)[1:2] <- c('season', 'year')
+
+seasons <- cov_seas$season
+years_seas <- cov_seas$year
 
 # 2 - plot response variable time series (unintelligible by month)####
 # series_plotter <- function(){
@@ -269,7 +294,6 @@ seas
 
 #covariate shiz
 dfa$par
-
 
 # 5 - plot estimated state processes, loadings, and model fits####
 
