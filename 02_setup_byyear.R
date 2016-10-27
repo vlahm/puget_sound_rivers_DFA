@@ -15,7 +15,7 @@ library(viridis)
 
 # 1 - CHOOSE and subset response and covs####
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice <- 'TURB'
+y_choice <- 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought
     # meteoDrought_anom ZDrought ZDrought_anom
 cov_choices <- c('meantemp')
@@ -124,6 +124,10 @@ dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD,
 # dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZ, A=aa, D=DD, d=dd, R=RR),
 #               inits=dfa$par,
 #               control=list(maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
+dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
+             inits=list(x0='zero'), z.score=TRUE,
+             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa')
+
 names(dfa)
 
 # 5 - plot estimated state processes, loadings, and model fits####
@@ -149,7 +153,7 @@ process_plotter <- function(){
       axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
-# process_plotter()
+process_plotter()
 
 # plot loadings
 loading_plotter <- function(){
@@ -170,7 +174,7 @@ loading_plotter <- function(){
       mtext(paste("Factor loadings on process",i),side=3,line=0.5)
     }
 }
-# loading_plotter()
+loading_plotter()
 
 # get model fits & CI's
 get_DFA_fits <- function(MLEobj,alpha=0.05) {
@@ -225,7 +229,7 @@ fits_plotter <- function(){
         lines(y_ts, lo, col="darkgray")
     }
 }
-# fits_plotter()
+fits_plotter()
 
 # model fitting - 6 - tune parameters without covs included ####
 #should repeat this in entirety with covs included

@@ -9,6 +9,7 @@
 
 #haven't set up fourier CC matrix yet. adding monthly effects in cc but not CC doesn't do what i need.
 rm(list=ls()); cat('\014')
+defpar <- par()
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
@@ -148,7 +149,7 @@ kmns3 <- kmeans(obs_imp, centers=3, iter.max=10000, nstart=25)
 #plot cluster output (jul-sep at one end, dec-feb at the other, mar-jun continuous, oct-nov continuous)
 cols <- brewer.pal(12, 'Paired')
 pchvec <- as.numeric(as.vector(factor(kmns3$cluster, labels=c(15,16,17))))
-defpar <- par(bg='black')
+par(bg='black')
 plotcluster(obs_imp, kmns3$cluster, col=cols, pch=pchvec)
 legend('topleft', legend=month.abb, fill=cols, bg='white')
 # kmns4 <- kmeans(obs_imp, centers=4, iter.max=10000, nstart=25)
@@ -276,8 +277,8 @@ dfa <- MARSS(y=obs_scl, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=C
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 
-dfa <- MARSS(y=obs_scl, model=list(m=2, R='diagonal and equal', A='zero'),
-             inits=list(x0=matrix(rep(0,mm),mm,1)), z.score=TRUE, #coef(dfa, type='matrix')$D
+dfa <- MARSS(y=obs_scl, model=list(m=2, R='diagonal and equal', A='zero', D='unconstrained'),
+             inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
              control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa',
              covariates=cc)
              # covariates=rbind(cc,covs))
@@ -286,11 +287,11 @@ dfa <- MARSS(y=obs_scl, model=list(m=2, R='diagonal and equal', A='zero'),
              inits=coef(dfa, type='matrix'), method='BFGS', z.score=TRUE,
              control=list(maxit=20000), silent=2, form='dfa', covariates=rbind(cc,covs))
 
-par(mfrow=c(5,3))
+par(mfrow=c(2,3))
 D_out <- coef(dfa, type='matrix')$D
 rownames(D_out) <- colnames(yy)[-1]
 for(i in 1:4){
-    barplot(D_out[,i], main=c('spr','sum','aut','win'))
+    barplot(D_out[,i], main=c('spr','sum','aut','win')[i])
 }
 for(i in length(cov_choices):1){
     barplot(D_out[,ncol(D_out)-i], main=rev(cov_choices)[i])
@@ -298,9 +299,9 @@ for(i in length(cov_choices):1){
 par(defpar)
 
 #get seasonal effects
-CC_out = coef(dfa, type="matrix")$C
+CC_out = coef(dfa, type="matrix")$C #??
 # The time series of net seasonal effects
-seas = CC_out %*% cc[,1:12]
+seas = CC_out %*% cc[,1:4]
 rownames(seas) = 1:mm
 colnames(seas) = month.abb
 seas
@@ -391,7 +392,8 @@ mod_fit <- get_DFA_fits(dfa)
 fits_plotter <- function(){
     ylbl <- names(obs)
     xlbl = y_ts =  1:length(seasons)
-    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     ymin <- min(obs_scl, na.rm=TRUE)
     ymax <- max(obs_scl, na.rm=TRUE)
     for(i in 1:nn) {

@@ -214,15 +214,18 @@ dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC,
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 
-dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
-             inits=list(x0=matrix(rep(0,mm),mm,1)), z.score=TRUE, #coef(dfa, type='matrix')$D
-             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa')#,
-             # covariates=rbind(covs))
-             # covariates=rbind(cc,covs))
+
 
 dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
              inits=coef(dfa, type='matrix'), method='BFGS', z.score=TRUE,
-             control=list(maxit=20000), silent=2, form='dfa', covariates=rbind(cc,covs))
+             control=list(maxit=20000), silent=2, form='dfa')#,
+             # covariates=cc)
+             # covariates=rbind(cc,covs))
+
+dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero', D='unconstrained'),
+             inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
+             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa',
+             covariates=cc)
 
 par(mfrow=c(5,3))
 D_out <- coef(dfa, type='matrix')$D
@@ -329,9 +332,9 @@ mod_fit <- get_DFA_fits(dfa)
 # plot fits
 fits_plotter <- function(){
     ylbl <- names(obs.ts)
-    xlbl <- years
-    y_ts <- years
-    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    xlbl = y_ts = 1:444
+    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     ymin <- min(dat.z, na.rm=TRUE)
     ymax <- max(dat.z, na.rm=TRUE)
     for(i in 1:nn) {
