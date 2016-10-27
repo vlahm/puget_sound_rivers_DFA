@@ -1,3 +1,10 @@
 20160826
 yes, it's cool to average the anomalies.  didn't save calculations, but just compare the mean of anomalies across
 regions 3 and 4 to the calculated anomaly from their corresponding temperatures and base levels
+
+20161026
+made a new script for dfa by season
+changed names of dat.z, obs.ts
+currently using imputed data in the dfa, which means excluding approx 9 sites; could switch back to obs set instead of obs_imp
+	nvm, switched back
+ISSUE - 1978 has no winter (can fix by not omitting the two months at the beginning)

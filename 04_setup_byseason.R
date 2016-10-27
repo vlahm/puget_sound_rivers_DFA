@@ -87,7 +87,7 @@ years <- as.numeric(format(yy[,1], '%Y'))
 int_dates <- (years - startyr) * 12 + months
 
 #create objects for response variables and covariates
-obs.ts <- yy[,-1]
+obs <- yy[,-1]
 
 covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt',
                 'maxtemp_anom'='mt_anom_1900.99','precip'='pc','precip_anom'='pc_anom_1900.99',
@@ -119,6 +119,67 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
+# 1.2 - delineate seasons (cluster time points into 4 groups by water temp) ####
+
+#check for outliers and excessive noise
+fivenum(obs, na.rm=TRUE)
+sum(obs > 20, na.rm=TRUE)
+sd(as.matrix(obs), na.rm=TRUE)
+#no outliers detected; reasonable noise; proceeding with k-means clustering
+
+#remove columns with lots of NAs before imputing values
+matfilter(obs, fun=is.na, na.rm=FALSE, filter=FALSE)
+obs_imp <- obs[,-c(2,8,16,18,21,24,25)]
+
+#impute values
+for(i in 1:ncol(obs_imp)){
+    y <- obs_imp[,i]
+    yts <- ts(y, int_dates[1], int_dates[length(y)], frequency=12)
+    yimp <- na.seasplit(yts, 'interpolation')
+    # plot(int_dates, yimp[1:length(y)], col='green', type='l', lwd=2)
+    # lines(int_dates, y, lwd=2)
+    obs_imp[,i] <- round(yimp[1:length(y)], 2)
+}
+
+#k-means clustering (based on euclidean distance)
+euc <- vegdist(obs_imp, method='euclidean')
+kmns3 <- kmeans(obs_imp, centers=3, iter.max=10000, nstart=25)
+
+#plot cluster output (jul-sep at one end, dec-feb at the other, mar-jun continuous, oct-nov continuous)
+cols <- brewer.pal(12, 'Paired')
+pchvec <- as.numeric(as.vector(factor(kmns3$cluster, labels=c(15,16,17))))
+defpar <- par(bg='black')
+plotcluster(obs_imp, kmns3$cluster, col=cols, pch=pchvec)
+legend('topleft', legend=month.abb, fill=cols, bg='white')
+# kmns4 <- kmeans(obs_imp, centers=4, iter.max=10000, nstart=25)
+# plotcluster(obs_imp, kmns4$cluster)
+par(defpar)
+
+#group data by season
+seas_bymo <- rep(c(1,1,2,2,2,2,3,3,3,4,4,1), length.out=444) #win-aut = 1-4
+years[seq(12,444,12)] <- years[seq(12,444,12)] + 1 #group each december with the following year's winter
+
+#jettison dangling winter months from all data
+years <- years[-444]
+seas_bymo <- seas_bymo[-444]
+# obs_imp <- obs_imp[-c(1,2,444),] #using imputed dataset here
+obs <- obs[-444,]
+covs <- covs[-444,]
+
+head(cbind(seas_bymo, years), 20)
+
+# obs_imp <- aggregate(obs_imp, list(seas_bymo, years), mean, na.rm=TRUE) #using imputed dataset here
+# obs_imp[is.na(obs_imp)] <- NA #replace NaNs with NAs
+# obs_imp <- obs_imp[,-(1:2)]
+obs <- aggregate(obs, list(seas_bymo, years), mean, na.rm=TRUE)
+obs[is.na(obs)] <- NA #replace NaNs with NAs
+obs <- obs[,-(1:2)]
+
+covs <- aggregate(covs, list(seas_bymo, years), mean)
+seasons <- covs[,1]
+years_seas <- covs[,2]
+covs <- covs[,-(1:2)]
+
 # 2 - plot response variable time series (unintelligible by month) ####
 # series_plotter <- function(){
 #     colors1 <- viridis(ncol(yy)-1, end=1)
@@ -135,8 +196,8 @@ if(region=='3_4' & average_regions==FALSE){
 
 # 3 - Set up input matrices to MARSS function call ####
 # scale and center y and cov data
-dat.z <- t(scale(as.matrix(obs.ts)))
-mean(dat.z[1,], na.rm=T); sd(dat.z[1,], na.rm=T)
+obs_scl <- t(scale(as.matrix(obs)))
+mean(obs_scl[1,], na.rm=T); sd(obs_scl[1,], na.rm=T)
 
 covs <- t(scale(as.matrix(covs)))
 
@@ -145,15 +206,16 @@ mm <- ntrends #number of hidden processes (trends)
 BB <- "identity" #'BB' is identity: 1's along the diagonal & 0's elsewhere (not part of DFA)
 uu <- "zero" # 'uu' is a column vector of 0's (not part of DFA)
 CCgen <- function(meth=method){
+    seas_abb <- c('win','spr','sum','aut')
     if(meth %in% c('fixed_collective', 'fourier_collective')){
-        out <- matrix(month.abb, mm, 12, byrow=TRUE)
+        out <- matrix(seas_abb, mm, 4, byrow=TRUE)
         rownames(out) <- NULL
     } else {
         if(meth %in% c('fixed_individual', 'fourier_individual')){
-            out <- paste0(month.abb, 1)
+            out <- paste0(seas_abb, 1)
             if(mm > 1){
                 for(i in 2:mm){
-                    out <- rbind(out, paste0(month.abb, i))
+                    out <- rbind(out, paste0(seas_abb, i))
                 }
             }
             rownames(out) <- NULL
@@ -166,17 +228,17 @@ CC <- CCgen() #coeffs for covariates in process equation (cc)
 # CC <- "zero" #use zero if not including seasonality
 ccgen <- function(meth=method){
     if(meth %in% c('fixed_collective', 'fixed_individual')){
-        year_block <- diag(12)
+        year_block <- diag(4)
         nyears <- endyr-startyr+1
 
         cc <- Reduce(function(x,y) {cbind(x,y)},
                      eval(parse(text=paste0('list(',
                                             paste(rep('year_block', nyears,), sep=', ', collapse=', '),
                                             ')'))))
-        rownames(cc) <- month.abb
+        rownames(cc) <- c('win','spr','sum','aut')
     } else { #fourier method
-        cos_t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
-        sin_t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
+        cos_t = cos(2 * pi * seq(dim(obs_scl)[2]) / 12)
+        sin_t = sin(2 * pi * seq(dim(obs_scl)[2]) / 12)
         cc = rbind(cos_t,sin_t)
     }
     return(cc)
@@ -186,7 +248,7 @@ cc <- ccgen() #covariates for the state processes (seasonal and climatic)
 QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing actual marss)
 
 # observation equation params
-nn <- length(names(obs.ts)) # number of obs time series
+nn <- length(names(obs)) # number of obs time series
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
 #(we want zero because we're not interested in what the offsets actually are)
 DD <- 'unconstrained'
@@ -196,10 +258,10 @@ dd <- covs
 RR <- obs_err_var_struc # 'RR' is var-cov matrix for obs errors (tune this)
 ZZgen <- function(){
     ZZ <- matrix(list(0),nn,mm)
-    ZZ[,1] <- paste0("z",names(obs.ts),1)
+    ZZ[,1] <- paste0("z",names(obs),1)
     if(mm > 1){
         for(i in 2:mm){
-            ZZ[i:nn,i] <- paste0("z",names(obs.ts)[-(1:(i-1))],i)
+            ZZ[i:nn,i] <- paste0("z",names(obs)[-(1:(i-1))],i)
         }
     }
     return(ZZ)
@@ -207,32 +269,33 @@ ZZgen <- function(){
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
 # 4 - run DFA ####
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs, R=RR),
+dfa <- MARSS(y=obs_scl, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
              control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
+dfa <- MARSS(y=obs_scl, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 
-dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
+dfa <- MARSS(y=obs_scl, model=list(m=2, R='diagonal and equal', A='zero'),
              inits=list(x0=matrix(rep(0,mm),mm,1)), z.score=TRUE, #coef(dfa, type='matrix')$D
-             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa')#,
-             # covariates=rbind(covs))
+             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa',
+             covariates=cc)
              # covariates=rbind(cc,covs))
 
-dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
+dfa <- MARSS(y=obs_scl, model=list(m=2, R='diagonal and equal', A='zero'),
              inits=coef(dfa, type='matrix'), method='BFGS', z.score=TRUE,
              control=list(maxit=20000), silent=2, form='dfa', covariates=rbind(cc,covs))
 
 par(mfrow=c(5,3))
 D_out <- coef(dfa, type='matrix')$D
 rownames(D_out) <- colnames(yy)[-1]
-for(i in 1:12){
-    barplot(D_out[,i], main=month.name[i])
+for(i in 1:4){
+    barplot(D_out[,i], main=c('spr','sum','aut','win'))
 }
 for(i in length(cov_choices):1){
     barplot(D_out[,ncol(D_out)-i], main=rev(cov_choices)[i])
 }
+par(defpar)
 
 #get seasonal effects
 CC_out = coef(dfa, type="matrix")$C
@@ -255,9 +318,8 @@ proc_rot = solve(H_inv) %*% dfa$states # rotate processes
 
 # plot hidden processes
 process_plotter <- function(){
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
-    xlbl <- int_dates
-    y_ts <- int_dates
+    defpar <- par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+    xlbl = y_ts =  1:length(seasons)
     ylm <- c(-1,1)*max(abs(proc_rot))
     for(i in 1:mm) {
         plot(y_ts,proc_rot[i,], type="n", bty="L",
@@ -268,15 +330,14 @@ process_plotter <- function(){
         mtext(paste("Process",i), side=3, line=0.5)
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
+    par(defpar)
 }
 process_plotter()
-
-
 
 # plot loadings
 loading_plotter <- function(){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
-    ylbl <- names(obs.ts)
+    ylbl <- names(obs)
     clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(proc_rot))
     minZ <- 0
@@ -328,12 +389,11 @@ mod_fit <- get_DFA_fits(dfa)
 
 # plot fits
 fits_plotter <- function(){
-    ylbl <- names(obs.ts)
-    xlbl <- years
-    y_ts <- years
+    ylbl <- names(obs)
+    xlbl = y_ts =  1:length(seasons)
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    ymin <- min(dat.z, na.rm=TRUE)
-    ymax <- max(dat.z, na.rm=TRUE)
+    ymin <- min(obs_scl, na.rm=TRUE)
+    ymax <- max(obs_scl, na.rm=TRUE)
     for(i in 1:nn) {
         lo <- mod_fit$lo[i,]
         mn <- mod_fit$ex[i,]
@@ -341,7 +401,7 @@ fits_plotter <- function(){
         plot(y_ts,mn,xlab="",ylab=ylbl[i],xaxt="n",type="n", cex.lab=1.2,
              ylim=c(ymin,ymax))
         axis(1, at=xlbl, labels=xlbl, cex.axis=1)
-        points(y_ts,dat.z[i,], pch=16, col="darkblue")
+        points(y_ts,obs_scl[i,], pch=16, col="darkblue")
         lines(y_ts, up, col="darkgray")
         lines(y_ts, mn, col="black", lwd=2)
         lines(y_ts, lo, col="darkgray")
@@ -382,14 +442,14 @@ for(RRR in R_strucs){
         if(mmm == 1){
             print(paste('should be 1', mmm))
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=obs_scl, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=0), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
         } else {
             print(mmm)
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=obs_scl, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
@@ -399,7 +459,7 @@ for(RRR in R_strucs){
         if(RRR != 'equalvarcov'){
             print(paste(RRR,mmm,'BFGS'))
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=obs_scl, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=dfa$par, silent=FALSE,
                              # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
                              control=list(dfa$control$maxit), method='BFGS'))
@@ -419,7 +479,7 @@ for(RRR in R_strucs){
                                  R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
 
         if(mmm > 1){
-
+i
             #open plot device
             pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
                             R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
