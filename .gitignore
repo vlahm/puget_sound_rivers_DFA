@@ -1,12 +1,9 @@
-*.pptx
 *.db
 *.Rhistory
-/model_objects
-/model_outputs
-*.rda
 /obsolete
 *.pdf
 /data/climate_data/by_year/raw
 /data/climate_data/by_month/raw
-*.rds
-*.csv
+/round_1_no_covs
+/round_2
+*.pptx
