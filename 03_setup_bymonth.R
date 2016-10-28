@@ -274,8 +274,6 @@ process_plotter <- function(){
 }
 process_plotter()
 
-
-
 # plot loadings
 loading_plotter <- function(){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
@@ -333,8 +331,8 @@ mod_fit <- get_DFA_fits(dfa)
 fits_plotter <- function(){
     ylbl <- names(obs.ts)
     xlbl = y_ts = 1:444
-    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     ymin <- min(dat.z, na.rm=TRUE)
     ymax <- max(dat.z, na.rm=TRUE)
     for(i in 1:nn) {

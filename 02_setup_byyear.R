@@ -17,7 +17,7 @@ library(viridis)
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice <- 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom meteoDrought
-    # meteoDrought_anom ZDrought ZDrought_anom
+# meteoDrought_anom ZDrought ZDrought_anom
 cov_choices <- c('meantemp')
 
 yy <- eval(parse(text=y_choice))
