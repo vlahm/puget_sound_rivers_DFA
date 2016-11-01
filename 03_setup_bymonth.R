@@ -15,19 +15,15 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth_mean.rda')
 
-library(MARSS)
-library(viridis)
-library(imputeTS)
-library(vegan)
-library(cluster)
-library(fpc)
-library(RColorBrewer)
+package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc','RColorBrewer')
+new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
 if (!require("manipulateR")) {
     if (!require("devtools")) install.packages('devtools')
     library(devtools)
     install_github('vlahm/manipulateR')
 }
-library(manipulateR)
+for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE)
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
@@ -37,7 +33,7 @@ library(manipulateR)
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('meantemp', 'precip')
+cov_choices = c('meantemp')
 #region choices: '3' (downstream), '4' (upstream), '3_4' (average of 3 and 4)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -222,10 +218,12 @@ dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
              # covariates=cc)
              # covariates=rbind(cc,covs))
 
+
 dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero', D='unconstrained'),
              inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
-             control=list(minit=200, maxit=500, allow.degen=TRUE), silent=2, form='dfa',
-             covariates=cc)
+             control=list(minit=1, maxit=20, allow.degen=TRUE), silent=2, form='dfa',
+             covariates=rbind(covs))
+
 
 par(mfrow=c(5,3))
 D_out <- coef(dfa, type='matrix')$D
@@ -245,10 +243,7 @@ rownames(seas) = 1:mm
 colnames(seas) = month.abb
 seas
 
-#covariate shiz
-dfa$par
-
-# 5 - plot estimated state processes, loadings, and model fits####
+# 5 - plot estimated state processes, loadings, and model fits ####
 
 # varimax rotation to get Z loadings
 Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
@@ -350,7 +345,19 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# model fitting - 6 - tune parameters without covs included ####
+# 6 - landscape factor regressions ####
+#regress factor loadings (Z) on hidden trends against landscape vars
+
+land <- read.csv('watershed_data/watershed_data_simp.csv')
+
+Z_rot
+plot(Z_rot[,1],
+
+coef(dfa, type="matrix")$D
+
+#regress effect sizes of climate covariates against landscape vars
+
+# model fitting - 7 - tune parameters without covs included ####
 #should repeat this in entirety with covs included
 
 R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
@@ -368,6 +375,13 @@ model_out <- data.frame()
 # R_names <- c('Unconst')
 # mmm=1
 
+library(foreach)
+library(doParallel)
+cl <- makeCluster(detectCores() - 1) #specify ncores-1 to be used in parallel
+registerDoParallel(cl)
+foreach(RRR=R_strucs)...
+
+stopCluster() #free parallelized cores for other uses
 
 for(RRR in R_strucs){
     for(mmm in ntrends){

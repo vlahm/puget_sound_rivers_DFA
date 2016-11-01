@@ -1,3 +1,6 @@
+library(MARSS)
+library(viridis)
+
 mm=2
 nts=30
 x = 1:120
@@ -18,11 +21,16 @@ for(i in 1:120){
     y[i] <- y[i]+0.01*i
     z[i] <- z[i]-0.01*i
 }
+# for(i in 1:120){
+#     w[i] <- w[i]-0.02*i
+#     y[i] <- y[i]-0.02*i
+#     z[i] <- z[i]-0.02*i
+# }
 
 data <- t(scale(cbind(y,z,w)))
 rownames(data) <- c('y','z','w')
 
-cov <- t(scale(seq(10,-10,length.out=length(y))))
+cov <- t(scale(seq(1.2,-1.2,length.out=length(y))))
 
 plot(x,data[1,], type='l', col='red')
 lines(x,data[2,],col='blue')
@@ -48,10 +56,12 @@ cc <- ccgen(4, nts, F)
 
 dfa <- MARSS(y=data, model=list(m=mm, R='diagonal and equal', A='zero'),
              inits=list(x0='zero'), z.score=T,
-             control=list(minit=1, maxit=300, allow.degen=T, safe=T, trace=1),
+             control=list(minit=1, maxit=500, allow.degen=T, safe=T, trace=1),
+             # silent=2, form='dfa')
              silent=2, form='dfa',
              # covariates=cc)
-             covariates=rbind(cc,cov))
+             covariates=cov)
+             # covariates=rbind(cc,cov))
 
 #plot
 Z_est <- coef(dfa, type="matrix")$Z
