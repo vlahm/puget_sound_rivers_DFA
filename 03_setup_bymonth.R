@@ -12,6 +12,7 @@ rm(list=ls()); cat('\014')
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth_mean.rda')
 source('../00_tmb_uncor_Rmat.R')
@@ -475,12 +476,31 @@ library(foreach)
 library(doParallel)
 cl <- makeCluster(detectCores() - 1) #specify ncores-1 to be used in parallel
 registerDoParallel(cl)
+registerDoParallel(cores=detectCores() - 1)
+stopCluster()
+stopImplicitCluster()
+getDoParWorkers()
+
+if(.Platform$OS.type == "unix")
+
+#basic
+#.combine can be c, cbind, rbind, *, +; default is a list
+# %dopar% tells it to parallelize, as opposed to %do%, which tells it not to
+out <- foreach(i=1:length(n), .combine=rbind) %dopar% {
+    data.frame(col1=x, col2=y, col3=names(chili)[i])
+}
+
+#to combine output as a list
+out <- foreach(i=1:length(n), .combine=list, .multicombine=TRUE) %dopar% {
+    x <- i + 1
+    turbofunction(x)
+}
+
 
 foreach(RRR=R_strucs, .combine=rbind) %:%
     foreach(mmm=ntrends, .combine=rbind) %:%
         foreach(sss=1:length(seasonality), .combine=rbind) %dopar% {
             data.frame(R=RRR, m=mmm, s=names(seasonality)[sss])
-            x <- 5
         }
 
 stopCluster(cl)
@@ -501,18 +521,6 @@ for(RRR in R_strucs){
             dfa <- runDFA(obs=dat.z, NumStates=mmm, ErrStruc=RRR,
                           EstCovar=TRUE, Covars=rbind(seasonality[[sss]],covs))
 
-            #store params, etc. in dataframe
-            model_out <- rbind(model_out,
-                               data.frame(R=RRR, m=mmm,
-                                          seasonality=names(seasonality)[sss],
-                                          LogLik=dfa$Optimization$value,
-                                          AIC=dfa$AIC,
-                                          counts_func=dfa$Optimization$counts[1],
-                                          counts_gradient=dfa$Optimization$counts[2],
-                                          convergence=dfa$Optimization$convergence,
-                                          message=dfa$Optimization$message,
-                                          stringsAsFactors=FALSE))
-
             #save model object
             saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
                                      RRR, '_', mmm, 'm_',
@@ -531,6 +539,18 @@ for(RRR in R_strucs){
 
             #close plot device
             dev.off()
+
+            #store params, etc. in dataframe
+            model_out <- rbind(model_out,
+                               data.frame(R=RRR, m=mmm,
+                                          seasonality=names(seasonality)[sss],
+                                          LogLik=dfa$Optimization$value,
+                                          AIC=dfa$AIC,
+                                          counts_func=dfa$Optimization$counts[1],
+                                          counts_gradient=dfa$Optimization$counts[2],
+                                          convergence=dfa$Optimization$convergence,
+                                          message=dfa$Optimization$message,
+                                          stringsAsFactors=FALSE))
         }
     }
 }
