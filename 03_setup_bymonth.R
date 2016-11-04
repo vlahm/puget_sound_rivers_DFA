@@ -333,13 +333,13 @@ fits_plotter()
 
 # 5.5 - plot estimated state processes and loadings (TMB-testing) ####
 
-process_plotter <- function(dfa_obj){
-    for(i in 1:mm){
-        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+process_plotter <- function(dfa_obj, ntrends){
+    for(i in 1:ntrends){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
         xlbl <- int_dates
         y_ts <- int_dates
         ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
-        for(i in 1:mm) {
+        for(i in 1:ntrends){
             plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
                  ylim=ylm, xlab="", ylab="", xaxt="n")
             abline(h=0, col="gray")
@@ -349,17 +349,17 @@ process_plotter <- function(dfa_obj){
         }
     }
 }
-process_plotter(dfa2)
+# process_plotter(dfa)
 
-loading_plotter <- function(dfa_obj){
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+loading_plotter <- function(dfa_obj, ntrends){
+    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     ylbl <- names(obs.ts)
     clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     minZ <- 0
     Z_rot <- dfa_obj$Estimates$Z
     ylm <- c(-1,1)*max(abs(Z_rot))
-    for(i in 1:mm) {
+    for(i in 1:ntrends) {
         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
              lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col=clr)
         for(j in 1:nn) {
@@ -370,7 +370,7 @@ loading_plotter <- function(dfa_obj){
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
     }
 }
-loading_plotter(dfa2)
+# loading_plotter(dfa)
 
 # plot(dfa2$Estimates$u[1,], type='l')
 # points(dfa2$Fits[25,], col='blue', pch=20)
@@ -474,92 +474,83 @@ write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
 # 6.5 - model fitting/parameter tuning (TMB) ####
 library(foreach)
 library(doParallel)
-cl <- makeCluster(detectCores() - 1) #specify ncores-1 to be used in parallel
+
+#specify system-dependent cluster type; ncores-1 to be used in parallel
+if(.Platform$OS.type == "windows"){
+    cl <- makeCluster(detectCores() - 1, type='PSOCK')
+} else {
+    cl <- makeCluster(detectCores() - 1, type='FORK')
+}
 registerDoParallel(cl)
-registerDoParallel(cores=detectCores() - 1)
-stopCluster()
-stopImplicitCluster()
+
 getDoParWorkers()
-
-if(.Platform$OS.type == "unix")
-
-#basic
-#.combine can be c, cbind, rbind, *, +; default is a list
-# %dopar% tells it to parallelize, as opposed to %do%, which tells it not to
-out <- foreach(i=1:length(n), .combine=rbind) %dopar% {
-    data.frame(col1=x, col2=y, col3=names(chili)[i])
-}
-
-#to combine output as a list
-out <- foreach(i=1:length(n), .combine=list, .multicombine=TRUE) %dopar% {
-    x <- i + 1
-    turbofunction(x)
-}
-
-
-foreach(RRR=R_strucs, .combine=rbind) %:%
-    foreach(mmm=ntrends, .combine=rbind) %:%
-        foreach(sss=1:length(seasonality), .combine=rbind) %dopar% {
-            data.frame(R=RRR, m=mmm, s=names(seasonality)[sss])
-        }
-
+getDoParRegistered() #make sure (this will not return NULL)
+getDoParName() #see what it is
+registerDoSEQ()
 stopCluster(cl)
+stopImplicitCluster()
+
+unregister <- function() {
+    env <- foreach:::.foreachGlobals
+    rm(list=ls(name=env), pos=env)
+}
+unregister()
 
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
 seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
                     'fourier'=ccgen('fourier'), 'no_seas'=NULL)
-model_out <- data.frame()
 
-for(RRR in R_strucs){
-    for(mmm in ntrends){
-        for(sss in 1:length(seasonality)){
+model_out <-
+    foreach(RRR=R_strucs, .combine=rbind) %:%
+        foreach(mmm=ntrends, .combine=rbind) %:%
+            foreach(sss=1:length(seasonality), .combine=rbind,
+                    .packages='viridis') %dopar% {
 
-            print(paste(RRR,mmm,names(seasonality)[sss]))
+                source('../00_tmb_uncor_Rmat.R')
 
-            #fit model with TMB
-            dfa <- runDFA(obs=dat.z, NumStates=mmm, ErrStruc=RRR,
-                          EstCovar=TRUE, Covars=rbind(seasonality[[sss]],covs))
+                print(paste(RRR,mmm,names(seasonality)[sss]))
 
-            #save model object
-            saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
-                                     RRR, '_', mmm, 'm_',
-                                     names(seasonality)[sss], '_',
-                                     startyr, '-', endyr, '_', y_choice, '.rds'))
+                #fit model with TMB
+                dfa <- runDFA(obs=dat.z, NumStates=mmm, ErrStruc=RRR,
+                              EstCovar=TRUE, Covars=rbind(seasonality[[sss]],covs))
 
-            #open plot device
-            pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
-                            RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
-                            startyr, '-', endyr, '_', y_choice, '.pdf'),
-                onefile=TRUE)
+                #save model object
+                saveRDS(dfa, file=paste0("../model_objects/",
+                                         RRR, '_', mmm, 'm_',
+                                         names(seasonality)[sss], '_',
+                                         startyr, '-', endyr, '_', y_choice, '.rds'))
 
-            #plot hidden processes, loadings, and model fits for each parameter combination
-            process_plotter(dfa)
-            loading_plotter(dfa)
+                #open plot device
+                pdf(file=paste0("../model_outputs/",
+                                RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
+                                startyr, '-', endyr, '_', y_choice, '.pdf'),
+                    onefile=TRUE)
 
-            #close plot device
-            dev.off()
+                #plot hidden processes, loadings, and model fits for each parameter combination
+                process_plotter(dfa, mmm)
+                loading_plotter(dfa, mmm)
 
-            #store params, etc. in dataframe
-            model_out <- rbind(model_out,
-                               data.frame(R=RRR, m=mmm,
-                                          seasonality=names(seasonality)[sss],
-                                          LogLik=dfa$Optimization$value,
-                                          AIC=dfa$AIC,
-                                          counts_func=dfa$Optimization$counts[1],
-                                          counts_gradient=dfa$Optimization$counts[2],
-                                          convergence=dfa$Optimization$convergence,
-                                          message=dfa$Optimization$message,
-                                          stringsAsFactors=FALSE))
-        }
-    }
-}
+                #close plot device
+                dev.off()
+
+                #store params, etc. in dataframe
+                data.frame(R=RRR, m=mmm,
+                           seasonality=names(seasonality)[sss],
+                           LogLik=dfa$Optimization$value, AIC=dfa$AIC,
+                           counts_func=unname(dfa$Optimization$counts[1]),
+                           counts_gradient=unname(dfa$Optimization$counts[2]),
+                           convergence=dfa$Optimization$convergence,
+                           message=paste('0',dfa$Optimization$message),
+                           stringsAsFactors=FALSE)
+                }
+
 #save data frame
-write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
+write.csv(model_out, file=paste0("../model_objects/",
                                  'param_tuning_dataframe_', startyr, '-',
-                                 y_choice, '.csv'))
+                                 endyr, '_', y_choice, '.csv'))
 
-stopCluster() #free parallelized cores for other uses
+stopCluster(cl) #free parallelized cores for other uses
 
 # 7 - landscape factor regressions ####
 #regress factor loadings (Z) on hidden trends against landscape vars

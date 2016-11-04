@@ -10,3 +10,5 @@
 *.cpp
 *.o
 *.dll
+/model_objects
+/model_outputs
