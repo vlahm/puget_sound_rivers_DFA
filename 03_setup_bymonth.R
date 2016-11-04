@@ -14,16 +14,18 @@ rm(list=ls()); cat('\014')
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth_mean.rda')
+source('../00_tmb_uncor_Rmat.R')
 
+#install packages that aren't already installed
 package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc','RColorBrewer')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages)
 if (!require("manipulateR")) {
     if (!require("devtools")) install.packages('devtools')
     library(devtools)
-    install_github('vlahm/manipulateR')
+    install_github('vlahm/manipulateR') #this one is from github
 }
-for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE)
+for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
@@ -202,48 +204,31 @@ ZZgen <- function(){
 }
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
-# 4 - run DFA ####
+# 4 - run DFA (testing) ####
+#MARSS full specification
 dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
              control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
 dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
-
-
-
-dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),
-             inits=coef(dfa, type='matrix'), method='BFGS', z.score=TRUE,
-             control=list(maxit=20000), silent=2, form='dfa')#,
-             # covariates=cc)
-             # covariates=rbind(cc,covs))
-
-
+#MARSS form=DFA
 dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero', D='unconstrained'),
              inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
-             control=list(minit=1, maxit=20, allow.degen=TRUE), silent=2, form='dfa',
+             control=list(minit=1, maxit=2000, allow.degen=TRUE), silent=2, form='dfa',
              covariates=rbind(covs))
+#TMB
+dfa2 <- runDFA(obs=dat.z, NumStates=mm, ErrStruc='DE', EstCovar=T, Covars=rbind(cc,covs))
 
+# #get seasonal effects
+# CC_out = coef(dfa, type="matrix")$C
+# # The time series of net seasonal effects
+# seas = CC_out %*% cc[,1:12]
+# rownames(seas) = 1:mm
+# colnames(seas) = month.abb
+# seas
 
-par(mfrow=c(5,3))
-D_out <- coef(dfa, type='matrix')$D
-rownames(D_out) <- colnames(yy)[-1]
-for(i in 1:12){
-    barplot(D_out[,i], main=month.name[i])
-}
-for(i in length(cov_choices):1){
-    barplot(D_out[,ncol(D_out)-i], main=rev(cov_choices)[i])
-}
-
-#get seasonal effects
-CC_out = coef(dfa, type="matrix")$C
-# The time series of net seasonal effects
-seas = CC_out %*% cc[,1:12]
-rownames(seas) = 1:mm
-colnames(seas) = month.abb
-seas
-
-# 5 - plot estimated state processes, loadings, and model fits ####
+# 5 - plot estimated state processes, loadings, and model fits (MARSS-testing) ####
 
 # varimax rotation to get Z loadings
 Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
@@ -326,8 +311,8 @@ mod_fit <- get_DFA_fits(dfa)
 fits_plotter <- function(){
     ylbl <- names(obs.ts)
     xlbl = y_ts = 1:444
-    # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     ymin <- min(dat.z, na.rm=TRUE)
     ymax <- max(dat.z, na.rm=TRUE)
     for(i in 1:nn) {
@@ -345,20 +330,51 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# 6 - landscape factor regressions ####
-#regress factor loadings (Z) on hidden trends against landscape vars
+# 5.5 - plot estimated state processes and loadings (TMB-testing) ####
 
-land <- read.csv('watershed_data/watershed_data_simp.csv')
+process_plotter <- function(dfa_obj){
+    for(i in 1:mm){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+        xlbl <- int_dates
+        y_ts <- int_dates
+        ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
+        for(i in 1:mm) {
+            plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
+                 ylim=ylm, xlab="", ylab="", xaxt="n")
+            abline(h=0, col="gray")
+            lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
+            mtext(paste("Process",i), side=3, line=0.5)
+            axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
+        }
+    }
+}
+process_plotter(dfa2)
 
-Z_rot
-plot(Z_rot[,1],
+loading_plotter <- function(dfa_obj){
+    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+    ylbl <- names(obs.ts)
+    clr <- viridis(nn) #colors may not line up with series plots in section 2
+    ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
+    minZ <- 0
+    Z_rot <- dfa_obj$Estimates$Z
+    ylm <- c(-1,1)*max(abs(Z_rot))
+    for(i in 1:mm) {
+        plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
+             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col=clr)
+        for(j in 1:nn) {
+            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
+            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2, col=clr[j])}
+            abline(h=0, lwd=1.5, col="gray")
+        }
+        mtext(paste("Factor loadings on process",i),side=3,line=0.5)
+    }
+}
+loading_plotter(dfa2)
 
-coef(dfa, type="matrix")$D
+# plot(dfa2$Estimates$u[1,], type='l')
+# points(dfa2$Fits[25,], col='blue', pch=20)
 
-#regress effect sizes of climate covariates against landscape vars
-
-# model fitting - 7 - tune parameters without covs included ####
-#should repeat this in entirety with covs included
+# 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
 
 R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
 R_names <- c('DiagAndEq', 'DiagAndUneq', 'EqVarCov')
@@ -374,14 +390,6 @@ model_out <- data.frame()
 # R_names <- c('DiagAndUneq')
 # R_names <- c('Unconst')
 # mmm=1
-
-library(foreach)
-library(doParallel)
-cl <- makeCluster(detectCores() - 1) #specify ncores-1 to be used in parallel
-registerDoParallel(cl)
-foreach(RRR=R_strucs)...
-
-stopCluster() #free parallelized cores for other uses
 
 for(RRR in R_strucs){
     for(mmm in ntrends){
@@ -461,3 +469,86 @@ for(RRR in R_strucs){
 #save data frame
 write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
+
+# 6.5 - model fitting/parameter tuning (TMB) ####
+library(foreach)
+library(doParallel)
+cl <- makeCluster(detectCores() - 1) #specify ncores-1 to be used in parallel
+registerDoParallel(cl)
+
+foreach(RRR=R_strucs, .combine=rbind) %:%
+    foreach(mmm=ntrends, .combine=rbind) %:%
+        foreach(sss=1:length(seasonality), .combine=rbind) %dopar% {
+            data.frame(R=RRR, m=mmm, s=names(seasonality)[sss])
+            x <- 5
+        }
+
+stopCluster(cl)
+
+R_strucs <- c('DE','DUE','UNC')
+ntrends <- 1:4
+seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
+                    'fourier'=ccgen('fourier'), 'no_seas'=NULL)
+model_out <- data.frame()
+
+for(RRR in R_strucs){
+    for(mmm in ntrends){
+        for(sss in 1:length(seasonality)){
+
+            print(paste(RRR,mmm,names(seasonality)[sss]))
+
+            #fit model with TMB
+            dfa <- runDFA(obs=dat.z, NumStates=mmm, ErrStruc=RRR,
+                          EstCovar=TRUE, Covars=rbind(seasonality[[sss]],covs))
+
+            #store params, etc. in dataframe
+            model_out <- rbind(model_out,
+                               data.frame(R=RRR, m=mmm,
+                                          seasonality=names(seasonality)[sss],
+                                          LogLik=dfa$Optimization$value,
+                                          AIC=dfa$AIC,
+                                          counts_func=dfa$Optimization$counts[1],
+                                          counts_gradient=dfa$Optimization$counts[2],
+                                          convergence=dfa$Optimization$convergence,
+                                          message=dfa$Optimization$message,
+                                          stringsAsFactors=FALSE))
+
+            #save model object
+            saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
+                                     RRR, '_', mmm, 'm_',
+                                     names(seasonality)[sss], '_',
+                                     startyr, '-', endyr, '_', y_choice, '.rds'))
+
+            #open plot device
+            pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
+                            RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
+                            startyr, '-', endyr, '_', y_choice, '.pdf'),
+                onefile=TRUE)
+
+            #plot hidden processes, loadings, and model fits for each parameter combination
+            process_plotter(dfa)
+            loading_plotter(dfa)
+
+            #close plot device
+            dev.off()
+        }
+    }
+}
+#save data frame
+write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
+                                 'param_tuning_dataframe_', startyr, '-',
+                                 y_choice, '.csv'))
+
+stopCluster() #free parallelized cores for other uses
+
+# 7 - landscape factor regressions ####
+#regress factor loadings (Z) on hidden trends against landscape vars
+
+land <- read.csv('watershed_data/watershed_data_simp.csv')
+
+Z_rot
+plot(Z_rot[,1],
+
+coef(dfa, type="matrix")$D
+
+#regress effect sizes of climate covariates against landscape vars

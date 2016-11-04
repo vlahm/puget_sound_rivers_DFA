@@ -1,4 +1,4 @@
-library(MARSS)
+# library(MARSS)
 library(viridis)
 
 mm=2
@@ -54,14 +54,29 @@ cc <- ccgen(4, nts, F)
 
 
 
-dfa <- MARSS(y=data, model=list(m=mm, R='diagonal and equal', A='zero'),
-             inits=list(x0='zero'), z.score=T,
-             control=list(minit=1, maxit=500, allow.degen=T, safe=T, trace=1),
-             # silent=2, form='dfa')
-             silent=2, form='dfa',
-             # covariates=cc)
-             covariates=cov)
-             # covariates=rbind(cc,cov))
+# dfa <- MARSS(y=data, model=list(m=mm, R='diagonal and equal', A='zero'),
+#              inits=list(x0='zero'), z.score=T,
+#              control=list(minit=1, maxit=500, allow.degen=T, safe=T, trace=1),
+#              # silent=2, form='dfa')
+#              silent=2, form='dfa',
+#              # covariates=cc)
+#              covariates=cov)
+#              # covariates=rbind(cc,cov))
+
+dfa2 <- runDFA(obs=data, NumStates=2, ErrStruc='DUE', EstCovar=T, Covars=cov)
+dfa3 <- runDFA(obs=data, NumStates=1, ErrStruc='DUE', EstCovar=T, Covars=cov)
+
+plot(dfa2$Estimates$u[1,], type='l')
+lines(dfa2$Estimates$u[2,])
+lines(dfa3$Estimates$u[1,], type='l', col='red')
+lines(dfa3$Estimates$u[2,], col='red')
+
+dfa2$Fits
+#plot data series 1 and then fit on top, e.g.
+
+dfa2$Estimates$Z #loadings
+
+
 
 #plot
 Z_est <- coef(dfa, type="matrix")$Z

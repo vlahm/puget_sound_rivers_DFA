@@ -7,3 +7,6 @@
 /round_1_no_covs
 /round_2
 *.pptx
+*.cpp
+*.o
+*.dll
