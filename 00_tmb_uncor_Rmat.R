@@ -24,32 +24,32 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(D);
   PARAMETER_MATRIX(Z);
   PARAMETER_MATRIX(u); /* State */
-  
-  
+
+
   int timeSteps=obs.col(0).size();
   int obsDim=obs.row(0).size();
-  
+
   vector<Type> sdObs=exp(logsdObs);
-  
+
   using namespace density;
   UNSTRUCTURED_CORR_t<Type> corMatGen(cholCorr);// This is the full Cormat
   matrix<Type> FullCorrMat=corMatGen.cov();
-  
- 
-  // Setup object for evaluating multivariate normal likelihood (PROCESS)	
+
+
+  // Setup object for evaluating multivariate normal likelihood (PROCESS)
   //MVNORM_t<Type> initialState(initState);
   MVNORM_t<Type> neg_log_density_process(covState);
   /* Define likelihood */
   Type ans=0;
   //ans -= dnorm(vector<Type>(u.row(0)),Type(0),Type(1),1).sum();
   //ans += initialState(u.row(0));
-  for(int i=1;i<timeSteps;i++){ 
-    ans+= neg_log_density_process(u.row(i)-u.row(i-1)); // Process likelihood 
+  for(int i=1;i<timeSteps;i++){
+    ans+= neg_log_density_process(u.row(i)-u.row(i-1)); // Process likelihood
   }
-  
-  matrix<Type> pred(timeSteps,obsDim);  
+
+  matrix<Type> pred(timeSteps,obsDim);
   pred = (Z * u.transpose()) + (D * Covar);
-  
+
   for(int i=0;i<timeSteps;i++){ //move one time step at a time
      int nonNAcount = 0; //start at zero NA values
 	 vector<int> GoodVals(obs.row(i).size());
@@ -64,7 +64,7 @@ Type objective_function<Type>::operator() ()
 		vector<Type> subSds(nonNAcount);
 	 	vector<Type> subData(nonNAcount);
 	 	vector<Type> subPred(nonNAcount);
-	 	
+
 	 	for(int j=0;j<nonNAcount;j++){
 	 		subData(j) = obs.row(i)(GoodVals(j));
 			subPred(j) = pred.transpose().row(i)(GoodVals(j));
@@ -80,7 +80,7 @@ Type objective_function<Type>::operator() ()
 	 	ans += VECSCALE(corMatGen,sdObs)(differ);
 	 }//end of data likelihood for this time step
   }//end of loop over time steps
-  
+
   matrix<Type> FullCovMat(obsDim,obsDim);
   matrix<Type> dSD(obsDim,1);
   dSD = sdObs;
@@ -89,9 +89,9 @@ Type objective_function<Type>::operator() ()
   ADREPORT(D);
   ADREPORT(u);
   ADREPORT(FullCovMat);
-  
+
   REPORT(FullCorrMat);
-  
+
   return ans;
 }"
 
@@ -147,7 +147,7 @@ dfaAIC<-function(x,AICc=F){
 }
 
 ### This function runs the DFA using the TMB model above
-### This function does all of the prep work for matrices based on input about the number of states, error structure, and covariates. 
+### This function does all of the prep work for matrices based on input about the number of states, error structure, and covariates.
 ### !!!!!!!!! obs must be a matrix with time going across the columns (same as MARSS package !!!!!!!!).
 
 #All time series and covariates need to be Zscored prior to running the model.
@@ -160,8 +160,8 @@ dfaAIC<-function(x,AICc=F){
 # The Default covariate configuration is individual paramter estimates for each time series but from a single covariate time series. Example how does PDO (one covariate time series) affect the 9 sockeye runs of bristol bay (each time series gets a PDO effect)
 # If you want individual paramters from individual covariate series then you need to set indivCovar to TRUE. Example you have temperature covariates for each of the rivers of bristol bay and want to estimated individual temperature effects.
 # A combination of these two will require manual passing of the covariate paramter matrix. You can do this by supplying Dmat and Dfac. This defaults to NULL and don't mess with it unless you need to deviate from the two covariate approaches above. BEWARE!: frustrating debugging is an absolute certainty should you go this route. But if its what you need it can be done.
-    
-runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivCovar=FALSE,Dmat=NULL,Dfac=NULL,Rfac=NULL,logsdObs=NULL,logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE){ 
+
+runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivCovar=FALSE,Dmat=NULL,Dfac=NULL,Rfac=NULL,logsdObs=NULL,logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE){
 	##
 	#  TopSection is used for Debug only.
 	#
@@ -169,7 +169,7 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 	#obs<-Z_L_FW1
 	#Dmat<-DmatRun
 	#Dfac<-DfacRun
-	
+
 	obs<-t(obs)
 	Zfac<-ZmatFactorGen(Data=obs,NumStates=NumStates) #creates the Z factor to fix the upper corner if NumStates is greater than 1.
 	if(EstCovar){ # If you are estimating covariates this creates Dmat and Dfac based on the data, number of covars
@@ -187,13 +187,13 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 		}
 		data <- list(obs=obs,NumState=NumStates,Covar=Covars)
 	}else{ #If you are not estimating covaraites we just pass a time series of 0's, a Dmat of 0's, and and NA factors so the paramters will not be estimated
-		
+
 		Dmat<-matrix(0,ncol=1,nrow=ncol(obs))
 		Dfac<-as.factor(rep(NA,ncol(obs)))
 		Covars<-matrix(0,nrow=1,ncol=nrow(obs))
 		data <- list(obs=obs,NumState=NumStates,Covar=Covars)
 	}
-	
+
 	#This set of if-else statements creates the proper parameter set for the error structure selected
 	if(is.null(logsdObs) & is.null(logsdObsFac) & is.null(cholCorr) & is.null(cholFac)){
 	if(ErrStruc=='DE'){
@@ -236,7 +236,7 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 		cholFac <-seq(1,(ncol(obs)*(ncol(obs)-1)/2))
 		cholFac<-factor(cholFac)
 	}}
-	
+
 	#Creates the input parameter list
 	parameters <- list(
 	 	    logsdObs = logsdObs,
@@ -268,7 +268,7 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 	if(EstSE){
 		sdr<-sdreport(obj1)
 	}
-	
+
 	#Trend directions are arbitrary adjust them so that most load positively
 	for(i in 1:NumStates){
 		if(median(pl1$Z[,i])<0){
@@ -276,27 +276,28 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 			pl1$u[,i]<--pl1$u[,i]
 		}
 	}
-	ScaleFac<-as.vector(apply(pl1$u,2,FUN=function(x){max(Mod(x))/3}))#function(x) max(Mod(x))/3))
+	ScaleFac<-as.vector(apply(pl1$u,2,FUN=sd)) #improvement so that loadings and coeffs are directly comparable
+	# ScaleFac<-as.vector(apply(pl1$u,2,FUN=function(x){max(Mod(x))/3}))#function(x) max(Mod(x))/3))
 	pl1$u<-t(t(pl1$u)/ScaleFac)
 	pl1$Z<-t(t(pl1$Z)*ScaleFac)
-	
+
 	# Do the Varimax rotation from models with more that one trend so I dont have to do it later.
 	if(NumStates>1){
 		H.inv = varimax(pl1$Z)$rotmat
 		Z.rot = pl1$Z %*% H.inv #maximum variance explained
 		trends.rot = solve(H.inv) %*% t(pl1$u)
-		
+
 		pl1$Z<-Z.rot
 		pl1$u<-t(trends.rot)
 	}
 	pl1$u<-t(pl1$u)
-	
+
 	if(EstSE){pl1$R <- matrix(sdr$value[which(names(sdr$value)=='FullCovMat')],nrow=length(logsdObs),ncol=length(logsdObs))
 		}else{pl1$R<- diag(exp(pl1$logsdObs)) %*% obj1$report()$FullCorrMat  %*% diag(exp(pl1$logsdObs))}
-	
+
 	#Fits for each time series
 	FitSeries<- pl1$Z %*% pl1$u + pl1$D %*% Covars
-	
+
 	#Create plots of model fit
 	#pdf('DFAfit.pdf')
 	#for(i in 1:ncol(obs)){
@@ -304,21 +305,21 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 		#points(FitSeries[i,],type='l')
 	#}
 	#dev.off()
-	
+
 	#Standard Errors for parameters
 	if(EstSE){
 	SES <- list(D=sdr$sd[which(names(sdr$value)=='D')],
 			Z=sdr$sd[which(names(sdr$value)=='Z')],
 			u=sdr$sd[which(names(sdr$value)=='u')],
 			R=matrix(sdr$sd[which(names(sdr$value)=='FullCovMat')],nrow=length(logsdObs),ncol=length(logsdObs)))}
-	
+
 	#Compute AIC.
 	AIC<-2*length(opt1$par) + 2*opt1$value;AIC
-	
+
 	#print(AIC)
 	if(EstSE){return(list(Optimization = opt1, Estimates = pl1, Fits = FitSeries,AIC=AIC,StdErr=SES,ParCorrs=sdr$cov.fixed))
 	}else{return(list(Optimization = opt1, Estimates = pl1, Fits = FitSeries,AIC=AIC))}
-		
+
 }
 #
 # runDFA(ZL_FW1,ErrStruc='UNC')

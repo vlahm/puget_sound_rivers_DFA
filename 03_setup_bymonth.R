@@ -1,13 +1,7 @@
 #Puget Sound rivers DFA
 #Mike Vlah (vlahm13@gmail.com)
 #created: 8/10/2016
-#last edit: 8/22/2016
 
-###
-#change the names of DDgen and ddgen if it turns out that seasonal effects go in the process eqn
-###
-
-#haven't set up fourier CC matrix yet. adding monthly effects in cc but not CC doesn't do what i need.
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
@@ -15,10 +9,11 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth_mean.rda')
-source('../00_tmb_uncor_Rmat.R')
+# source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
-package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc','RColorBrewer')
+package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc',
+                  'RColorBrewer', 'foreach', 'doParallel')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages)
 if (!require("manipulateR")) {
@@ -331,22 +326,20 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# 5.5 - plot estimated state processes and loadings (TMB-testing) ####
+# 5.1 - plot estimated state processes and loadings (TMB-testing) ####
 
 process_plotter <- function(dfa_obj, ntrends){
+    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    xlbl <- int_dates
+    y_ts <- int_dates
+    ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     for(i in 1:ntrends){
-        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
-        xlbl <- int_dates
-        y_ts <- int_dates
-        ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
-        for(i in 1:ntrends){
-            plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
-                 ylim=ylm, xlab="", ylab="", xaxt="n")
-            abline(h=0, col="gray")
-            lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
-            mtext(paste("Process",i), side=3, line=0.5)
-            axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
-        }
+        plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
+             ylim=ylm, xlab="", ylab="", xaxt="n")
+        abline(h=0, col="gray")
+        lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
+        mtext(paste("Process",i), side=3, line=0.5)
+        axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
 # process_plotter(dfa)
@@ -471,9 +464,7 @@ for(RRR in R_strucs){
 write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
 
-# 6.5 - model fitting/parameter tuning (TMB) ####
-library(foreach)
-library(doParallel)
+# 6.1 - model fitting/parameter tuning (TMB) ####
 
 #specify system-dependent cluster type; ncores-1 to be used in parallel
 if(.Platform$OS.type == "windows"){
@@ -483,18 +474,18 @@ if(.Platform$OS.type == "windows"){
 }
 registerDoParallel(cl)
 
-getDoParWorkers()
-getDoParRegistered() #make sure (this will not return NULL)
-getDoParName() #see what it is
-registerDoSEQ()
-stopCluster(cl)
-stopImplicitCluster()
+# getDoParWorkers()
+# getDoParRegistered() #make sure (this will not return NULL)
+# getDoParName() #see what it is
+# registerDoSEQ()
+# stopCluster(cl)
+# stopImplicitCluster()
 
 unregister <- function() {
     env <- foreach:::.foreachGlobals
     rm(list=ls(name=env), pos=env)
 }
-unregister()
+# unregister()
 
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
@@ -552,14 +543,37 @@ write.csv(model_out, file=paste0("../model_objects/",
 
 stopCluster(cl) #free parallelized cores for other uses
 
+# 6.2 - load desired model output ####
+mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
+
 # 7 - landscape factor regressions ####
+
 #regress factor loadings (Z) on hidden trends against landscape vars
+land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
+land$siteCode[land$siteCode == 'AA'] <- 'ZA' #rename sammamish @ bothell sitecode
+land <- land[land$siteCode %in% names(obs.ts),] #remove sites not in analysis
+land <- land[match(names(obs.ts), land$siteCode),] #sort landscape data by site order in model
 
-land <- read.csv('watershed_data/watershed_data_simp.csv')
+#plot trend loadings against all landscape variables of interest
+landvars <- c('BFIWs','ElevWs','PctImp2006Ws','PctImp2006WsRp100','PctColluvSedWs',
+              'PctGlacTilClayWs','PctGlacTilLoamWs','PctGlacLakeFineWs','PctEolFineWs',
+              'PctAlluvCoastWs','PctIce2011Ws','PctUrbOp2011Ws','PctUrbLo2011Ws',
+              'PctUrbMd2011Ws','PctUrbHi2011Ws','PctHay2011Ws','PctCrop2011Ws',
+              'PctIce2011WsRp100','PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
+              'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100','PctHay2011WsRp100',
+              'PctCrop2011WsRp100','RdDensWs','RdDensWsRp100','RunoffWs','OmWs',
+              'RckDepWs','WtDepWs','PermWs','HUDen2010Ws','PopDen2010Ws','PopDen2010WsRp100')
+landcols <- which(colnames(land) %in% landvars)
 
-Z_rot
-plot(Z_rot[,1],
 
-coef(dfa, type="matrix")$D
+for(i in landcols){
+    lm(mod_out$Estimates$Z[,1], land[,i])
+}
+for(i in landcols){
+    plot(mod_out$Estimates$Z[,1], land[,i])
+}
+
+plot(covs, obs.ts$A)
+summary(lm(obs.ts$A ~ t(covs)))
 
 #regress effect sizes of climate covariates against landscape vars

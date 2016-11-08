@@ -12,3 +12,4 @@
 *.dll
 /model_objects
 /model_outputs
+/round_2_tmb_covs
