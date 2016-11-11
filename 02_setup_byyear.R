@@ -3,6 +3,8 @@
 #created: 8/10/2016
 #last edit: 8/11/2016
 
+#NOTE - climate data for end2014-2016 have not been downloaded or organized by year
+
 # setup - 0 - CHOOSE yy maxes or means ####
 load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_byyear_mean.rda")
 meantemp <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_year/ meantemp3 .csv")

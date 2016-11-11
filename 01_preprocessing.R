@@ -138,10 +138,10 @@ TEMP <- assembler('TEMP')
 TP_P <- assembler('TP_P')
 TURB <- assembler('TURB')
 
-# 5 dump to disk ####
+# 5 dump to disk (change filename accordingly)####
 save(COND, FC, NH3_N, NO2_NO3, OP_DIS, OXYGEN, PH, PRESS, SUSSOL, TEMP, TP_P, TURB,
      list=c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN', 'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB'),
-     file="C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_byyear_max.rda")
+     file="C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_by___.rda")
 
 # 6 add temp, precip, drought, heating degree days ####
 #data from http://www.ncdc.noaa.gov/cag/time-series/us/45/3/zndx/ytd/12/1970-2014?base_prd=true&firstbaseyear=1970&lastbaseyear=2014

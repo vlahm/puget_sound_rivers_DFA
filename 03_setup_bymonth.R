@@ -2,14 +2,16 @@
 #Mike Vlah (vlahm13@gmail.com)
 #created: 8/10/2016
 
+#NOTE - should have 4 datapoints (observations x streams) for each parameter in model.
+
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
-load('chemPhys_data/yys_bymonth_mean.rda')
-# source('../00_tmb_uncor_Rmat.R')
+load('chemPhys_data/yys_bymonth.rda')
+source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
 package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc',
@@ -31,7 +33,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('meantemp')
+cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought')
 #region choices: '3' (downstream), '4' (upstream), '3_4' (average of 3 and 4)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -209,12 +211,12 @@ dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC,
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 #MARSS form=DFA
-dfa <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero', D='unconstrained'),
+dfa2 <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
              inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
-             control=list(minit=1, maxit=2000, allow.degen=TRUE), silent=2, form='dfa',
-             covariates=rbind(covs))
+             control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
+             # covariates=rbind(covs))
 #TMB
-dfa2 <- runDFA(obs=dat.z, NumStates=mm, ErrStruc='DE', EstCovar=T, Covars=rbind(cc,covs))
+dfa <- runDFA(obs=dat.z, NumStates=mm, ErrStruc='DE', EstCovar=T, Covars=rbind(cc,covs))
 
 # #get seasonal effects
 # CC_out = coef(dfa, type="matrix")$C
@@ -307,8 +309,8 @@ mod_fit <- get_DFA_fits(dfa)
 fits_plotter <- function(){
     ylbl <- names(obs.ts)
     xlbl = y_ts = 1:444
-    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     ymin <- min(dat.z, na.rm=TRUE)
     ymax <- max(dat.z, na.rm=TRUE)
     for(i in 1:nn) {
@@ -326,9 +328,9 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# 5.1 - plot estimated state processes and loadings (TMB-testing) ####
+# 5.1 - plot estimated state processes, loadings, and model fits (TMB-testing) ####
 
-process_plotter <- function(dfa_obj, ntrends){
+process_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     xlbl <- int_dates
     y_ts <- int_dates
@@ -342,9 +344,9 @@ process_plotter <- function(dfa_obj, ntrends){
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
-# process_plotter(dfa)
+process_plotter_TMB(dfa, mm)
 
-loading_plotter <- function(dfa_obj, ntrends){
+loading_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     ylbl <- names(obs.ts)
     clr <- viridis(nn) #colors may not line up with series plots in section 2
@@ -363,10 +365,24 @@ loading_plotter <- function(dfa_obj, ntrends){
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
     }
 }
-# loading_plotter(dfa)
+loading_plotter_TMB(dfa, mm)
 
-# plot(dfa2$Estimates$u[1,], type='l')
-# points(dfa2$Fits[25,], col='blue', pch=20)
+# full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs)
+# identical(full_fit, dfa$Fits)
+# hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
+
+fits_plotter_TMB <- function(dfa_obj){
+    hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    for(i in 1:ncol(obs.ts)){
+        plot(dfa_obj$Fits[i,], type='l', lwd=2,
+             ylim=c(min(dat.z[i,], na.rm=TRUE), max(dat.z[i,], na.rm=TRUE)),
+             ylab=rownames(dat.z)[i], xlab='day_index')
+        lines(hiddenTrendOnly_fit[i,], col='green', lwd=2)
+        points(dat.z[i,], col='blue', pch=20, cex=1.5)
+    }
+}
+fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 # 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
 
@@ -465,6 +481,7 @@ write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
 
 # 6.1 - model fitting/parameter tuning (TMB) ####
+#round 2 determined that individual fixed factors provide the best seasonality absorption
 
 #specify system-dependent cluster type; ncores-1 to be used in parallel
 if(.Platform$OS.type == "windows"){
@@ -489,13 +506,14 @@ unregister <- function() {
 
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
-seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
-                    'fourier'=ccgen('fourier'), 'no_seas'=NULL)
+# seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
+#                     'fourier'=ccgen('fourier'), 'no_seas'=NULL)
 
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:%
         foreach(mmm=ntrends, .combine=rbind) %:%
-            foreach(sss=1:length(seasonality), .combine=rbind,
+            # foreach(sss=1:length(seasonality), .combine=rbind,
+            foreach(
                     .packages='viridis') %dopar% {
 
                 source('../00_tmb_uncor_Rmat.R')
@@ -519,8 +537,9 @@ model_out <-
                     onefile=TRUE)
 
                 #plot hidden processes, loadings, and model fits for each parameter combination
-                process_plotter(dfa, mmm)
-                loading_plotter(dfa, mmm)
+                process_plotter_TMB(dfa, mmm)
+                loading_plotter_TMB(dfa, mmm)
+                fits_plotter_TMB(dfa)
 
                 #close plot device
                 dev.off()

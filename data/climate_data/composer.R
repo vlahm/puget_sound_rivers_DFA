@@ -1,10 +1,11 @@
 #for decomposing single-month datasets from:
 # http://www.ncdc.noaa.gov/cag/time-series/us/45/3/tavg/ytd/12/1895-2016?base_prd=true&firstbaseyear=1901&lastbaseyear=2000
 
+#be sure to change input pathname to batch_file_reader as well as output filename
+#go through and repeat for mt, at, hd, hdr, pc and for each of their regional classes, 3 and 4
+#these stand for max temp, average (mean) temp, heating degree days, hydrologic drought,
+#and precipitation. sorry for the dumb naming convention
 
-
-
-#be sure to change input dir to batch_file_reader as well as output filename
 rm(list=ls()); cat('\014')
 
 batch_file_reader <- function(dir_args=list(path='./', pattern='.csv'),
@@ -46,22 +47,22 @@ batch_file_reader <- function(dir_args=list(path='./', pattern='.csv'),
 #by month####
 #read in raw csvs
 batch_file_reader(dir_args=list(path="C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/raw/",
-                                pattern='hdr3.+\\.csv'), #only read in one metric and region at a time
+                                pattern='pc3.+\\.csv'), #only read in one metric and region at a time
                   merge=FALSE)
 
 #get rid of function object for next step
 rm(batch_file_reader)
 
-#rbind all years together
+#rbind all years together (see comments inside)
 binder <- function(){
     filenames <- ls(name='.GlobalEnv')[ls(name='.GlobalEnv') != 'binder']
     x <- data.frame()
     for(i in 1:length(filenames)){
         y <- eval(parse(text=filenames[i]), envir=.GlobalEnv)
         if(substr(filenames[i], 1, 3) == 'hdr'){
-            y <- y[-(1:2),-4]
+            y <- y[-(1:3),-4] #might have to change these numbers depending on how files were downloaded
         } else {
-            y <- y[-(1:3),-4]
+            y <- y[-(1:4),-4] #was 1:2 and 1:3 for obsolete files, now 1:3 and 1:4
         }
         x <- rbind(x, y)
     }
@@ -72,7 +73,7 @@ rm(binder)
 
 #sort by date and rename stuff
 out <- as.data.frame(apply(out, 2, as.numeric))
-metric <- substr(ls(name='.GlobalEnv')[2], 1, 3) #set this to 1, 3 for hdr
+metric <- substr(ls(name='.GlobalEnv')[2], 1, 2) #set this to 1, 3 for hdr; 1,2 otherwise
 colnames(out) <- c('date', metric, paste(metric, 'anom_1900-99', sep='_'))
 sorted <- out[order(out$date),]
 rownames(sorted) <- 1:nrow(sorted)
@@ -104,7 +105,7 @@ sorted[,3] <- sorted[,2] - base #get anomalies in cm
 
 #write output csv
 write.csv(sorted, row.names=FALSE, file=
-              "C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/hydroDrought3.csv") #change name
+              "C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/precip3.csv") #change name
 
 
 #by year (obsolete?) ####
