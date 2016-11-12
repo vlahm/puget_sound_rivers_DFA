@@ -8,3 +8,12 @@ changed names of dat.z, obs.ts
 currently using imputed data in the dfa, which means excluding approx 9 sites; could switch back to obs set instead of obs_imp
 	nvm, switched back
 ISSUE - 1978 has no winter (can fix by not omitting the two months at the beginning)
+
+20161111
+after TEMP model fitting round 2, fixed factor seasonality is the clear favorite, so i'm not varying the seasonality model
+in round 3. got to determine whether to include regions as 3 and 4 separately, or the average of 3 and 4
+also time to test all the possible covariates
+
+selection process <- first determine whether seasonality (and which seasonality model) is useful
+	and whether to do 3+4 or 3, 4
+then find out which covariates are best

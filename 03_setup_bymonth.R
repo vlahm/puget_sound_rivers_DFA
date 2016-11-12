@@ -33,8 +33,11 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought')
-#region choices: '3' (downstream), '4' (upstream), '3_4' (average of 3 and 4)
+#this selects the full cov matrix during testing, but selects covs
+#to be entered individually or in pairs during model fitting
+# cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
+cov_choices = c('meantemp')
+#region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
@@ -42,7 +45,7 @@ average_regions = TRUE #only used if region = '3_4'
 method = 'fixed_individual'
 #which years to include?
 startyr = 1978
-endyr = 2014
+endyr = 2015
 #model params
 ntrends = 2
 obs_err_var_struc = 'diagonal and equal'
@@ -69,10 +72,10 @@ subsetter <- function(yy, start, end, na_thresh=1){
 yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75) #beware reducing threshold, may add sites and break stuff
 
 # subset by region
-if(region == 3){
+if(region == '3'){
     yy <- yy[,colnames(yy) %in% c('date','K','J','A','B','ZA','Q','H','T','G','F','E','C')]
 } else {
-    if(region == 4){
+    if(region == '4'){
         yy <- yy[,colnames(yy) %in% c('date','Z','I','L','M','N','O','P','S','U','X','V','W')]
     }
 }
@@ -83,7 +86,7 @@ years <- as.numeric(format(yy[,1], '%Y'))
 int_dates <- (years - startyr) * 12 + months
 
 #create objects for response variables and covariates
-obs.ts <- yy[,-1]
+obs_ts <- yy[,-1]
 
 covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt',
                 'maxtemp_anom'='mt_anom_1900.99','precip'='pc','precip_anom'='pc_anom_1900.99',
@@ -131,10 +134,10 @@ if(region=='3_4' & average_regions==FALSE){
 
 # 3 - Set up input matrices to MARSS function call ####
 # scale and center y and cov data
-dat.z <- t(scale(as.matrix(obs.ts)))
-mean(dat.z[1,], na.rm=T); sd(dat.z[1,], na.rm=T)
+dat_z <- t(scale(as.matrix(obs_ts)))
+mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
 
-covs <- t(scale(as.matrix(covs)))
+covs_z <- t(scale(as.matrix(covs)))
 
 # state equation params
 mm <- ntrends #number of hidden processes (trends)
@@ -171,8 +174,8 @@ ccgen <- function(meth=method){
                                             ')'))))
         rownames(cc) <- month.abb
     } else { #fourier method
-        cos_t = cos(2 * pi * seq(dim(dat.z)[2]) / 12)
-        sin_t = sin(2 * pi * seq(dim(dat.z)[2]) / 12)
+        cos_t = cos(2 * pi * seq(dim(dat_z)[2]) / 12)
+        sin_t = sin(2 * pi * seq(dim(dat_z)[2]) / 12)
         cc = rbind(cos_t,sin_t)
     }
     return(cc)
@@ -182,20 +185,20 @@ cc <- ccgen() #covariates for the state processes (seasonal and climatic)
 QQ <- "identity"  # 'QQ' is identity (would usually be tuned if we were doing actual marss)
 
 # observation equation params
-nn <- length(names(obs.ts)) # number of obs time series
+nn <- length(names(obs_ts)) # number of obs time series
 aa <- "zero" # 'aa' is the offset/scaling (zero allowed because we standardize the data)
 #(we want zero because we're not interested in what the offsets actually are)
 DD <- 'unconstrained'
 # DD <- 'zero' #use zero if not including climate covs
-dd <- covs
+dd <- covs_z
 # dd <- 'zero' #use zero if not including climate covs
 RR <- obs_err_var_struc # 'RR' is var-cov matrix for obs errors (tune this)
 ZZgen <- function(){
     ZZ <- matrix(list(0),nn,mm)
-    ZZ[,1] <- paste0("z",names(obs.ts),1)
+    ZZ[,1] <- paste0("z",names(obs_ts),1)
     if(mm > 1){
         for(i in 2:mm){
-            ZZ[i:nn,i] <- paste0("z",names(obs.ts)[-(1:(i-1))],i)
+            ZZ[i:nn,i] <- paste0("z",names(obs_ts)[-(1:(i-1))],i)
         }
     }
     return(ZZ)
@@ -203,20 +206,23 @@ ZZgen <- function(){
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
 # 4 - run DFA (testing) ####
+cov_and_seas <- rbind(cc,covs_z)
+
 #MARSS full specification
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs, R=RR),
+dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
              inits=list(x0=matrix(rep(0,mm),mm,1)),
              control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
-dfa <- MARSS(y=dat.z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
+dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
              inits=dfa$par,
              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
 #MARSS form=DFA
-dfa2 <- MARSS(y=dat.z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
+dfa2 <- MARSS(y=dat_z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
              inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
              control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
-             # covariates=rbind(covs))
+             # covariates=cov_and_seas)
 #TMB
-dfa <- runDFA(obs=dat.z, NumStates=mm, ErrStruc='DE', EstCovar=T, Covars=rbind(cc,covs))
+dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='UNC', EstCovar=T, Covars=cov_and_seas)
+
 
 # #get seasonal effects
 # CC_out = coef(dfa, type="matrix")$C
@@ -255,7 +261,7 @@ process_plotter()
 # plot loadings
 loading_plotter <- function(){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
-    ylbl <- names(obs.ts)
+    ylbl <- names(obs_ts)
     clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(proc_rot))
     minZ <- 0
@@ -307,12 +313,12 @@ mod_fit <- get_DFA_fits(dfa)
 
 # plot fits
 fits_plotter <- function(){
-    ylbl <- names(obs.ts)
+    ylbl <- names(obs_ts)
     xlbl = y_ts = 1:444
     # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    ymin <- min(dat.z, na.rm=TRUE)
-    ymax <- max(dat.z, na.rm=TRUE)
+    ymin <- min(dat_z, na.rm=TRUE)
+    ymax <- max(dat_z, na.rm=TRUE)
     for(i in 1:nn) {
         lo <- mod_fit$lo[i,]
         mn <- mod_fit$ex[i,]
@@ -320,7 +326,7 @@ fits_plotter <- function(){
         plot(y_ts,mn,xlab="",ylab=ylbl[i],xaxt="n",type="n", cex.lab=1.2,
              ylim=c(ymin,ymax))
         axis(1, at=xlbl, labels=xlbl, cex.axis=1)
-        points(y_ts,dat.z[i,], pch=16, col="darkblue")
+        points(y_ts,dat_z[i,], pch=16, col="darkblue")
         lines(y_ts, up, col="darkgray")
         lines(y_ts, mn, col="black", lwd=2)
         lines(y_ts, lo, col="darkgray")
@@ -328,7 +334,7 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# 5.1 - plot estimated state processes, loadings, and model fits (TMB-testing) ####
+# 5.1 - plot processes, loadings, fits, and get R^2 (TMB-testing) ####
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
@@ -348,7 +354,7 @@ process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
-    ylbl <- names(obs.ts)
+    ylbl <- names(obs_ts)
     clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     minZ <- 0
@@ -367,22 +373,33 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
 }
 loading_plotter_TMB(dfa, mm)
 
-# full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs)
+# full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
 # identical(full_fit, dfa$Fits)
 # hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
 
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    for(i in 1:ncol(obs.ts)){
+    for(i in 1:ncol(obs_ts)){
         plot(dfa_obj$Fits[i,], type='l', lwd=2,
-             ylim=c(min(dat.z[i,], na.rm=TRUE), max(dat.z[i,], na.rm=TRUE)),
-             ylab=rownames(dat.z)[i], xlab='day_index')
+             ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
+             ylab=rownames(dat_z)[i], xlab='day_index')
         lines(hiddenTrendOnly_fit[i,], col='green', lwd=2)
-        points(dat.z[i,], col='blue', pch=20, cex=1.5)
+        points(dat_z[i,], col='blue', pch=20, cex=1.5)
     }
 }
 fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+
+get_R2 <- function(){
+    R2 <- rep(NA, nrow(dat_z))
+    for(i in 1:nrow(dat_z)){
+        SSE <- sum((dat_z[i,] - dfa$Fits[i,])^2, na.rm=TRUE)
+        SST <- sum((dat_z[i,] - mean(dat_z[i,], na.rm=TRUE))^2, na.rm=TRUE)
+        R2[i] <- 1 - (SSE/SST)
+    }
+    return(list(min(R2), mean(R2), max(R2)))
+}
+get_R2()
 
 # 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
 
@@ -415,14 +432,14 @@ for(RRR in R_strucs){
         if(mmm == 1){
             print(paste('should be 1', mmm))
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=0), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
         } else {
             print(mmm)
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
                              control=list(maxit=20000, allow.degen=TRUE)))
             if(isTRUE(class(dfa)=='try-error')) {next}
@@ -432,7 +449,7 @@ for(RRR in R_strucs){
         if(RRR != 'equalvarcov'){
             print(paste(RRR,mmm,'BFGS'))
 
-            dfa <- try(MARSS(y=dat.z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
                              inits=dfa$par, silent=FALSE,
                              # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
                              control=list(dfa$control$maxit), method='BFGS'))
@@ -521,8 +538,9 @@ model_out <-
                 print(paste(RRR,mmm,names(seasonality)[sss]))
 
                 #fit model with TMB
-                dfa <- runDFA(obs=dat.z, NumStates=mmm, ErrStruc=RRR,
-                              EstCovar=TRUE, Covars=rbind(seasonality[[sss]],covs))
+                cov_and_seas <- rbind(seasonality[[sss]],covs_z)
+                dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                              EstCovar=TRUE, Covars=cov_and_seas)
 
                 #save model object
                 saveRDS(dfa, file=paste0("../model_objects/",
@@ -543,6 +561,8 @@ model_out <-
 
                 #close plot device
                 dev.off()
+
+                #get R^2
 
                 #store params, etc. in dataframe
                 data.frame(R=RRR, m=mmm,
@@ -570,19 +590,58 @@ mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-
 #regress factor loadings (Z) on hidden trends against landscape vars
 land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
 land$siteCode[land$siteCode == 'AA'] <- 'ZA' #rename sammamish @ bothell sitecode
-land <- land[land$siteCode %in% names(obs.ts),] #remove sites not in analysis
-land <- land[match(names(obs.ts), land$siteCode),] #sort landscape data by site order in model
+land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
+land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 
 #plot trend loadings against all landscape variables of interest
-landvars <- c('BFIWs','ElevWs','PctImp2006Ws','PctImp2006WsRp100','PctColluvSedWs',
-              'PctGlacTilClayWs','PctGlacTilLoamWs','PctGlacLakeFineWs','PctEolFineWs',
-              'PctAlluvCoastWs','PctIce2011Ws','PctUrbOp2011Ws','PctUrbLo2011Ws',
-              'PctUrbMd2011Ws','PctUrbHi2011Ws','PctHay2011Ws','PctCrop2011Ws',
-              'PctIce2011WsRp100','PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
-              'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100','PctHay2011WsRp100',
-              'PctCrop2011WsRp100','RdDensWs','RdDensWsRp100','RunoffWs','OmWs',
-              'RckDepWs','WtDepWs','PermWs','HUDen2010Ws','PopDen2010Ws','PopDen2010WsRp100')
+landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
+              'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
+              'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
+              'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
+              'RdDensWsRp100','RunoffWs','OmWs',
+              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
 landcols <- which(colnames(land) %in% landvars)
+
+#multiple covariates?
+# for(i in 1:ncol(obs_ts)){
+#     sd_response <- sd(obs_ts[,i], na.rm=TRUE)
+#     sd_covar <- sd(covs[,i], na.rm=TRUE)
+#     if(exists('cc')){
+#         dfa$Estimates$D[,]
+#     }
+#     effect_size <-  ( / )
+# }
+
+#effect size regression
+#don't run this code if there are no covars in the model
+nstream <- ncol(obs_ts)
+ncov <- ncol(covs)
+
+#get coefs from model (isolated from seasonal effects)
+if(nrow(cov_and_seas) > 2){
+    coefs <- matrix(dfa$Estimates$D[,(nrow(cc)+1):ncol(dfa$Estimates$D)])
+} else {
+    coefs <- dfa$Estimates$D
+}
+
+#determine effect sizes of covars on response
+for(i in 1:nstream){
+    sd_response <- sd(obs_ts[,i], na.rm=TRUE)
+    effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
+    for(j in 1:ncov){
+        sd_covar <- sd(covs[,j], na.rm=TRUE)
+        effect_size[,j] <- coefs[,j] * (sd_response/sd_covar)
+    }
+}
+
+
+
+#grab top 8 landscape vars that correlate with effect size, plot and get stats ####
+order(abs(unname(apply(land[landcols], 2, function(i) cor(effect_size, i)))))
+
+for(i in landcols){
+    plot(mod_out$Estimates$Z[,1], land[,i])
+}
 
 
 for(i in landcols){
@@ -592,7 +651,7 @@ for(i in landcols){
     plot(mod_out$Estimates$Z[,1], land[,i])
 }
 
-plot(covs, obs.ts$A)
-summary(lm(obs.ts$A ~ t(covs)))
+plot(covs_z, obs_ts$A)
+summary(lm(obs_ts$A ~ t(covs_z)))
 
 #regress effect sizes of climate covariates against landscape vars
