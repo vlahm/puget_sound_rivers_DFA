@@ -205,8 +205,9 @@ ZZgen <- function(){
 }
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
-# 4 - run DFA (testing) ####
 cov_and_seas <- rbind(cc,covs_z)
+
+# 4 - run DFA (testing) ####
 
 #MARSS full specification
 dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
@@ -393,11 +394,10 @@ fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue 
 get_R2 <- function(){
     R2 <- rep(NA, nrow(dat_z))
     for(i in 1:nrow(dat_z)){
-        SSE <- sum((dat_z[i,] - dfa$Fits[i,])^2, na.rm=TRUE)
-        SST <- sum((dat_z[i,] - mean(dat_z[i,], na.rm=TRUE))^2, na.rm=TRUE)
-        R2[i] <- 1 - (SSE/SST)
+        mod <- lm(dat_z[i,] ~ dfa$Fits[i,])
+        R2[i] <- summary(mod)$r.squared
     }
-    return(list(min(R2), mean(R2), max(R2)))
+    return(list(min(R2), median(R2), max(R2)))
 }
 get_R2()
 
@@ -523,8 +523,10 @@ unregister <- function() {
 
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
-# seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
-#                     'fourier'=ccgen('fourier'), 'no_seas'=NULL)
+seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
+                    'fourier'=ccgen('fourier'), 'no_seas'=NULL)
+
+sss <- 1
 
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:%
@@ -562,12 +564,15 @@ model_out <-
                 #close plot device
                 dev.off()
 
-                #get R^2
+                #get min, median, max R^2
+                R2 <- get_R2
 
                 #store params, etc. in dataframe
                 data.frame(R=RRR, m=mmm,
                            seasonality=names(seasonality)[sss],
+                           nparams=length(dfa$Optimization$par),
                            LogLik=dfa$Optimization$value, AIC=dfa$AIC,
+                           min_R2=R2[1], median_R2=R2[2], max_R2=R2[3],
                            counts_func=unname(dfa$Optimization$counts[1]),
                            counts_gradient=unname(dfa$Optimization$counts[2]),
                            convergence=dfa$Optimization$convergence,
@@ -583,9 +588,10 @@ write.csv(model_out, file=paste0("../model_objects/",
 stopCluster(cl) #free parallelized cores for other uses
 
 # 6.2 - load desired model output ####
-mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
+# mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
+dfa <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
 
-# 7 - landscape factor regressions ####
+# 7 - landscape factor regressions (setup) ####
 
 #regress factor loadings (Z) on hidden trends against landscape vars
 land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
@@ -612,36 +618,39 @@ landcols <- which(colnames(land) %in% landvars)
 #     effect_size <-  ( / )
 # }
 
-#effect size regression
-#don't run this code if there are no covars in the model
+#effect size regression (skip if no covars) ####
 nstream <- ncol(obs_ts)
 ncov <- ncol(covs)
 
-#get coefs from model (isolated from seasonal effects)
+#get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
 if(nrow(cov_and_seas) > 2){
-    coefs <- matrix(dfa$Estimates$D[,(nrow(cc)+1):ncol(dfa$Estimates$D)])
+    z_effect_size <- matrix(dfa$Estimates$D[,(nrow(cc)+1):ncol(dfa$Estimates$D)])
 } else {
-    coefs <- dfa$Estimates$D
+    z_effect_size <- dfa$Estimates$D
 }
 
-#determine effect sizes of covars on response
+#convert effects back to original scale (units response/units covar)
+#x/sd(response) = 1/sd(covar); x is the coefficient scale factor
 for(i in 1:nstream){
     sd_response <- sd(obs_ts[,i], na.rm=TRUE)
-    effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
+    rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
     for(j in 1:ncov){
         sd_covar <- sd(covs[,j], na.rm=TRUE)
-        effect_size[,j] <- coefs[,j] * (sd_response/sd_covar)
+        rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
     }
 }
 
-
-
 #grab top 8 landscape vars that correlate with effect size, plot and get stats ####
-order(abs(unname(apply(land[landcols], 2, function(i) cor(effect_size, i)))))
+eff_cors <- unname(apply(land[landcols], 2, function(i) cor(rescaled_effect_size, i)))
+eff_rank <- order(abs(eff_cors), decreasing=TRUE)
+best_landvars <- landcols[head(eff_rank, top)]
 
-for(i in landcols){
-    plot(mod_out$Estimates$Z[,1], land[,i])
+top <- 8 #top x columns to plot/test
+for(i in 1:){
+    plot(mod_out$Estimates$D[??], land[,best_landvars])
 }
+#left off here. check dim(D), plot land (x) vs rescaled effect size (y) - dunno
+#how this will work for multiple covariates...
 
 
 for(i in landcols){
@@ -655,3 +664,9 @@ plot(covs_z, obs_ts$A)
 summary(lm(obs_ts$A ~ t(covs_z)))
 
 #regress effect sizes of climate covariates against landscape vars
+
+
+#Z loadings
+for(i in 1:length(landcols)){
+    plot(mod_out$Estimates$Z[,1], land[,landcols[]])
+}
