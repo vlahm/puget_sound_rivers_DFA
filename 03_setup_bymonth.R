@@ -2,11 +2,13 @@
 #Mike Vlah (vlahm13@gmail.com)
 #created: 8/10/2016
 
-#NOTE - should have 4 datapoints (observations x streams) for each parameter in model.
+#NOTEs - should have 4 datapoints (observations x streams) for each parameter in model.
+#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
+#sections marked with an asterisk must be run in order to perform model selection
 
 rm(list=ls()); cat('\014')
 
-# 0 - setup ####
+# * 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
@@ -27,7 +29,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# 1 - CHOICES ####
+# * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice = 'TEMP'
@@ -35,8 +37,8 @@ y_choice = 'TEMP'
 # maxtemp maxtemp_anom hdd hdd_anom
 #this selects the full cov matrix during testing, but selects covs
 #to be entered individually or in pairs during model fitting
-# cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
-cov_choices = c('meantemp')
+cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
+# cov_choices = c('meantemp')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -50,7 +52,7 @@ endyr = 2015
 ntrends = 2
 obs_err_var_struc = 'diagonal and equal'
 
-# 1.1 - subset datasets according to choices ####
+# * 1.1 - subset datasets according to choices ####
 
 #chem/phys data manipulations
 # subset by year and exclude columns with >= na_thresh proportion of NAs
@@ -132,7 +134,7 @@ if(region=='3_4' & average_regions==FALSE){
 # }
 # series_plotter()
 
-# 3 - Set up input matrices to MARSS function call ####
+# * 3 - Set up input matrices to MARSS function call ####
 # scale and center y and cov data
 dat_z <- t(scale(as.matrix(obs_ts)))
 mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
@@ -335,7 +337,7 @@ fits_plotter <- function(){
 }
 fits_plotter()
 
-# 5.1 - plot processes, loadings, fits, and get R^2 (TMB-testing) ####
+# * 5.1 - plot processes, loadings, fits, and get R^2 (TMB-testing) ####
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
@@ -351,7 +353,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
-process_plotter_TMB(dfa, mm)
+# process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
@@ -372,7 +374,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
     }
 }
-loading_plotter_TMB(dfa, mm)
+# loading_plotter_TMB(dfa, mm)
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
 # identical(full_fit, dfa$Fits)
@@ -389,7 +391,7 @@ fits_plotter_TMB <- function(dfa_obj){
         points(dat_z[i,], col='blue', pch=20, cex=1.5)
     }
 }
-fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+# fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 get_R2 <- function(){
     R2 <- rep(NA, nrow(dat_z))
@@ -399,7 +401,103 @@ get_R2 <- function(){
     }
     return(list(min(R2), median(R2), max(R2)))
 }
-get_R2()
+# get_R2()
+
+# * 5.2 - landscape variable setup ####
+
+#regress factor loadings (Z) on hidden trends against landscape vars
+land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
+land$siteCode[land$siteCode == 'AA'] <- 'ZA' #rename sammamish @ bothell sitecode
+land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
+land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
+
+#plot trend loadings against all landscape variables of interest
+landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
+              'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
+              'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
+              'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
+              'RdDensWsRp100','RunoffWs','OmWs',
+              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
+landcols <- which(colnames(land) %in% landvars)
+
+#for use below
+best_landvars <- function(response, top){ #response = loadings/rescaled_effect_size, top=top n vars
+    best_cols = best_names = best_cors = matrix(NA, nrow=top, ncol=ncol(response))
+    for(i in 1:ncol(response)){
+        all_cors <- as.vector(cor(response[,i], land[landcols]))
+        rank <- order(abs(all_cors), decreasing=T)
+        best_cols[,i] <- landcols[head(rank, top)]
+        best_names[,i] <- colnames(land)[best_cols[,i]]
+        best_cors[,i] <- all_cors[head(rank, top)]
+    }
+    return(list(cols=best_cols, names=best_names, cors=best_cors))
+}
+
+nstream <- ncol(obs_ts)
+ncov <- ncol(covs)
+
+# * 5.3 - effect size regressions ####
+
+eff_rescaler <- function(all_cov, seas){
+    #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
+    if(nrow(all_cov) > 2){
+        z_effect_size <- matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+    } else {
+        z_effect_size <- dfa$Estimates$D
+    }
+
+    #convert effects back to original scale (units response/units covar)
+    #x/sd(response) = 1/sd(covar); x is the coefficient scale factor
+    for(i in 1:nstream){
+        sd_response <- sd(obs_ts[,i], na.rm=TRUE)
+        rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
+        for(j in 1:ncov){
+            sd_covar <- sd(covs[,j], na.rm=TRUE)
+            rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
+        }
+    }
+
+    return(rescaled_effect_size)
+}
+# rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
+
+#grab top landscape vars that correlate with effect size, plot and get stats
+eff_best <- best_landvars(rescaled_effect_size, 6)
+
+eff_regress_plotter <- function(){
+    par(mfrow=c(top/2, 2))
+    land_ind <- eff_best[[1]]
+    for(j in 1:ncov){
+        for(i in 1:top){
+            plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
+                 xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
+                 main=paste('covar =', cov_choices[j]))
+        }
+    }
+}
+# eff_regress_plotter()
+
+#regression analysis coming soon
+
+# * 5.4 - process loading regressions ####
+loadings <- dfa$Estimates$Z
+
+load_best <- best_landvars(loadings, 6)
+
+load_regress_plotter <- function(mmm){
+    par(mfrow=c(top/2, mmm))
+    land_ind <- load_best[[1]]
+    for(j in 1:mmm){
+        for(i in 1:top){
+            plot(land[,land_ind[i,j]], loadings[,j],
+                 xlab=colnames(land)[land_ind[i,j]], ylab='factor loading on hidden trend',
+                 main=paste('hidden trend', j))
+        }
+    }
+}
+# load_regress_plotter(2)
+
+#regression analysis coming soon
 
 # 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
 
@@ -523,16 +621,17 @@ unregister <- function() {
 
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
-seasonality <- list('fixed_factors'=ccgen('fixed_individual'),
-                    'fourier'=ccgen('fourier'), 'no_seas'=NULL)
-
+seasonality <- list(fixed_factors=ccgen('fixed_individual'),
+                    fourier=ccgen('fourier'), no_seas=NULL)
+covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
+                   hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,])
 sss <- 1
 
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:%
         foreach(mmm=ntrends, .combine=rbind) %:%
             # foreach(sss=1:length(seasonality), .combine=rbind,
-            foreach(
+            foreach(cov=1:length(covariates), .combine=rbind,
                     .packages='viridis') %dopar% {
 
                 source('../00_tmb_uncor_Rmat.R')
@@ -550,16 +649,41 @@ model_out <-
                                          names(seasonality)[sss], '_',
                                          startyr, '-', endyr, '_', y_choice, '.rds'))
 
+                #landscape variable correlations
+                if(cov!=0){
+                    eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
+                    rescaled_effect_size <- eff_rescaler(cov_and_seas, cc) #effect sizes on original scale
+                }
+                load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
+                loadings <- dfa$Estimates$Z
+
+                #format influential landscape var names and cors for export
+                load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
+                    load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
+
+                for(i in 1:ncol(load_best)){
+                    assign(paste0('load_names', i), paste(load_best[[2]], collapse=','))
+                    assign(paste0('load_cors', i), paste(load_best[[3]], collapse=','))
+                }
+                if(cov!=0){
+                    for(i in 1:ncol(eff_best)){
+                        assign(paste0('eff_names', i), paste(eff_best[[2]], collapse=','))
+                        assign(paste0('eff_cors', i), paste(eff_best[[3]], collapse=','))
+                    }
+                }
+
                 #open plot device
                 pdf(file=paste0("../model_outputs/",
                                 RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
                                 startyr, '-', endyr, '_', y_choice, '.pdf'),
                     onefile=TRUE)
 
-                #plot hidden processes, loadings, and model fits for each parameter combination
+                #plot hidden processes, loadings, model fits, and landscape regressions
                 process_plotter_TMB(dfa, mmm)
                 loading_plotter_TMB(dfa, mmm)
                 fits_plotter_TMB(dfa)
+                if(cov!=0) eff_regress_plotter()
+                load_regress_plotter(mmm)
 
                 #close plot device
                 dev.off()
@@ -577,6 +701,12 @@ model_out <-
                            counts_gradient=unname(dfa$Optimization$counts[2]),
                            convergence=dfa$Optimization$convergence,
                            message=paste('0',dfa$Optimization$message),
+                           load_names1=load_names1,load_names2=load_names2,
+                           load_names3=load_names3,load_names4=load_names4,
+                           load_cors1=load_cors1,load_cors2=load_cors2,
+                           load_cors3=load_cors3,load_cors4=load_cors4,
+                           eff_names1=eff_names1,eff_names2=eff_names2,
+                           eff_cors1=eff_cors1,eff_cors2=eff_cors2,
                            stringsAsFactors=FALSE)
                 }
 
@@ -591,82 +721,6 @@ stopCluster(cl) #free parallelized cores for other uses
 # mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
 dfa <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
 
-# 7 - landscape factor regressions (setup) ####
-
-#regress factor loadings (Z) on hidden trends against landscape vars
-land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
-land$siteCode[land$siteCode == 'AA'] <- 'ZA' #rename sammamish @ bothell sitecode
-land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
-land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
-
-#plot trend loadings against all landscape variables of interest
-landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
-              'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
-              'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
-              'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
-              'RdDensWsRp100','RunoffWs','OmWs',
-              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
-landcols <- which(colnames(land) %in% landvars)
-
-#multiple covariates?
-# for(i in 1:ncol(obs_ts)){
-#     sd_response <- sd(obs_ts[,i], na.rm=TRUE)
-#     sd_covar <- sd(covs[,i], na.rm=TRUE)
-#     if(exists('cc')){
-#         dfa$Estimates$D[,]
-#     }
-#     effect_size <-  ( / )
-# }
-
-#effect size regression (skip if no covars) ####
-nstream <- ncol(obs_ts)
-ncov <- ncol(covs)
-
-#get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
-if(nrow(cov_and_seas) > 2){
-    z_effect_size <- matrix(dfa$Estimates$D[,(nrow(cc)+1):ncol(dfa$Estimates$D)])
-} else {
-    z_effect_size <- dfa$Estimates$D
-}
-
-#convert effects back to original scale (units response/units covar)
-#x/sd(response) = 1/sd(covar); x is the coefficient scale factor
-for(i in 1:nstream){
-    sd_response <- sd(obs_ts[,i], na.rm=TRUE)
-    rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
-    for(j in 1:ncov){
-        sd_covar <- sd(covs[,j], na.rm=TRUE)
-        rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
-    }
-}
-
-#grab top 8 landscape vars that correlate with effect size, plot and get stats ####
-eff_cors <- unname(apply(land[landcols], 2, function(i) cor(rescaled_effect_size, i)))
-eff_rank <- order(abs(eff_cors), decreasing=TRUE)
-best_landvars <- landcols[head(eff_rank, top)]
-
-top <- 8 #top x columns to plot/test
-for(i in 1:){
-    plot(mod_out$Estimates$D[??], land[,best_landvars])
-}
-#left off here. check dim(D), plot land (x) vs rescaled effect size (y) - dunno
-#how this will work for multiple covariates...
 
 
-for(i in landcols){
-    lm(mod_out$Estimates$Z[,1], land[,i])
-}
-for(i in landcols){
-    plot(mod_out$Estimates$Z[,1], land[,i])
-}
 
-plot(covs_z, obs_ts$A)
-summary(lm(obs_ts$A ~ t(covs_z)))
-
-#regress effect sizes of climate covariates against landscape vars
-
-
-#Z loadings
-for(i in 1:length(landcols)){
-    plot(mod_out$Estimates$Z[,1], land[,landcols[]])
-}
