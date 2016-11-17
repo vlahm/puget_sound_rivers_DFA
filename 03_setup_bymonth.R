@@ -655,7 +655,7 @@ unregister <- function() {
 # unregister()
 
 R_strucs <- c('DE','DUE','UNC')
-ntrends <- 1:2
+ntrends <- 1:4
 seasonality <- list(fixed_factors=ccgen('fixed_individual'),
                     fourier=ccgen('fourier'), no_seas=NULL)
 covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
@@ -665,18 +665,17 @@ sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-RRR='DE'; mmm=1; cov=1
+RRR='DE'; mmm=2; cov=1
 rm(RRR, mmm, cov)
 rm(cov_and_seas, dfa, all_cov, seas)
 
-#lines to fix before final run: 658, 677/78
+#lines to fix before final run: 658, 677/78, 657
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
-    foreach(mmm=ntrends, .combine=rbind) %:%
-    # foreach(sss=1:length(seasonality), .combine=rbind, # **s
-    foreach(cov=c(1,6), .combine=rbind,
-    # foreach(cov=1:length(covariates), .combine=rbind,
-            .packages='viridis') %dopar% {
+        foreach(mmm=ntrends, .combine=rbind) %:%
+            # foreach(sss=1:length(seasonality), .combine=rbind, # **s
+            foreach(cov=1:length(covariates), .combine=rbind,
+                    .packages='viridis') %dopar% {
 
                 source('../00_tmb_uncor_Rmat.R')
 
@@ -689,7 +688,7 @@ model_out <-
 
                 #save model object
                 saveRDS(dfa, file=paste0("../model_objects/",
-                                         RRR, '_', mmm, 'm_',
+                                         y_choice, '_', RRR, '_', mmm, 'm_',
                                          names(seasonality)[sss], '_', names(covariates)[cov], '_',
                                          startyr, '-', endyr, '_', y_choice, '.rds'))
 
@@ -698,27 +697,27 @@ model_out <-
                     rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
                     eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
                 }
-                load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
                 loadings <- dfa$Estimates$Z
+                load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
 
                 #format influential landscape var names and cors for export
                 load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
                     load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
 
                 for(i in 1:ncol(load_best[[1]])){
-                    assign(paste0('load_names', i), paste(load_best[[2]], collapse=','))
-                    assign(paste0('load_cors', i), paste(load_best[[3]], collapse=','))
+                    assign(paste0('load_names', i), paste(load_best[[2]][,i], collapse=','))
+                    assign(paste0('load_cors', i), paste(load_best[[3]][,i], collapse=','))
                 }
                 if(cov!=0){
                     for(i in 1:ncol(eff_best[[1]])){
-                        assign(paste0('eff_names', i), paste(eff_best[[2]], collapse=','))
-                        assign(paste0('eff_cors', i), paste(eff_best[[3]], collapse=','))
+                        assign(paste0('eff_names', i), paste(eff_best[[2]][,i], collapse=','))
+                        assign(paste0('eff_cors', i), paste(eff_best[[3]][,i], collapse=','))
                     }
                 }
 
                 #open plot device
                 pdf(file=paste0("../model_outputs/",
-                                RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
+                                y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
                                 names(covariates)[cov], '_',
                                 startyr, '-', endyr, '_', y_choice, '.pdf'),
                     onefile=TRUE)
@@ -757,8 +756,8 @@ model_out <-
 
 #save data frame
 write.csv(model_out, file=paste0("../model_objects/",
-                                 'param_tuning_dataframe_', startyr, '-',
-                                 endyr, '_', y_choice, '.csv'))
+                                 'param_tuning_dataframe_', y_choice, '_',
+                                 startyr, '-', endyr, '_', y_choice, '.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
 
