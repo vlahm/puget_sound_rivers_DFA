@@ -32,7 +32,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TEMP'
+y_choice = 'TURB'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 #this selects the full cov matrix during testing, but selects covs
@@ -665,9 +665,9 @@ sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-RRR='DE'; mmm=2; cov=1
-rm(RRR, mmm, cov)
-rm(cov_and_seas, dfa, all_cov, seas)
+# RRR='DE'; mmm=2; cov=1
+# rm(RRR, mmm, cov)
+# rm(cov_and_seas, dfa, all_cov, seas)
 
 #lines to fix before final run: 658, 677/78, 657
 model_out <-
@@ -690,7 +690,7 @@ model_out <-
                 saveRDS(dfa, file=paste0("../model_objects/",
                                          y_choice, '_', RRR, '_', mmm, 'm_',
                                          names(seasonality)[sss], '_', names(covariates)[cov], '_',
-                                         startyr, '-', endyr, '_', y_choice, '.rds'))
+                                         startyr, '-', endyr, '.rds'))
 
                 #landscape variable correlations
                 if(cov!=0){
@@ -719,7 +719,7 @@ model_out <-
                 pdf(file=paste0("../model_outputs/",
                                 y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
                                 names(covariates)[cov], '_',
-                                startyr, '-', endyr, '_', y_choice, '.pdf'),
+                                startyr, '-', endyr, '.pdf'),
                     onefile=TRUE)
 
                 #plot hidden processes, loadings, model fits, and landscape regressions
@@ -756,7 +756,7 @@ model_out <-
 
 #save data frame
 write.csv(model_out, file=paste0("../model_objects/",
-                                 'param_tuning_dataframe_', y_choice, '_',
+                                 'param_tuning_dataframe_',
                                  startyr, '-', endyr, '_', y_choice, '.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
