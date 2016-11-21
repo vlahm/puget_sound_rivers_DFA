@@ -10,8 +10,6 @@
 *.cpp
 *.o
 *.dll
-/model_objects
-/model_outputs
 /round_2_tmb_covs
 /data/chemPhys_data/obsolete
 /data/climate_data/by_month/obsolete

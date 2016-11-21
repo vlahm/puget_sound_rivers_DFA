@@ -736,7 +736,7 @@ model_out <-
                 R2 <- get_R2(dfa)
 
                 #store params, etc. in dataframe
-                data.frame(R=RRR, m=mmm,
+                data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
                            seasonality=names(seasonality)[sss],
                            nparams=length(dfa$Optimization$par),
                            LogLik=dfa$Optimization$value, AIC=dfa$AIC,
