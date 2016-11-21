@@ -5,7 +5,7 @@
 /data/climate_data/by_year/raw
 /data/climate_data/by_month/raw
 /round_1_no_covs
-/round_2
+/round_3_temp
 *.pptx
 *.cpp
 *.o
