@@ -238,19 +238,19 @@ cov_and_seas <- rbind(cc,covs_z)
 # 4 - run DFA (testing) ####
 
 #MARSS full specification
-dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
-             inits=list(x0=matrix(rep(0,mm),mm,1)),
-             control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
-dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
-             inits=dfa$par,
-             control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
-#MARSS form=DFA
-dfa2 <- MARSS(y=dat_z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
-              inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
-              control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
-# covariates=cov_and_seas)
-#TMB
-dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=cov_and_seas)
+# dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
+#              inits=list(x0=matrix(rep(0,mm),mm,1)),
+#              control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
+# dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
+#              inits=dfa$par,
+#              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
+# #MARSS form=DFA
+# dfa2 <- MARSS(y=dat_z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
+#               inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
+#               control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
+# # covariates=cov_and_seas)
+# #TMB
+# dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=cov_and_seas)
 
 
 # #get seasonal effects
@@ -264,104 +264,104 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=cov_
 # 5 - plot estimated state processes, loadings, and model fits (MARSS-testing) ####
 
 # varimax rotation to get Z loadings
-Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
-H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
-Z_rot = Z_est %*% H_inv # rotate factor loadings
-proc_rot = solve(H_inv) %*% dfa$states # rotate processes
-
-# plot hidden processes
-process_plotter <- function(){
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
-    xlbl <- int_dates
-    y_ts <- int_dates
-    ylm <- c(-1,1)*max(abs(proc_rot))
-    for(i in 1:mm) {
-        plot(y_ts,proc_rot[i,], type="n", bty="L",
-             ylim=ylm, xlab="", ylab="", xaxt="n")
-        abline(h=0, col="gray")
-        lines(y_ts,proc_rot[i,], lwd=2)
-        # lines(y_ts,proc_rot[i,] * seas[i,], lwd=2, col='green')
-        mtext(paste("Process",i), side=3, line=0.5)
-        axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
-    }
-}
-process_plotter()
-
-# plot loadings
-loading_plotter <- function(){
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
-    ylbl <- names(obs_ts)
-    clr <- viridis(nn) #colors may not line up with series plots in section 2
-    ylm <- c(-1,1)*max(abs(proc_rot))
-    minZ <- 0
-    ylm <- c(-1,1)*max(abs(Z_rot))
-    for(i in 1:mm) {
-        plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
-             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col=clr)
-        for(j in 1:nn) {
-            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
-            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2, col=clr[j])}
-            abline(h=0, lwd=1.5, col="gray")
-        }
-        mtext(paste("Factor loadings on process",i),side=3,line=0.5)
-    }
-}
-loading_plotter()
-
-# get model fits & CI's
-get_DFA_fits <- function(MLEobj,alpha=0.05) {
-    ## empty list for results
-    fits <- list()
-    ## extra stuff for var() calcs
-    Ey <- MARSS:::MARSShatyt(MLEobj)
-    ## model params
-    ZZ <- coef(MLEobj, type="matrix")$Z
-    ## number of obs ts
-    nn <- dim(Ey$ytT)[1]
-    ## number of time steps
-    TT <- dim(Ey$ytT)[2]
-    ## get the inverse of the rotation matrix
-    H_inv <- varimax(ZZ)$rotmat
-    ## model expectation
-    fits$ex <- ZZ %*% H_inv %*% MLEobj$states
-    ## Var in model fits
-    VtT <- MARSSkfss(MLEobj)$VtT
-    VV <- NULL
-    for(tt in 1:TT) {
-        RZVZ <- coef(MLEobj, type="matrix")$R - ZZ%*%VtT[,,tt]%*%t(ZZ)
-        SS <- Ey$yxtT[,,tt] - Ey$ytT[,tt,drop=FALSE] %*% t(MLEobj$states[,tt,drop=FALSE])
-        VV <- cbind(VV,diag(RZVZ + SS%*%t(ZZ) + ZZ%*%t(SS)))
-    }
-    SE <- sqrt(VV)
-    ## upper & lower (1-alpha)% CI
-    fits$up <- qnorm(1-alpha/2)*SE + fits$ex
-    fits$lo <- qnorm(alpha/2)*SE + fits$ex
-    return(fits)
-}
-mod_fit <- get_DFA_fits(dfa)
-
-# plot fits
-fits_plotter <- function(){
-    ylbl <- names(obs_ts)
-    xlbl = y_ts = 1:444
-    # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    ymin <- min(dat_z, na.rm=TRUE)
-    ymax <- max(dat_z, na.rm=TRUE)
-    for(i in 1:nn) {
-        lo <- mod_fit$lo[i,]
-        mn <- mod_fit$ex[i,]
-        up <- mod_fit$up[i,]
-        plot(y_ts,mn,xlab="",ylab=ylbl[i],xaxt="n",type="n", cex.lab=1.2,
-             ylim=c(ymin,ymax))
-        axis(1, at=xlbl, labels=xlbl, cex.axis=1)
-        points(y_ts,dat_z[i,], pch=16, col="darkblue")
-        lines(y_ts, up, col="darkgray")
-        lines(y_ts, mn, col="black", lwd=2)
-        lines(y_ts, lo, col="darkgray")
-    }
-}
-fits_plotter()
+# Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
+# H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
+# Z_rot = Z_est %*% H_inv # rotate factor loadings
+# proc_rot = solve(H_inv) %*% dfa$states # rotate processes
+#
+# # plot hidden processes
+# process_plotter <- function(){
+#     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+#     xlbl <- int_dates
+#     y_ts <- int_dates
+#     ylm <- c(-1,1)*max(abs(proc_rot))
+#     for(i in 1:mm) {
+#         plot(y_ts,proc_rot[i,], type="n", bty="L",
+#              ylim=ylm, xlab="", ylab="", xaxt="n")
+#         abline(h=0, col="gray")
+#         lines(y_ts,proc_rot[i,], lwd=2)
+#         # lines(y_ts,proc_rot[i,] * seas[i,], lwd=2, col='green')
+#         mtext(paste("Process",i), side=3, line=0.5)
+#         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
+#     }
+# }
+# process_plotter()
+#
+# # plot loadings
+# loading_plotter <- function(){
+#     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(mm, 1))
+#     ylbl <- names(obs_ts)
+#     clr <- viridis(nn) #colors may not line up with series plots in section 2
+#     ylm <- c(-1,1)*max(abs(proc_rot))
+#     minZ <- 0
+#     ylm <- c(-1,1)*max(abs(Z_rot))
+#     for(i in 1:mm) {
+#         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
+#              lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col=clr)
+#         for(j in 1:nn) {
+#             if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
+#             if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2, col=clr[j])}
+#             abline(h=0, lwd=1.5, col="gray")
+#         }
+#         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
+#     }
+# }
+# loading_plotter()
+#
+# # get model fits & CI's
+# get_DFA_fits <- function(MLEobj,alpha=0.05) {
+#     ## empty list for results
+#     fits <- list()
+#     ## extra stuff for var() calcs
+#     Ey <- MARSS:::MARSShatyt(MLEobj)
+#     ## model params
+#     ZZ <- coef(MLEobj, type="matrix")$Z
+#     ## number of obs ts
+#     nn <- dim(Ey$ytT)[1]
+#     ## number of time steps
+#     TT <- dim(Ey$ytT)[2]
+#     ## get the inverse of the rotation matrix
+#     H_inv <- varimax(ZZ)$rotmat
+#     ## model expectation
+#     fits$ex <- ZZ %*% H_inv %*% MLEobj$states
+#     ## Var in model fits
+#     VtT <- MARSSkfss(MLEobj)$VtT
+#     VV <- NULL
+#     for(tt in 1:TT) {
+#         RZVZ <- coef(MLEobj, type="matrix")$R - ZZ%*%VtT[,,tt]%*%t(ZZ)
+#         SS <- Ey$yxtT[,,tt] - Ey$ytT[,tt,drop=FALSE] %*% t(MLEobj$states[,tt,drop=FALSE])
+#         VV <- cbind(VV,diag(RZVZ + SS%*%t(ZZ) + ZZ%*%t(SS)))
+#     }
+#     SE <- sqrt(VV)
+#     ## upper & lower (1-alpha)% CI
+#     fits$up <- qnorm(1-alpha/2)*SE + fits$ex
+#     fits$lo <- qnorm(alpha/2)*SE + fits$ex
+#     return(fits)
+# }
+# mod_fit <- get_DFA_fits(dfa)
+#
+# # plot fits
+# fits_plotter <- function(){
+#     ylbl <- names(obs_ts)
+#     xlbl = y_ts = 1:444
+#     # par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+#     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+#     ymin <- min(dat_z, na.rm=TRUE)
+#     ymax <- max(dat_z, na.rm=TRUE)
+#     for(i in 1:nn) {
+#         lo <- mod_fit$lo[i,]
+#         mn <- mod_fit$ex[i,]
+#         up <- mod_fit$up[i,]
+#         plot(y_ts,mn,xlab="",ylab=ylbl[i],xaxt="n",type="n", cex.lab=1.2,
+#              ylim=c(ymin,ymax))
+#         axis(1, at=xlbl, labels=xlbl, cex.axis=1)
+#         points(y_ts,dat_z[i,], pch=16, col="darkblue")
+#         lines(y_ts, up, col="darkgray")
+#         lines(y_ts, mn, col="black", lwd=2)
+#         lines(y_ts, lo, col="darkgray")
+#     }
+# }
+# fits_plotter()
 
 # * 5.1 - plot processes, loadings, fits, and get R^2 (TMB-testing) ####
 
@@ -536,99 +536,99 @@ load_regress_plotter <- function(mmm){
 
 # 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
 
-R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
-R_names <- c('DiagAndEq', 'DiagAndUneq', 'EqVarCov')
-ntrends <- 1:4
-model_out <- data.frame()
-
-# ntrends <- 5
+# R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
+# R_names <- c('DiagAndEq', 'DiagAndUneq', 'EqVarCov')
+# ntrends <- 1:4
 # model_out <- data.frame()
-# R_strucs <- c('diagonal and unequal')
-# R_strucs <- c('unconstrained')
-# RRR='diagonal and unequal'
-# RRR='unconstrained'
-# R_names <- c('DiagAndUneq')
-# R_names <- c('Unconst')
-# mmm=1
-
-for(RRR in R_strucs){
-    for(mmm in ntrends){
-
-        #create loadings matrix
-        mm <- mmm
-        ZZZ <- ZZgen()
-
-        #fit model with EM algorithm
-        print(paste(RRR,mmm))
-
-
-        if(mmm == 1){
-            print(paste('should be 1', mmm))
-
-            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                             inits=list(x0=0), silent=FALSE,
-                             control=list(maxit=20000, allow.degen=TRUE)))
-            if(isTRUE(class(dfa)=='try-error')) {next}
-        } else {
-            print(mmm)
-
-            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                             inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
-                             control=list(maxit=20000, allow.degen=TRUE)))
-            if(isTRUE(class(dfa)=='try-error')) {next}
-        }
-
-        #where possible, polish EM estimate with BFGS
-        if(RRR != 'equalvarcov'){
-            print(paste(RRR,mmm,'BFGS'))
-
-            dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
-                             inits=dfa$par, silent=FALSE,
-                             # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
-                             control=list(dfa$control$maxit), method='BFGS'))
-            if(isTRUE(class(dfa)=='try-error')) {next}
-        }
-
-        #store params, etc. in dataframe
-        model_out <- rbind(model_out, data.frame(R=RRR, m=mmm, LogLik=dfa$logLik,
-                                                 K=dfa$num.params, AICc=dfa$AICc,
-                                                 AIC=dfa$AIC, converged=dfa$convergence,
-                                                 filter=dfa$fun.kf, method=dfa$method,
-                                                 iter=unname(dfa$numIter), n=dfa$samp.size,
-                                                 stringsAsFactors=FALSE))
-
-        #save model object
-        saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
-                                 R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
-
-        if(mmm > 1){
-
-            #open plot device
-            pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
-                            R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
-
-            # varimax rotation to get Z loadings
-            Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
-            H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
-            Z_rot = Z_est %*% H_inv # rotate factor loadings
-            proc_rot = solve(H_inv) %*% dfa$states # rotate processes
-
-            #plot hidden processes, loadings, and model fits for each parameter combination
-            process_plotter()
-            loading_plotter()
-
-            mod_fit <- get_DFA_fits(dfa)
-            fits_plotter()
-
-            #close plot device
-            dev.off()
-
-        }
-    }
-}
-#save data frame
-write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
-                                 'param_tuning_dataframe_', startyr, y_choice, '.csv'))
+#
+# # ntrends <- 5
+# # model_out <- data.frame()
+# # R_strucs <- c('diagonal and unequal')
+# # R_strucs <- c('unconstrained')
+# # RRR='diagonal and unequal'
+# # RRR='unconstrained'
+# # R_names <- c('DiagAndUneq')
+# # R_names <- c('Unconst')
+# # mmm=1
+#
+# for(RRR in R_strucs){
+#     for(mmm in ntrends){
+#
+#         #create loadings matrix
+#         mm <- mmm
+#         ZZZ <- ZZgen()
+#
+#         #fit model with EM algorithm
+#         print(paste(RRR,mmm))
+#
+#
+#         if(mmm == 1){
+#             print(paste('should be 1', mmm))
+#
+#             dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+#                              inits=list(x0=0), silent=FALSE,
+#                              control=list(maxit=20000, allow.degen=TRUE)))
+#             if(isTRUE(class(dfa)=='try-error')) {next}
+#         } else {
+#             print(mmm)
+#
+#             dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+#                              inits=list(x0=matrix(rep(0,mmm),mmm,1)), silent=FALSE,
+#                              control=list(maxit=20000, allow.degen=TRUE)))
+#             if(isTRUE(class(dfa)=='try-error')) {next}
+#         }
+#
+#         #where possible, polish EM estimate with BFGS
+#         if(RRR != 'equalvarcov'){
+#             print(paste(RRR,mmm,'BFGS'))
+#
+#             dfa <- try(MARSS(y=dat_z, model=list(B=BB, U=uu, C=CC, c=cc, Q=QQ, Z=ZZZ, A=aa, D=DD, d=dd, R=RRR),
+#                              inits=dfa$par, silent=FALSE,
+#                              # inits=coef(dfa, form='marss'), #alternate form? - see MARSSoptim examples
+#                              control=list(dfa$control$maxit), method='BFGS'))
+#             if(isTRUE(class(dfa)=='try-error')) {next}
+#         }
+#
+#         #store params, etc. in dataframe
+#         model_out <- rbind(model_out, data.frame(R=RRR, m=mmm, LogLik=dfa$logLik,
+#                                                  K=dfa$num.params, AICc=dfa$AICc,
+#                                                  AIC=dfa$AIC, converged=dfa$convergence,
+#                                                  filter=dfa$fun.kf, method=dfa$method,
+#                                                  iter=unname(dfa$numIter), n=dfa$samp.size,
+#                                                  stringsAsFactors=FALSE))
+#
+#         #save model object
+#         saveRDS(dfa, file=paste0("../stream_nuts_DFA/model_objects/",
+#                                  R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.rds'))
+#
+#         if(mmm > 1){
+#
+#             #open plot device
+#             pdf(file=paste0("../stream_nuts_DFA/model_outputs/",
+#                             R_names[R_strucs == RRR], '_', mmm, 'm_', startyr, y_choice, '.pdf'), onefile=TRUE)
+#
+#             # varimax rotation to get Z loadings
+#             Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
+#             H_inv <- varimax(Z_est)$rotmat # get the inverse of the rotation matrix
+#             Z_rot = Z_est %*% H_inv # rotate factor loadings
+#             proc_rot = solve(H_inv) %*% dfa$states # rotate processes
+#
+#             #plot hidden processes, loadings, and model fits for each parameter combination
+#             process_plotter()
+#             loading_plotter()
+#
+#             mod_fit <- get_DFA_fits(dfa)
+#             fits_plotter()
+#
+#             #close plot device
+#             dev.off()
+#
+#         }
+#     }
+# }
+# #save data frame
+# write.csv(model_out, file=paste0("../stream_nuts_DFA/model_objects/",
+#                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
 
 # 6.1 - model fitting/parameter tuning (TMB) ####
 #round 2 determined that individual fixed factors provide the best seasonality absorption
@@ -661,7 +661,7 @@ seasonality <- list(fixed_factors=ccgen('fixed_individual'),
 covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
                    hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,])
 
-sss = 1 #uncomment to fix seasonality (must also comment **s below)
+# sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
@@ -673,7 +673,7 @@ sss = 1 #uncomment to fix seasonality (must also comment **s below)
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
         foreach(mmm=ntrends, .combine=rbind) %:%
-            # foreach(sss=1:length(seasonality), .combine=rbind, # **s
+            foreach(sss=1:length(seasonality), .combine=rbind) %:% # **s
             foreach(cov=1:length(covariates), .combine=rbind,
                     .packages='viridis') %dopar% {
 
@@ -763,7 +763,7 @@ stopCluster(cl) #free parallelized cores for other uses
 
 # 6.2 - load desired model output ####
 # mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
-dfa <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
+# dfa <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
 
 
 
