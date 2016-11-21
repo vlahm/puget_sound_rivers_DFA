@@ -9,19 +9,19 @@
 rm(list=ls()); cat('\014')
 
 # * 0 - setup ####
-setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+#setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
-setwd('Z:/stream_nuts_DFA/data/')
+#setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
-source('../00_tmb_uncor_Rmat.R')
+#source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
 package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc',
                   'RColorBrewer', 'foreach', 'doParallel')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
-if(length(new_packages)) install.packages(new_packages)
+if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
 if (!require("manipulateR")) {
-    if (!require("devtools")) install.packages('devtools')
+    if (!require("devtools")) install.packages('devtools', repos="http://cran.rstudio.com/")
     library(devtools)
     install_github('vlahm/manipulateR') #this one is from github
 }
@@ -32,7 +32,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TURB'
+y_choice = 'COND'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 #this selects the full cov matrix during testing, but selects covs
