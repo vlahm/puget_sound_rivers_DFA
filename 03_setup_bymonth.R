@@ -13,7 +13,7 @@ rm(list=ls()); cat('\014')
 setwd('~/git/puget_sound_rivers_DFA/data')
 #setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
-#source('../00_tmb_uncor_Rmat.R')
+# source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
 package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc',
@@ -35,20 +35,22 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 y_choice = 'COND'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-#this selects the full cov matrix during testing, but selects covs
-#to be entered individually or in pairs during model fitting
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
-# cov_choices = c('meantemp')
+    #always include all 5 options here.
+    #the cov_choices matrix can be later subset by row if you don't want to include all covs in
+    #a given model run
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
 #seasonality model choices: 'fixed_collective', 'fixed_individual', 'fourier'
 method = 'fixed_individual'
+    #collective vs. indiv is no longer relevant. choose either "fixed" option to get
+    #an appropriate fixed-effect cc matrix, or "fourier" to get a simpler one
 #which years to include?
 startyr = 1978
 endyr = 2015
-#model params
+#model params (specific values only relevant for testing, not for parameter optimization loop)
 ntrends = 2
 obs_err_var_struc = 'diagonal and equal'
 
@@ -120,7 +122,7 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
-# 2 - plot response variable time series (unintelligible by month) ####
+# 2 - plot response variable time series (unintelligible by month, deprecated) ####
 # series_plotter <- function(){
 #     colors1 <- viridis(ncol(yy)-1, end=1)
 #     ymin <- min(yy[,-1], na.rm=TRUE)
@@ -134,7 +136,7 @@ if(region=='3_4' & average_regions==FALSE){
 # }
 # series_plotter()
 
-# * 3 - Set up input matrices to MARSS function call ####
+# * 3 - Set up input matrices to MARSS function call (much of this is obsolete)####
 # scale and center y and cov data
 dat_z <- t(scale(as.matrix(obs_ts)))
 mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
@@ -654,11 +656,12 @@ unregister <- function() {
 }
 # unregister()
 
+#create vectors of parameter values to loop through
 R_strucs <- c('DE','DUE','UNC')
 ntrends <- 1:4
-seasonality <- list(fixed_factors=ccgen('fixed_individual'),
+seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
                     fourier=ccgen('fourier'), no_seas=NULL)
-covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
+covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
                    hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,])
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
@@ -677,9 +680,10 @@ model_out <-
             foreach(cov=1:length(covariates), .combine=rbind,
                     .packages='viridis') %dopar% {
 
+                #re-run TMB script for each new R process
                 source('../00_tmb_uncor_Rmat.R')
 
-                print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
+                # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
 
                 #fit model with TMB
                 cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
