@@ -9,9 +9,9 @@
 rm(list=ls()); cat('\014')
 
 # * 0 - setup ####
-#setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
-#setwd('Z:/stream_nuts_DFA/data/')
+setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
 # source('../00_tmb_uncor_Rmat.R')
 
@@ -662,14 +662,14 @@ ntrends <- 1:4
 seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
                     fourier=ccgen('fourier'), no_seas=NULL)
 covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
-                   hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,])
+                   hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,], none=NULL)
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-# RRR='DE'; mmm=2; cov=1
-# rm(RRR, mmm, cov)
+RRR='DE'; mmm=2; cov=8; sss=1
+# rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
 #lines to fix before final run: 658, 677/78, 657
@@ -677,86 +677,86 @@ model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
         foreach(mmm=ntrends, .combine=rbind) %:%
             foreach(sss=1:length(seasonality), .combine=rbind) %:% # **s
-            foreach(cov=1:length(covariates), .combine=rbind,
-                    .packages='viridis') %dopar% {
+                foreach(cov=1:length(covariates), .combine=rbind,
+                        .packages='viridis') %dopar% {
 
-                #re-run TMB script for each new R process
-                source('../00_tmb_uncor_Rmat.R')
+                    #re-run TMB script for each new R process
+                    source('../00_tmb_uncor_Rmat.R')
 
-                # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
+                    # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
 
-                #fit model with TMB
-                cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
-                dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                              EstCovar=TRUE, Covars=cov_and_seas)
+                    #fit model with TMB
+                    cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
+                    dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                                  EstCovar=TRUE, Covars=cov_and_seas)
 
-                #save model object
-                saveRDS(dfa, file=paste0("../model_objects/",
-                                         y_choice, '_', RRR, '_', mmm, 'm_',
-                                         names(seasonality)[sss], '_', names(covariates)[cov], '_',
-                                         startyr, '-', endyr, '.rds'))
+                    #save model object
+                    saveRDS(dfa, file=paste0("../model_objects/",
+                                             y_choice, '_', RRR, '_', mmm, 'm_',
+                                             names(seasonality)[sss], '_', names(covariates)[cov], '_',
+                                             startyr, '-', endyr, '.rds'))
 
-                #landscape variable correlations
-                if(cov!=0){
-                    rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
-                    eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
-                }
-                loadings <- dfa$Estimates$Z
-                load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
-
-                #format influential landscape var names and cors for export
-                load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
-                    load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
-
-                for(i in 1:ncol(load_best[[1]])){
-                    assign(paste0('load_names', i), paste(load_best[[2]][,i], collapse=','))
-                    assign(paste0('load_cors', i), paste(load_best[[3]][,i], collapse=','))
-                }
-                if(cov!=0){
-                    for(i in 1:ncol(eff_best[[1]])){
-                        assign(paste0('eff_names', i), paste(eff_best[[2]][,i], collapse=','))
-                        assign(paste0('eff_cors', i), paste(eff_best[[3]][,i], collapse=','))
+                    #landscape variable correlations
+                    if(!is.null(covariates[[cov]])){
+                        rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
+                        eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
                     }
+                    loadings <- dfa$Estimates$Z
+                    load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
+
+                    #format influential landscape var names and cors for export
+                    load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
+                        load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
+
+                    for(i in 1:ncol(load_best[[1]])){
+                        assign(paste0('load_names', i), paste(load_best[[2]][,i], collapse=','))
+                        assign(paste0('load_cors', i), paste(load_best[[3]][,i], collapse=','))
+                    }
+                    if(!is.null(covariates[[cov]])){
+                        for(i in 1:ncol(eff_best[[1]])){
+                            assign(paste0('eff_names', i), paste(eff_best[[2]][,i], collapse=','))
+                            assign(paste0('eff_cors', i), paste(eff_best[[3]][,i], collapse=','))
+                        }
+                    }
+
+                    #open plot device
+                    pdf(file=paste0("../model_outputs/",
+                                    y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
+                                    names(covariates)[cov], '_',
+                                    startyr, '-', endyr, '.pdf'),
+                        onefile=TRUE)
+
+                    #plot hidden processes, loadings, model fits, and landscape regressions
+                    process_plotter_TMB(dfa, mmm)
+                    loading_plotter_TMB(dfa, mmm)
+                    fits_plotter_TMB(dfa)
+                    if(!is.null(covariates[[cov]])) eff_regress_plotter()
+                    load_regress_plotter(mmm)
+
+                    #close plot device
+                    dev.off()
+
+                    #get min, median, max R^2
+                    R2 <- get_R2(dfa)
+
+                    #store params, etc. in dataframe
+                    data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
+                               seasonality=names(seasonality)[sss],
+                               nparams=length(dfa$Optimization$par),
+                               LogLik=dfa$Optimization$value, AIC=dfa$AIC,
+                               min_R2=R2[[1]], median_R2=R2[[2]], max_R2=R2[[3]],
+                               counts_func=unname(dfa$Optimization$counts[1]),
+                               counts_gradient=unname(dfa$Optimization$counts[2]),
+                               convergence=dfa$Optimization$convergence,
+                               message=paste('0',dfa$Optimization$message),
+                               load_names1=load_names1,load_names2=load_names2,
+                               load_names3=load_names3,load_names4=load_names4,
+                               load_cors1=load_cors1,load_cors2=load_cors2,
+                               load_cors3=load_cors3,load_cors4=load_cors4,
+                               eff_names1=eff_names1,eff_names2=eff_names2,
+                               eff_cors1=eff_cors1,eff_cors2=eff_cors2,
+                               stringsAsFactors=FALSE)
                 }
-
-                #open plot device
-                pdf(file=paste0("../model_outputs/",
-                                y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
-                                names(covariates)[cov], '_',
-                                startyr, '-', endyr, '.pdf'),
-                    onefile=TRUE)
-
-                #plot hidden processes, loadings, model fits, and landscape regressions
-                process_plotter_TMB(dfa, mmm)
-                loading_plotter_TMB(dfa, mmm)
-                fits_plotter_TMB(dfa)
-                if(cov!=0) eff_regress_plotter()
-                load_regress_plotter(mmm)
-
-                #close plot device
-                dev.off()
-
-                #get min, median, max R^2
-                R2 <- get_R2(dfa)
-
-                #store params, etc. in dataframe
-                data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
-                           seasonality=names(seasonality)[sss],
-                           nparams=length(dfa$Optimization$par),
-                           LogLik=dfa$Optimization$value, AIC=dfa$AIC,
-                           min_R2=R2[[1]], median_R2=R2[[2]], max_R2=R2[[3]],
-                           counts_func=unname(dfa$Optimization$counts[1]),
-                           counts_gradient=unname(dfa$Optimization$counts[2]),
-                           convergence=dfa$Optimization$convergence,
-                           message=paste('0',dfa$Optimization$message),
-                           load_names1=load_names1,load_names2=load_names2,
-                           load_names3=load_names3,load_names4=load_names4,
-                           load_cors1=load_cors1,load_cors2=load_cors2,
-                           load_cors3=load_cors3,load_cors4=load_cors4,
-                           eff_names1=eff_names1,eff_names2=eff_names2,
-                           eff_cors1=eff_cors1,eff_cors2=eff_cors2,
-                           stringsAsFactors=FALSE)
-            }
 
 #save data frame
 write.csv(model_out, file=paste0("../model_objects/",
