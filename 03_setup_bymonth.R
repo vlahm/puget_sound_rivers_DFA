@@ -32,7 +32,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'COND'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
@@ -657,18 +657,21 @@ unregister <- function() {
 # unregister()
 
 #create vectors of parameter values to loop through
-R_strucs <- c('DE','DUE','UNC')
-ntrends <- 1:4
+R_strucs <- c('UNC')
+# R_strucs <- c('DE','DUE')
+ntrends <- 1:3
 seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
                     fourier=ccgen('fourier'), no_seas=NULL)
 covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
-                   hd=covs_z[5,], atpc=covs_z[c(1,3),], pchdr=covs_z[3:4,], none=NULL)
+                   hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
+# covariates <- list(hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL) #this is subsetting particular covariatess from the full covariate matrix
+# covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,]) #this is subsetting particular covariatess from the full covariate matrix
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-RRR='DE'; mmm=2; cov=8; sss=1
+RRR='DE'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
@@ -687,8 +690,14 @@ model_out <-
 
                     #fit model with TMB
                     cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
-                    dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                  EstCovar=TRUE, Covars=cov_and_seas)
+                    if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
+                        dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                                      EstCovar=FALSE, max_iter=5000)
+                    } else {
+                        dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                                      EstCovar=TRUE, Covars=cov_and_seas,
+                                      max_iter=5000)
+                    }
 
                     #save model object
                     saveRDS(dfa, file=paste0("../model_objects/",

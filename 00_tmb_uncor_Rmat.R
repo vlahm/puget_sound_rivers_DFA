@@ -161,7 +161,10 @@ dfaAIC<-function(x,AICc=F){
 # If you want individual paramters from individual covariate series then you need to set indivCovar to TRUE. Example you have temperature covariates for each of the rivers of bristol bay and want to estimated individual temperature effects.
 # A combination of these two will require manual passing of the covariate paramter matrix. You can do this by supplying Dmat and Dfac. This defaults to NULL and don't mess with it unless you need to deviate from the two covariate approaches above. BEWARE!: frustrating debugging is an absolute certainty should you go this route. But if its what you need it can be done.
 
-runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivCovar=FALSE,Dmat=NULL,Dfac=NULL,Rfac=NULL,logsdObs=NULL,logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE){
+runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,
+                 indivCovar=FALSE,Dmat=NULL,Dfac=NULL,Rfac=NULL,logsdObs=NULL,
+                 logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE,
+                 max_iter=2000){
 	##
 	#  TopSection is used for Debug only.
 	#
@@ -250,9 +253,9 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 	covStateFac<-factor(matrix(NA,nrow=NumStates,ncol=NumStates))
 	#Creates the model object and runs the optimization
 	obj1 <- MakeADFun(data,parameters,random="u",DLL="dfa1tmb",silent=T,map=list(Z=Zfac,D=Dfac,cholCorr=cholFac,logsdObs=logsdObsFac,covState=covStateFac))#,map=list())
-	opt1 <- nlminb(obj1$par,obj1$fn,obj1$gr,control=list(iter.max=2000,eval.max=2000))
+	opt1 <- nlminb(obj1$par,obj1$fn,obj1$gr,control=list(iter.max=max_iter,eval.max=max_iter))
 	#newtonOption(obj1,smartsearch=TRUE)
-	obj1$control=list(trace=1,REPORT=1,reltol=1e-12,maxit=2000)
+	obj1$control=list(trace=1,REPORT=1,reltol=1e-12,maxit=max_iter)
 	obj1$fn()
 	obj1$gr()
 	#obj1$method='BFGS'
