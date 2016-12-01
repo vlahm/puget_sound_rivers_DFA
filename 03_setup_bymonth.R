@@ -16,16 +16,18 @@ load('chemPhys_data/yys_bymonth.rda')
 # source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
-package_list <- c('MARSS','viridis','imputeTS','vegan','cluster','fpc',
-                  'RColorBrewer', 'foreach', 'doParallel')
+#imputeTS, RColorBrewer, cluster, fpc
+package_list <- c('MARSS','viridis','vegan', 'e1071',
+                  'foreach', 'doParallel', 'caret')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
-if (!require("manipulateR")) {
-    if (!require("devtools")) install.packages('devtools', repos="http://cran.rstudio.com/")
-    library(devtools)
-    install_github('vlahm/manipulateR') #this one is from github
-}
-for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
+# if (!require("manipulateR")) {
+#     if (!require("devtools")) install.packages('devtools', repos="http://cran.rstudio.com/")
+#     library(devtools)
+#     install_github('vlahm/manipulateR') #this one is from github
+#     detach('package:devtools', unload=TRUE)
+# }
+# for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
@@ -73,7 +75,7 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.4)
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75)
 
 # subset by region
 if(region == '3'){
@@ -122,7 +124,27 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
+# * 1.2 - (transform), center, scale ####
+library(caret); library(e1071)
+
+# yeo-johnson transform nonnormal data (e.g. concentrations)
+plot(density(obs_ts[,1], na.rm=T))
+# bcPower(obs_ts, rep(-1, ncol(obs_ts)))
+pre <- preProcess(as.matrix(obs_ts), method=c('BoxCox', 'center', 'scale'),
+                    fudge=0.02)
+pre$bc[[1]]
+dat_z <- predict(pre, obs_ts)
+plot(density(dat_z[,1], na.rm=T))
+
+
+# scale and center y and cov data
+dat_z <- t(scale(as.matrix(obs_ts)))
+mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
+
+covs_z <- t(scale(as.matrix(covs)))
+
 # 2 - plot response variable time series (unintelligible by month, deprecated) ####
+# library(viridis)
 # series_plotter <- function(){
 #     colors1 <- viridis(ncol(yy)-1, end=1)
 #     ymin <- min(yy[,-1], na.rm=TRUE)
@@ -137,11 +159,6 @@ if(region=='3_4' & average_regions==FALSE){
 # series_plotter()
 
 # * 3 - Set up input matrices to MARSS function call (much of this is obsolete)####
-# scale and center y and cov data
-dat_z <- t(scale(as.matrix(obs_ts)))
-mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
-
-covs_z <- t(scale(as.matrix(covs)))
 
 # state equation params
 mm <- ntrends #number of hidden processes (trends)
@@ -238,7 +255,7 @@ cov_and_seas <- rbind(cc,covs_z)
 # process_plotter_TMB(dfa6, mm)
 
 # 4 - run DFA (testing) ####
-
+# library(MARSS)
 #MARSS full specification
 # dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
 #              inits=list(x0=matrix(rep(0,mm),mm,1)),
@@ -537,7 +554,7 @@ load_regress_plotter <- function(mmm){
 #regression analysis coming soon
 
 # 6 - model fitting/parameter tuning (MARSS - not parallelized) ####
-
+# library(MARSS)
 # R_strucs <- c('diagonal and equal', 'diagonal and unequal', 'equalvarcov')
 # R_names <- c('DiagAndEq', 'DiagAndUneq', 'EqVarCov')
 # ntrends <- 1:4
@@ -634,6 +651,7 @@ load_regress_plotter <- function(mmm){
 
 # 6.1 - model fitting/parameter tuning (TMB) ####
 #round 2 determined that individual fixed factors provide the best seasonality absorption
+library(doParallel); library(foreach)
 
 #specify system-dependent cluster type; ncores-1 to be used in parallel
 if(.Platform$OS.type == "windows"){
@@ -671,7 +689,7 @@ covariates <- list(hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL) #this is subs
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-RRR='DUE'; mmm=3; cov=1; sss=1
+# RRR='UNC'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
@@ -691,11 +709,11 @@ model_out <-
                     cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
                     if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=FALSE, max_iter=10000)
+                                      EstCovar=FALSE, max_iter=8000)
                     } else {
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=TRUE, Covars=cov_and_seas)#,
-                                      # max_iter=10000)
+                                      EstCovar=TRUE, Covars=cov_and_seas,
+                                      max_iter=8000)
                     }
 
                     #save model object
