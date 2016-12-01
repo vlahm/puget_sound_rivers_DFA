@@ -163,8 +163,8 @@ dfaAIC<-function(x,AICc=F){
 
 runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,
                  indivCovar=FALSE,Dmat=NULL,Dfac=NULL,Rfac=NULL,logsdObs=NULL,
-                 logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE,
-                 max_iter=2000){
+                 logsdObsFac=NULL,cholCorr=NULL,cholFac=NULL,EstSE=FALSE){#,
+                 # max_iter=2000){
 	##
 	#  TopSection is used for Debug only.
 	#
@@ -253,9 +253,9 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,
 	covStateFac<-factor(matrix(NA,nrow=NumStates,ncol=NumStates))
 	#Creates the model object and runs the optimization
 	obj1 <- MakeADFun(data,parameters,random="u",DLL="dfa1tmb",silent=T,map=list(Z=Zfac,D=Dfac,cholCorr=cholFac,logsdObs=logsdObsFac,covState=covStateFac))#,map=list())
-	opt1 <- nlminb(obj1$par,obj1$fn,obj1$gr,control=list(iter.max=max_iter,eval.max=max_iter))
+	opt1 <- nlminb(obj1$par,obj1$fn,obj1$gr,control=list(iter.max=2000,eval.max=2000))
 	#newtonOption(obj1,smartsearch=TRUE)
-	obj1$control=list(trace=1,REPORT=1,reltol=1e-12,maxit=max_iter)
+	obj1$control=list(trace=1,REPORT=1,reltol=1e-12,maxit=2000)
 	obj1$fn()
 	obj1$gr()
 	#obj1$method='BFGS'

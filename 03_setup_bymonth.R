@@ -662,20 +662,19 @@ R_strucs <- c('UNC')
 ntrends <- 1:3
 seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
                     fourier=ccgen('fourier'), no_seas=NULL)
-covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
-                   hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
-# covariates <- list(hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL) #this is subsetting particular covariatess from the full covariate matrix
+# covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
+#                    hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
+covariates <- list(hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL) #this is subsetting particular covariatess from the full covariate matrix
 # covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,]) #this is subsetting particular covariatess from the full covariate matrix
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-# RRR='DE'; mmm=1; cov=1; sss=1
+RRR='DUE'; mmm=3; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
-#lines to fix before final run: 658, 677/78, 657
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
         foreach(mmm=ntrends, .combine=rbind) %:%
@@ -695,8 +694,8 @@ model_out <-
                                       EstCovar=FALSE, max_iter=10000)
                     } else {
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=TRUE, Covars=cov_and_seas,
-                                      max_iter=10000)
+                                      EstCovar=TRUE, Covars=cov_and_seas)#,
+                                      # max_iter=10000)
                     }
 
                     #save model object
@@ -770,7 +769,7 @@ model_out <-
 #save data frame
 write.csv(model_out, file=paste0("../model_objects/",
                                  'param_tuning_dataframe_',
-                                 startyr, '-', endyr, '_', y_choice, '.csv'))
+                                 startyr, '-', endyr, '_', y_choice, '3.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
 
