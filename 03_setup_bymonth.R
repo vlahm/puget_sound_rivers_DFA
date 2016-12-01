@@ -32,7 +32,7 @@ for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and lo
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TEMP'
+y_choice = 'SUSSOL'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
@@ -73,7 +73,7 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.75) #beware reducing threshold, may add sites and break stuff
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.4)
 
 # subset by region
 if(region == '3'){
@@ -671,7 +671,7 @@ covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], 
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
 #for troubleshooting
-RRR='DE'; mmm=1; cov=1; sss=1
+# RRR='DE'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
@@ -692,11 +692,11 @@ model_out <-
                     cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
                     if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=FALSE, max_iter=5000)
+                                      EstCovar=FALSE, max_iter=10000)
                     } else {
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
                                       EstCovar=TRUE, Covars=cov_and_seas,
-                                      max_iter=5000)
+                                      max_iter=10000)
                     }
 
                     #save model object
