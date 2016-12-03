@@ -5,8 +5,11 @@
 #NOTEs - should have 4 datapoints (observations x streams) for each parameter in model.
 #collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
 #sections marked with an asterisk must be run in order to perform model selection
+#if R crashes when you try to use runDFA,
+    #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
+    #no data or 1 data point. these timepoints must either be removed or imputed.
 
-rm(list=ls()); cat('\014')
+# rm(list=ls()); cat('\014')
 
 # * 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
@@ -34,7 +37,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'SUSSOL'
+y_choice = 'OXYGEN'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
@@ -53,7 +56,7 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 2
+ntrends = 1
 obs_err_var_struc = 'diagonal and equal'
 
 # * 1.1 - subset datasets according to choices ####
@@ -127,20 +130,67 @@ if(region=='3_4' & average_regions==FALSE){
 # * 1.2 - (transform), center, scale ####
 library(caret); library(e1071)
 
-# yeo-johnson transform nonnormal data (e.g. concentrations)
-plot(density(obs_ts[,1], na.rm=T))
-# bcPower(obs_ts, rep(-1, ncol(obs_ts)))
-pre <- preProcess(as.matrix(obs_ts), method=c('BoxCox', 'center', 'scale'),
-                    fudge=0.02)
-pre$bc[[1]]
-dat_z <- predict(pre, obs_ts)
-plot(density(dat_z[,1], na.rm=T))
+#visualize which responses should be transformed to normal
+boxcoxables <- function(){
+    par(mfrow=c(4,4))
+    for(i in c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN',
+               'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB')){
+        x <- as.numeric(as.matrix(eval(parse(text=i))[,-1]))
+        plot(density(x, na.rm=TRUE), main=i)
+        qqnorm(x, main=paste(i, 'qqnorm'))
+        qqline(x, col='red', lwd=2)
+    }
+}
+# boxcoxables()
 
+# Box-Cox transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP)
+# center and scale all responses and covariates
+transformer <- function(data, transform, plot=FALSE){ #plot=T to see the effect of transforming
+    obs_ts2 <- data
+    lambdas <- NULL
 
-# scale and center y and cov data
-dat_z <- t(scale(as.matrix(obs_ts)))
-mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
+    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){
+        if(transform=='boxcox'){
+            pre <- preProcess(as.matrix(obs_ts2), method=c('BoxCox'), fudge=0.01)
+            obs_ts2 <- predict(pre, obs_ts2)
 
+            lambdas <- sapply(pre$bc, function(x) x$lambda)
+            unchanged <- setdiff(names(obs_ts2), names(lambdas))
+            if(length(unchanged)){
+                temp <- c(lambdas, rep(NA, length(unchanged)))
+                names(temp)[(length(lambdas)+1):(length(lambdas)+length(unchanged))] <-
+                    unchanged
+                lambdas <- temp[order(names(temp))]
+            }
+        } else {
+            if(transform=='sqrt'){
+                obs_ts2 <- sqrt(obs_ts2)
+            }
+        }
+    }
+    scaled <- scale(obs_ts2)
+    # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
+    sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
+
+    if(plot){
+        par(mfrow=c(4,3))
+        for(i in 1:ncol(data)){
+            plot(density(data[,i], na.rm=TRUE), main='raw data')
+            plot(density(scaled[,i], na.rm=TRUE), main='transformed')
+            qqnorm(scaled[,i], main='qqnorm transformed')
+            qqline(scaled[,i], col='red', lwd=2)
+        }
+    }
+
+    out <- list(trans=scaled, sds=sds, lambdas=lambdas)
+    return(out)
+}
+trans <- transformer(obs_ts, transform='sqrt', plot=T) #why isn't sqrt making it more normal?
+
+dat_z <- t(trans$trans)
+# mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
+
+#scale and center covariate data
 covs_z <- t(scale(as.matrix(covs)))
 
 # 2 - plot response variable time series (unintelligible by month, deprecated) ####
@@ -269,7 +319,7 @@ cov_and_seas <- rbind(cc,covs_z)
 #               control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
 # # covariates=cov_and_seas)
 # #TMB
-# dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=cov_and_seas)
+# dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DUE', EstCovar=TRUE, Covars=cov_and_seas)
 
 
 # #get seasonal effects
@@ -494,10 +544,10 @@ eff_rescaler <- function(all_cov, seas){
     ncov <- ncol(z_effect_size)
 
     #convert effects back to original scale (units response/units covar)
-    #x/sd(response) = 1/sd(covar); x is the coefficient scale factor
+    #x/sd(response) = 1/sd(covar); x is the effect size scale factor
     rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
     for(i in 1:nstream){
-        sd_response <- sd(obs_ts[,i], na.rm=TRUE)
+        sd_response <- trans$sds[i]
         for(j in 1:ncov){
             sd_covar <- sd(covs[,j], na.rm=TRUE)
             rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
