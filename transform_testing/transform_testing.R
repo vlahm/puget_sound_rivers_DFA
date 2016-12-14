@@ -1,7 +1,9 @@
 #run 03_setup_bymonth.R through step 3.1 before using this script
 
-setwd('C:/Users/Mike/git/stream_nuts_DFA/boxcox_testing')
-# source('../00_tmb_uncor_Rmat.R')
+setwd('C:/Users/Mike/git/stream_nuts_DFA/transform_testing')
+source('../00_tmb_uncor_Rmat.R')
+
+#for boxcox testing (no relationship between lambdas and effect sizes or effect size residuals) ####
 
 #if there are any timepoints with 0 or 1 observation, remove them
 propNA <- apply(dat_z, 2, function(x) sum(is.na(x))/length(x))
@@ -93,3 +95,5 @@ plot(oxygen_lambdas, oxygen_trans[[1]]-oxygen_raw[[1]])
 plot(oxygen_lambdas, oxygen_trans[[2]])
 plot(oxygen_lambdas, oxygen_raw[[2]], pch=20, cex=2)
 plot(oxygen_lambdas, oxygen_trans[[2]]-oxygen_raw[[2]])
+
+#power transform testing ####

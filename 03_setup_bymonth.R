@@ -9,14 +9,14 @@
     #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
     #no data or 1 data point. these timepoints must either be removed or imputed.
 
-# rm(list=ls()); cat('\014')
+rm(list=ls()); cat('\014')
 
 # * 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
-# source('../00_tmb_uncor_Rmat.R')
+source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
 #imputeTS, RColorBrewer, cluster, fpc
@@ -37,7 +37,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # * 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'OXYGEN'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
@@ -143,34 +143,38 @@ boxcoxables <- function(){
 }
 # boxcoxables()
 
-# Box-Cox transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP)
+# Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP)
 # center and scale all responses and covariates
-transformer <- function(data, transform, plot=FALSE){ #plot=T to see the effect of transforming
+transformer <- function(data, transform, exp=NA, plot=FALSE){ #check inside function for details
+    #plot=T to see the effect of transforming
+    #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
+
     obs_ts2 <- data
     lambdas <- NULL
 
-    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){
+    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){ #should include oxygen, press, ph, temp. add if missing
         if(transform=='boxcox'){
             pre <- preProcess(as.matrix(obs_ts2), method=c('BoxCox'), fudge=0.01)
             obs_ts2 <- predict(pre, obs_ts2)
 
             lambdas <- sapply(pre$bc, function(x) x$lambda)
             unchanged <- setdiff(names(obs_ts2), names(lambdas))
-            if(length(unchanged)){
+            if(length(unchanged) > 0){
                 temp <- c(lambdas, rep(NA, length(unchanged)))
                 names(temp)[(length(lambdas)+1):(length(lambdas)+length(unchanged))] <-
-                    unchanged
+                    unchanged #this will harmlessly error if nothing was left unchanged
                 lambdas <- temp[order(names(temp))]
             }
         } else {
-            if(transform=='sqrt'){
-                obs_ts2 <- sqrt(obs_ts2)
+            if(transform=='power'){
+                obs_ts2 <- obs_ts2^exp
             }
         }
     }
+
+    sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
     scaled <- scale(obs_ts2)
     # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
-    sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
 
     if(plot){
         par(mfrow=c(4,3))
@@ -185,7 +189,7 @@ transformer <- function(data, transform, plot=FALSE){ #plot=T to see the effect 
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='sqrt', plot=T) #why isn't sqrt making it more normal?
+trans <- transformer(obs_ts, transform='none', exp=.1, plot=T) #why isn't sqrt making it more normal?
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T)
@@ -483,7 +487,7 @@ fits_plotter_TMB <- function(dfa_obj){
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
              ylab=rownames(dat_z)[i], xlab='day_index')
         lines(hiddenTrendOnly_fit[i,], col='green', lwd=2)
-        points(dat_z[i,], col='blue', pch=20, cex=1.5)
+        points(dat_z[i,], col='blue', pch=1, cex=1)
     }
 }
 # fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
@@ -556,50 +560,89 @@ eff_rescaler <- function(all_cov, seas){
 
     return(rescaled_effect_size)
 }
-# rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
+rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 
 #grab top landscape vars that correlate with effect size, plot and get stats
 # eff_best <- best_landvars(rescaled_effect_size, 6)
 
-eff_regress_plotter <- function(){
-    pal <- colorRampPalette(c('black', 'green')) #green is high elev
-    land_ind <- eff_best[[1]]
-    top <- nrow(land_ind)
-    par(mfrow=c(top/2, 2))
-    for(j in 1:ncol(eff_best[[1]])){
-        for(i in 1:top){
-            cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
-            plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
-                 xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
-                 main=paste('covar =', cov_choices[j]),
-                 col=cols, pch=20, cex=2)
+eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside function for details
+    #mode='exploration' is for use within the model fitting loop
+        #automatically selects the best correlated landscape vars
+    #mode='indiv' is for plotting against individual landscape vars once a model has been selected
+    #if using 'indiv', must select a var name
+    #col_scale determines which variable to color the points by
+        #green is high, black is low
+
+    pal <- colorRampPalette(c('black', 'green'))
+
+    if(mode == 'exploration'){
+        land_ind <- eff_best[[1]]
+        top <- nrow(land_ind)
+        par(mfrow=c(top/2, 2))
+        for(j in 1:ncol(eff_best[[1]])){
+            for(i in 1:top){
+                cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+                plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
+                     xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
+                     main=paste('covar =', cov_choices[j]),
+                     col=cols, pch=colnames(trans$trans))
+            }
+        }
+    } else {
+        if(mode == 'indiv'){
+            cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+            plot(land[,landcols[landvars==var]], rescaled_effect_size,
+                 xlab=var, ylab='D resp / D cov',
+                 main=paste('covar =', cov_choices),
+                 col=cols, pch=colnames(trans$trans))
         }
     }
 }
-# eff_regress_plotter()
+eff_regress_plotter('indiv', 'WtDepWs')
 
 #regression analysis coming soon
 
 # * 5.4 - process loading regressions ####
-# loadings <- dfa$Estimates$Z
 
 # load_best <- best_landvars(loadings, 6)
 
-load_regress_plotter <- function(mmm){
-    pal <- colorRampPalette(c('black', 'green')) #green is high elev
-    land_ind <- load_best[[1]]
-    top <- nrow(land_ind)
-    par(mfrow=c(top/2, mmm))
-    for(j in 1:mmm){
-        for(i in 1:top){
-            cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
-            plot(land[,land_ind[i,j]], loadings[,j],
-                 xlab=colnames(land)[land_ind[i,j]], ylab='factor loading on hidden trend',
-                 main=paste('hidden trend', j), col=cols, pch=20, cex=2)
+load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
+    #requires number of hidden trends as input (mmm); annoying, I know
+    #mode='exploration' is for use within the model fitting loop
+        #automatically selects the best correlated landscape vars
+    #mode='indiv' is for plotting against individual landscape vars once a model has been selected
+    #if using 'indiv', must select a var name
+    #col_scale determines which variable to color the points by
+        #green is high, black is low
+
+    loadings <- dfa$Estimates$Z
+    pal <- colorRampPalette(c('black', 'green'))
+
+    if(mode == 'exploration'){
+        land_ind <- load_best[[1]]
+        top <- nrow(land_ind)
+        par(mfrow=c(top/2, mmm))
+        for(j in 1:mmm){
+            for(i in 1:top){
+                cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+                plot(land[,land_ind[i,j]], loadings[,j],
+                     xlab=colnames(land)[land_ind[i,j]], ylab='factor loading on hidden trend',
+                     main=paste('hidden trend', j), col=cols, pch=colnames(trans$trans))
+            }
+        }
+    } else {
+        if(mode == 'indiv'){
+            cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+            for(j in 1:mmm){
+                plot(land[,landcols[landvars==var]], loadings[,j],
+                     xlab=var, ylab='factor loading on hidden trend',
+                     main=paste('hidden trend', j),
+                     col=cols, pch=colnames(trans$trans))
+            }
         }
     }
 }
-# load_regress_plotter(2)
+# load_regress_plotter(2, 'indiv', 'WtDepWs')
 
 #regression analysis coming soon
 
@@ -759,11 +802,11 @@ model_out <-
                     cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
                     if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=FALSE, max_iter=8000)
+                                      EstCovar=FALSE, max_iter=4000)
                     } else {
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
                                       EstCovar=TRUE, Covars=cov_and_seas,
-                                      max_iter=8000)
+                                      max_iter=4000)
                     }
 
                     #save model object
@@ -806,8 +849,8 @@ model_out <-
                     process_plotter_TMB(dfa, mmm)
                     loading_plotter_TMB(dfa, mmm)
                     fits_plotter_TMB(dfa)
-                    if(!is.null(covariates[[cov]])) eff_regress_plotter()
-                    load_regress_plotter(mmm)
+                    if(!is.null(covariates[[cov]])) eff_regress_plotter(mode='exploration')
+                    load_regress_plotter(mmm, mode='exploration')
 
                     #close plot device
                     dev.off()
@@ -842,9 +885,30 @@ write.csv(model_out, file=paste0("../model_objects/",
 stopCluster(cl) #free parallelized cores for other uses
 
 # 6.2 - load desired model output ####
-# mod_out <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
-# dfa <- readRDS("../round_2_tmb_covs/model_objects/UNC_2m_fixed_factors_1978-2014_TEMP.rds")
+# saveRDS(covs, '../saved_structures/at.rds')
 
+# load best temp model and all associated mumbo jumbo
+dfa <- readRDS('../round_4_legit_temperature/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
+cc <- readRDS('../saved_structures/fixed.rds')
+trans <- readRDS('../saved_structures/temp.rds')
+covs <- readRDS('../saved_structures/at.rds')
 
+# best turb model
 
+# best sussol model
 
+# best cond model
+
+# check out all correlations just to see if there's anything interesting we missed during fitting
+defpar <- par(mfrow=c(3,3))
+
+for(i in landvars){
+    eff_regress_plotter('indiv', i, 'ElevWs')
+}
+
+for(i in landvars){
+    load_regress_plotter(ncol(dfa$Estimates$Z), 'indiv', i, 'ElevWs')
+}
+
+par(defpar)
