@@ -16,7 +16,7 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
-source('../00_tmb_uncor_Rmat.R')
+# source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed
 #imputeTS, RColorBrewer, cluster, fpc
@@ -41,6 +41,7 @@ y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
+# cov_choices = c('meantemp')
     #always include all 5 options here.
     #the cov_choices matrix can be later subset by row if you don't want to include all covs in
     #a given model run
@@ -509,6 +510,7 @@ land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALS
 land$siteCode[land$siteCode == 'AA'] <- 'ZA' #rename sammamish @ bothell sitecode
 land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
+rownames(land) <- 1:nrow(land)
 
 #plot trend loadings against all landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -598,12 +600,13 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside 
         }
     }
 }
-eff_regress_plotter('indiv', 'WtDepWs')
+# eff_regress_plotter('indiv', 'WtDepWs')
 
 #regression analysis coming soon
 
 # * 5.4 - process loading regressions ####
 
+loadings <- dfa$Estimates$Z
 # load_best <- best_landvars(loadings, 6)
 
 load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
@@ -885,30 +888,87 @@ write.csv(model_out, file=paste0("../model_objects/",
 stopCluster(cl) #free parallelized cores for other uses
 
 # 6.2 - load desired model output ####
-# saveRDS(covs, '../saved_structures/at.rds')
+# saveRDS(obs_ts, '../saved_structures/temp.rds')
 
-# load best temp model and all associated mumbo jumbo
+# 7 - evaluate best TEMP model ####
+
+#load best temp model and all associated mumbo jumbo
 dfa <- readRDS('../round_4_legit_temperature/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
 cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 cc <- readRDS('../saved_structures/fixed.rds')
-trans <- readRDS('../saved_structures/temp.rds')
+trans <- readRDS('../saved_structures/temp_trans.rds')
+obs_ts <- readRDS('../saved_structures/temp.rds')
 covs <- readRDS('../saved_structures/at.rds')
 
-# best turb model
-
-# best sussol model
-
-# best cond model
-
-# check out all correlations just to see if there's anything interesting we missed during fitting
+# check out all covariate effect plots just to see if there's anything interesting
+#that was missed during fitting
 defpar <- par(mfrow=c(3,3))
-
 for(i in landvars){
-    eff_regress_plotter('indiv', i, 'ElevWs')
+    eff_regress_plotter('indiv', i, 'ElevWs') #covarite effect
+}
+par(defpar)
+
+#site K is a common leverage point and is unaffected by air temp. checking to see if it's
+#tidally influenced. in the meantime, removing it from analysis, checking top cors
+K_ind <- which(land$siteCode=='K')
+land_sub <- land[-K_ind,landcols] #subset landscape variables by those used in the analysis, remove K
+best <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, rescaled_effect_size[-K_ind]))))))
+
+#plot best cors along with fitted models
+defpar <- par(mfrow=c(2,2))
+full_names <- c('mean water table depth', 'base flow index', '% ice 2011', 'mean elevation')
+pal <- colorRampPalette(c('blue', 'red'))
+cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
+for(i in 1:4){
+    plot(land_sub[,names(best)[1:4][i]], rescaled_effect_size[-K_ind],
+         xlab=full_names[i], ylab=expression(paste(Delta,'water temp /', Delta, 'air temp')),
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
+    mod <- lm(rescaled_effect_size[-K_ind] ~ land_sub[,names(best)[1:4][i]])
+    abline(mod, col='gray', lty=2)
+}
+par(defpar)
+
+#why is water table depth such a strong factor? what else is it correlated with?
+rev(tail(sort(abs(apply(land[,43:ncol(land)], 2, function(x) cor(land$WtDepWs, x)))), 15))
+    #it's just elevation (note the returned correlations have been abs()'d
+
+#okay, so stream temp follows the regional air trend depending primarily on
+    #base flow, glaciation, and elevation
+
+#check out all common trend plots to see if anything was missed during fitting
+defpar <- par(mfrow=c(3,3))
+for(i in landvars){
+    load_regress_plotter(ncol(dfa$Estimates$Z), 'indiv', i, 'ElevWs') #common trend
+}
+par(defpar)
+
+#get the best ones
+best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,1]))))))
+best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,2]))))))
+
+#plot best cors along with fitted models
+defpar <- par(mfrow=c(3,2))
+
+pal <- colorRampPalette(c('blue', 'red'))
+cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
+full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
+                'riparian urbanization (high)', 'riparian urbanization (low)')
+for(i in 1:6){
+    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[-K_ind,1],
+         xlab=full_names[i], ylab='loading on common trend 1',
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
+    mod <- lm(dfa$Estimates$Z[-K_ind,1] ~ land_sub[,names(best1)[i]])
+    # abline(mod, col='gray', lty=2)
 }
 
-for(i in landvars){
-    load_regress_plotter(ncol(dfa$Estimates$Z), 'indiv', i, 'ElevWs')
+full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
+                'riparian open space development', 'coastal alluvium')
+for(i in 1:6){
+    plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[-K_ind,2],
+         xlab=names(best2)[i], ylab='loading on common trend 2',
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
+    mod <- lm(dfa$Estimates$Z[-K_ind,2] ~ land_sub[,names(best2)[i]])
+    abline(mod, col='gray', lty=2)
 }
 
 par(defpar)

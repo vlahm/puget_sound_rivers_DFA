@@ -4,16 +4,14 @@
 *.pdf
 /data/climate_data/by_year/raw
 /data/climate_data/by_month/raw
-/round_1_no_covs
-/round_3_temp
 *.pptx
 *.cpp
 *.o
 *.dll
-/round_2_tmb_covs
 /data/chemPhys_data/obsolete
 /data/climate_data/by_month/obsolete
 /data/climate_data/by_year/obsolete
 *.png
 *.so
 /round*
+*.xlsx
