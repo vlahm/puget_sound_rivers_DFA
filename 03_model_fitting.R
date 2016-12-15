@@ -4,14 +4,16 @@
 
 #NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
 #collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
-#sections marked with an asterisk must be run in order to perform model selection
 #if R crashes when you try to use runDFA,
     #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
     #no data or 1 data point. these timepoints must either be removed or imputed.
+#to quickly access any of the function definitions, put the cursor on the function name and hit F2
+#make sure you have a large plot window before starting, or some of the functions may fail
+    #on windows, use windows(record=T) to open a separate window
 
 rm(list=ls()); cat('\014')
 
-# * 0 - setup ####
+# 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/')
@@ -34,7 +36,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 
 # if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
 
-# * 1 - CHOICES ####
+# 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice = 'TEMP'
@@ -51,11 +53,11 @@ startyr = 1978
 endyr = 2015
 #model params (just leave these as they are for model fitting. their values wont be used
     #but they still need to exist)
+method = 'fixed_individual'
 ntrends = 1
-#error matrix can either use the MARSS specifications or the TMB ones ('DE', 'DUE', 'UNC')
 obs_err_var_struc = 'diagonal and equal'
 
-# * 1.1 - subset datasets according to choices ####
+# 1.1 - subset datasets according to choices ####
 
 #chem/phys data manipulations
 yy <- eval(parse(text=y_choice))
@@ -76,7 +78,7 @@ subsetter <- function(yy, start, end, na_thresh=1){
 }
 yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55)#na_thresh is the only thing in
 #this subsection that may require modification (unless you want to experiment with region
-#3 vs. region 4 stuff
+#3 vs. region 4 stuff)
 
 # subset by region
 if(region == '3'){
@@ -125,7 +127,7 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
-# * 1.2 - (transform), center, scale ####
+# 1.2 - (transform), center, scale ####
 library(caret); library(e1071)
 
 #visualize which responses should be transformed to normal
@@ -187,7 +189,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=.1, plot=T) #will want to apply a
+trans <- transformer(obs_ts, transform='none', exp=.1, plot=F) #will want to apply a
 #transformation once we get that worked out
 
 dat_z <- t(trans$trans)
@@ -211,7 +213,7 @@ covs_z <- t(scale(as.matrix(covs)))
 # }
 # series_plotter()
 
-# * 3 - Set up input matrices to MARSS function call (automated for TMB - see next line)####
+# 3 - Set up input matrices to MARSS function call (automated for TMB - see next line)####
 #for TMB, only mm and cc are used, and these are determined in the CHOICES section,
 #so no need to touch this stuff. if experimenting with MARSS, some of these are relevant.
 #note though, that MARSS has been essentially abandoned past section 4
@@ -284,66 +286,7 @@ ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifia
 
 cov_and_seas <- rbind(cc,covs_z)
 
-# 3.1 - see if region 3 and 4 climate variables differ ####
-#feel free to uncomment and experiment with this stuff just to verify that
-#the regions barely differ in climate
-
-# #visualize
-# par(mfrow=c(3,2))
-# for(i in 1:ncol(covs3)){
-#     plot(scale(covs3[,i]), scale(covs4[,i]), main=colnames(covs3)[i])
-# }
-# par(mfrow=c(3,2))
-# for(i in 1:ncol(covs3)){
-#     plot(1:nrow(covs3), scale(covs3[,i]), main=colnames(covs3)[i], col='red', type='l')
-#     lines(1:nrow(covs3), scale(covs4[,i]), col='blue')
-# }
-# plot(1,1, type='n', axes=F, ann=F)
-# legend('center', legend=c('3','4'), col=c('red','blue'), lty=1)
-#
-# #compare model outputs based on region 3 vs 4 covars (focusing on the most different from above)
-# #precip
-# dfa3 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs3_z[3,]))
-# dfa4 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs4_z[3,]))
-# process_plotter_TMB(dfa3, mm)
-# process_plotter_TMB(dfa4, mm)
-# #hydrologic drought
-# dfa5 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs3_z[4,]))
-# dfa6 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs4_z[4,]))
-# process_plotter_TMB(dfa5, mm)
-# process_plotter_TMB(dfa6, mm)
-
-# 4 - run DFA (testing) ####
-# library(MARSS)
-
-#MARSS full specification
-# dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C='zero', c='zero', Q=QQ, Z=ZZ, A=aa, D='unconstrained', d=covs_z, R=RR),
-#              inits=list(x0=matrix(rep(0,mm),mm,1)),
-#              control=list(minit=200, maxit=20000, allow.degen=TRUE), silent=2)
-# dfa <- MARSS(y=dat_z, model=list(B=BB, U=uu, C=DD, c=dd, Q=QQ, Z=ZZ, A=aa, D=CC, d=cc, R=RR),
-#              inits=dfa$par,
-#              control=list(minit=200, maxit=3000), method='BFGS') #can't use BFGS for equalvarcov
-
-# #MARSS form=DFA
-# dfa2 <- MARSS(y=dat_z, model=list(m=2, R='diagonal and equal', A='zero'),#, D='unconstrained'),
-#               inits=list(x0='zero'), z.score=TRUE, #coef(dfa, type='matrix')$D
-#               control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
-# # covariates=cov_and_seas)
-
-# #TMB
-# dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DUE', EstCovar=TRUE, Covars=cov_and_seas)
-
-
-# #get seasonal effects (I think this chunk is fully obsolete, even for MARSS, but
-    #i'll leave it here just in case)
-# CC_out = coef(dfa, type="matrix")$C
-# # The time series of net seasonal effects
-# seas = CC_out %*% cc[,1:12]
-# rownames(seas) = 1:mm
-# colnames(seas) = month.abb
-# seas
-
-# 5 - plot estimated state processes, loadings, and model fits (MARSS-testing) ####
+# 5 - plot estimated state processes, loadings, and model fits (MARSS) ####
 
 # varimax rotation to get Z loadings
 # Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
@@ -445,8 +388,10 @@ cov_and_seas <- rbind(cc,covs_z)
 # }
 # fits_plotter()
 
-# * 5.1 - plot processes, loadings, fits, and get R^2 (TMB-testing) ####
+# 5.1 - plot processes, loadings, fits, and get R^2 (TMB) ####
 library(viridis)
+
+#these functions are used later within the loop
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
@@ -512,7 +457,7 @@ get_R2 <- function(dfa_out){
 }
 # get_R2(dfa)
 
-# * 5.2 - landscape variable setup ####
+# 5.2 - landscape variable setup ####
 
 #load and preprocess landscape data
 land <- read.csv('watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)
@@ -521,7 +466,7 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
-#isolate landscape variables of interest
+#choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
@@ -530,7 +475,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
 landcols <- which(colnames(land) %in% landvars)
 
-#this identifies the landscape vars that correlate best with the response (used below)
+#this identifies the landscape vars that correlate best with the response (used in the loop)
 best_landvars <- function(response, top){
     #response = loadings or rescaled_effect_sizes; top = top n vars
 
@@ -548,7 +493,9 @@ best_landvars <- function(response, top){
 # nstream <- ncol(obs_ts)
 # ncov <- ncol(covs)
 
-# * 5.3 - effect size regressions (look inside functions for details) ####
+# 5.3 - effect size regressions (look inside functions for details) ####
+#these functions are used later within the loop
+
 eff_rescaler <- function(all_cov, seas){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
@@ -573,7 +520,7 @@ eff_rescaler <- function(all_cov, seas){
 
     return(rescaled_effect_size)
 }
-rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
+# rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 
 #grab top landscape vars that correlate with effect size, plot and get stats
 # eff_best <- best_landvars(rescaled_effect_size, 6)
@@ -613,9 +560,10 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside 
 }
 # eff_regress_plotter('indiv', 'WtDepWs')
 
-# * 5.4 - process loading regressions (look inside functions for details) ####
+# 5.4 - process loading regressions (look inside functions for details) ####
+#these functions are used later within the loop
 
-loadings <- dfa$Estimates$Z
+# loadings <- dfa$Estimates$Z
 # load_best <- best_landvars(loadings, 6) #landscape vars that cor best with common trend loadings
 
 load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
@@ -753,10 +701,9 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
 #                                  'param_tuning_dataframe_', startyr, y_choice, '.csv'))
 
 # 6.1 - model fitting/parameter tuning (TMB) ####
-#round 2 determined that individual fixed factors provide the best seasonality absorption
 library(doParallel); library(foreach)
 
-#specify system-dependent cluster type; ncores-1 to be used in parallel
+#specify system-dependent cluster type; ncores-1 to be used in parallel (no need to modify this)
 if(.Platform$OS.type == "windows"){
     cl <- makeCluster(detectCores() - 1, type='PSOCK')
 } else {
@@ -775,27 +722,29 @@ unregister <- function() {
     env <- foreach:::.foreachGlobals
     rm(list=ls(name=env), pos=env)
 }
-# unregister()
+# unregister() #this resets everything related to parallelization
 
 #create vectors of parameter values to loop through
-R_strucs <- c('UNC')
-# R_strucs <- c('DE','DUE')
+R_strucs <- c('DE', 'DUE', 'UNC')
 ntrends <- 1:3
 seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
                     fourier=ccgen('fourier'), no_seas=NULL)
-# covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,], #this is subsetting particular covariatess from the full covariate matrix
-#                    hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
-covariates <- list(hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL) #this is subsetting particular covariatess from the full covariate matrix
-# covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,]) #this is subsetting particular covariatess from the full covariate matrix
+#subset particular covariatess from the full covariate matrix:
+covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
+                   hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 
-#for troubleshooting
+#stock parameters for troubleshooting
 # RRR='UNC'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 
+#this is the model fitting loop. it opens new R processes for each processor core
+    #and allocates model runs efficiently to each. the outputs are stored in stream_nuts_DFA/model_objects
+    #and stream_nuts_DFA/model_outputs. The variable "model_out" is a summary data frame of diagnostic stuff
+    #that will be dealt with next
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
         foreach(mmm=ntrends, .combine=rbind) %:%
@@ -887,7 +836,7 @@ model_out <-
                                stringsAsFactors=FALSE)
                 }
 
-#save data frame
+#save data frame mentioned above
 write.csv(model_out, file=paste0("../model_objects/",
                                  'param_tuning_dataframe_',
                                  startyr, '-', endyr, '_', y_choice, '3.csv'))

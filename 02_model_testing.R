@@ -4,17 +4,17 @@
 
 #NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
 #collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
-#sections marked with an asterisk must be run in order to perform model selection
 #if R crashes when you try to use runDFA,
-#use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
-#no data or 1 data point. these timepoints must either be removed or imputed.
+    #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
+    #no data or 1 data point. these timepoints must either be removed or imputed.
+#to quickly access any of the function definitions, put the cursor on the function name and hit F2
 
 rm(list=ls()); cat('\014')
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
-setwd('Z:/stream_nuts_DFA/data/')
+setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
 source('../00_tmb_uncor_Rmat.R')
 
@@ -37,7 +37,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TEMP'
+y_choice = 'NO2_NO3'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp')
@@ -50,7 +50,7 @@ average_regions = TRUE #only used if region = '3_4'
     #an appropriate fixed-effect cc matrix, or "fourier" to get a simpler one
 method = 'fixed_individual'
 #which years to include?
-startyr = 1978
+startyr = 1990
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
 ntrends = 1
@@ -189,7 +189,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=.1, plot=T) #will want to apply a
+trans <- transformer(obs_ts, transform='power', exp=.1, plot=T) #will want to apply a
     #transformation once we get that worked out
 
 dat_z <- t(trans$trans)
@@ -358,7 +358,7 @@ trans <- readRDS('../saved_structures/temp_trans.rds')
 obs_ts <- readRDS('../saved_structures/temp.rds')
 covs <- readRDS('../saved_structures/at.rds')
 
-# 5 - plot estimated state processes, loadings, and model fits (MARSS-) ####
+# 5 - plot estimated state processes, loadings, and model fits (MARSS) ####
 
 # varimax rotation to get Z loadings
 # Z_est <- coef(dfa, type="matrix")$Z # get the estimated ZZ
@@ -593,7 +593,8 @@ rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 #grab top landscape vars that correlate with effect size, plot and get stats
 eff_best <- best_landvars(rescaled_effect_size, 6)
 
-eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside function for details
+#look inside function for details
+eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #mode='exploration' is for use within the model fitting loop
     #automatically selects the best correlated landscape vars
     #mode='indiv' is for plotting against individual landscape vars once a model has been selected.
@@ -626,7 +627,8 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside 
         }
     }
 }
-eff_regress_plotter('indiv', 'WtDepWs')
+eff_regress_plotter('indiv', 'ElevWs')
+eff_regress_plotter('exploration',, 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
 
@@ -669,7 +671,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-load_regress_plotter(2, 'indiv', 'WtDepWs')
+load_regress_plotter(mm, 'indiv', 'WtDepWs')
 
 # 6 - example of evaluating best TEMP model ####
 
