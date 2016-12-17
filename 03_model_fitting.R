@@ -3,7 +3,7 @@
 #created: 8/10/2016
 
 #NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
-#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
+#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
 #if R crashes when you try to use runDFA,
     #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
     #no data or 1 data point. these timepoints must either be removed or imputed.
@@ -11,7 +11,7 @@
 #make sure you have a large plot window before starting, or some of the functions may fail
     #on windows, use windows(record=T) to open a separate window
 
-rm(list=ls()); cat('\014')
+rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
@@ -214,7 +214,8 @@ covs_z <- t(scale(as.matrix(covs)))
 # series_plotter()
 
 # 3 - Set up input matrices to MARSS function call (automated for TMB - see next line)####
-#for TMB, only mm and cc are used, and these are determined in the CHOICES section,
+#for TMB, only mm and cc (and the composite cov_and_seas) are used,
+#and these are determined in the CHOICES section,
 #so no need to touch this stuff. if experimenting with MARSS, some of these are relevant.
 #note though, that MARSS has been essentially abandoned past section 4
 
@@ -447,10 +448,10 @@ fits_plotter_TMB <- function(dfa_obj){
 }
 # fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
-get_R2 <- function(dfa_out){
+get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
     for(i in 1:nrow(dat_z)){
-        mod <- lm(dat_z[i,] ~ dfa_out$Fits[i,])
+        mod <- lm(dat_z[i,] ~ dfa_obj$Fits[i,])
         R2[i] <- summary(mod)$r.squared
     }
     return(list(min=min(R2), median=median(R2), max=max(R2)))

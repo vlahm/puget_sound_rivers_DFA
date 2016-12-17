@@ -3,13 +3,13 @@
 #created: 8/10/2016
 
 #NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
-#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac)
+#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
 #if R crashes when you try to use runDFA,
     #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
     #no data or 1 data point. these timepoints must either be removed or imputed.
 #to quickly access any of the function definitions, put the cursor on the function name and hit F2
 
-rm(list=ls()); cat('\014')
+rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
@@ -37,7 +37,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'NO2_NO3'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
 cov_choices = c('meantemp')
@@ -50,7 +50,7 @@ average_regions = TRUE #only used if region = '3_4'
     #an appropriate fixed-effect cc matrix, or "fourier" to get a simpler one
 method = 'fixed_individual'
 #which years to include?
-startyr = 1990
+startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
 ntrends = 1
@@ -189,7 +189,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='power', exp=.1, plot=T) #will want to apply a
+trans <- transformer(obs_ts, transform='none', exp=.1, plot=F) #will want to apply a
     #transformation once we get that worked out
 
 dat_z <- t(trans$trans)
@@ -214,7 +214,8 @@ covs_z <- t(scale(as.matrix(covs)))
 # series_plotter()
 
 # 3 - Set up input matrices to MARSS function call (automated for TMB only; see next line)####
-#for TMB, only mm and cc are used, and these are determined in the CHOICES section,
+#for TMB, only mm and cc (and the composite cov_and_seas) are used,
+#and these are determined in the CHOICES section,
 #so no need to touch this stuff. if experimenting with MARSS, some of these are relevant.
 #note though, that MARSS has been essentially abandoned past section 4
 
@@ -517,10 +518,10 @@ fits_plotter_TMB <- function(dfa_obj){
 }
 fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
-get_R2 <- function(dfa_out){
+get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
     for(i in 1:nrow(dat_z)){
-        mod <- lm(dat_z[i,] ~ dfa_out$Fits[i,])
+        mod <- lm(dat_z[i,] ~ dfa_obj$Fits[i,])
         R2[i] <- summary(mod)$r.squared
     }
     return(list(min=min(R2), median=median(R2), max=max(R2)))
@@ -627,7 +628,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-eff_regress_plotter('indiv', 'ElevWs')
+eff_regress_plotter('indiv', 'BFIWs')
 eff_regress_plotter('exploration',, 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
@@ -747,3 +748,22 @@ for(i in 1:6){
 }
 
 par(defpar)
+
+#use this code to compare monthly effects
+# pdf("C:/Users/Mike/Desktop/with_sitenames.pdf", width=10)
+rescaled_seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
+defpar <- par(mfrow=c(3,2))
+pal <- colorRampPalette(c('blue', 'green'))
+cols <- pal(10)[as.numeric(cut(land$BFIWs, breaks=10))]
+for(i in 1:12){
+    mod <- lm(rescaled_seas[,i] ~ land$PctIce2011Ws, weights=land$watershedA)
+    slope <- round(unname(mod$coefficients[2]), 2)
+    plot(land$PctIce2011Ws, rescaled_seas[,i], main=paste(month.abb[i], 'slope =', slope),
+         ylab=paste(month.abb[i], 'change in water temp'), xlab='% ice',
+         ylim=c(min(rescaled_seas), max(rescaled_seas)), col=cols, cex=1,
+         pch=colnames(trans$trans))
+    abline(mod, col='gray', lty=2, lwd=2)
+    abline(h=0, col='red')
+}
+par(defpar)
+# dev.off()
