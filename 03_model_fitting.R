@@ -151,8 +151,10 @@ transformables <- function(){
 }
 # transformables()
 
-# Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP)
-# center and scale all responses and covariates (check inside function for details)
+# Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP will be transformed)
+# backtransformation of boxcox and power does not work as intended, so our only current option
+# is to log transform and then report effect size as change in log(response) per change in covariate
+# also center and scale all responses and covariates (check inside function for details)
 transformer <- function(data, transform, exp=NA, plot=FALSE){
     #plot=T to see the effect of transforming
     #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
@@ -506,9 +508,15 @@ best_landvars <- function(response, top){
 # nstream <- ncol(obs_ts)
 # ncov <- ncol(covs)
 
-# 5.3 - effect size regressions (look inside functions for details) ####
-#these functions are used later within the loop
+# 5.3 - effect size regressions (these do not account for boxcox/power transformations) ####
+# these functions are used later within the loop
+# look inside functions for details
 
+#this converts the scaled effect sizes back to their original scales, based on the original
+#SDs of the response and covariate(s). it cannot presently account for the effects of
+#transformation (and i doubt it can in general). if the model can't converge on untransformed
+#data, our only option is to log transform and report the effect sizes as such. see section
+#1.2 for more.
 eff_rescaler <- function(all_cov, seas){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
@@ -538,6 +546,9 @@ eff_rescaler <- function(all_cov, seas){
 #grab top landscape vars that correlate with effect size, plot and get stats
 # eff_best <- best_landvars(rescaled_effect_size, 6)
 
+#look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
+#if you log transformed the response. (note that this may have been done by default in section 1.2
+#if the response was anything other than OXYGEN, TEMP, PRESS, or PH
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside function for details
     #mode='exploration' is for use within the model fitting loop
         #automatically selects the best correlated landscape vars
