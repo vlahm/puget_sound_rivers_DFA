@@ -9,19 +9,19 @@
     #no data or 1 data point. these timepoints must either be removed or imputed.
 #to quickly access any of the function definitions, put the cursor on the function name and hit F2
 
-rm(list=ls()); cat('\014') #clear env and console
+# rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-source('../00_tmb_uncor_Rmat.R')
+# source('../00_tmb_uncor_Rmat.R')
 
-#install packages that aren't already installed
+#install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
 package_list <- c('MARSS','viridis','vegan', 'e1071',
-                  'foreach', 'doParallel', 'caret')
+                  'foreach', 'doParallel', 'caret', 'Matrix')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
 # if (!require("manipulateR")) {
@@ -32,15 +32,23 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # }
 # for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
-# if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
+#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.2
+#it's fine to comment out this block as long as you look out for errors below
+if (is.null(dev.list()) == TRUE){
+    if(.Platform$OS.type == "windows"){
+        windows(record=TRUE, width=16, height=9)
+    } else {
+        x11(width=16, height=9)
+    }
+}
 
 # 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TEMP'
+y_choice = 'SUSSOL'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('meantemp')
+cov_choices = c('precip')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -144,7 +152,9 @@ transformables <- function(){
 # transformables()
 
 # Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP will be transformed)
-# center and scale all responses and covariates (check inside function for details)
+# backtransformation of boxcox and power does not work as intended, so our only current option
+# is to log transform and then report effect size as change in log(response) per change in covariate
+# also center and scale all responses and covariates (check inside function for details)
 transformer <- function(data, transform, exp=NA, plot=FALSE){
     #plot=T to see the effect of transforming
     #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
@@ -152,7 +162,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     obs_ts2 <- data
     lambdas <- NULL
 
-    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){ #should include oxygen, press, ph, temp. add if missing
+    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){
         if(transform=='boxcox'){
             pre <- preProcess(as.matrix(obs_ts2), method=c('BoxCox'), fudge=0.01)
             obs_ts2 <- predict(pre, obs_ts2)
@@ -168,6 +178,10 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
         } else {
             if(transform=='power'){
                 obs_ts2 <- obs_ts2^exp
+            } else{
+                if(transform=='log'){
+                    obs_ts2 <- log(obs_ts2)
+                }
             }
         }
     }
@@ -189,7 +203,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=.1, plot=F) #will want to apply a
+trans <- transformer(obs_ts, transform='log', exp=NA, plot=T) #will want to apply a
     #transformation once we get that worked out
 
 dat_z <- t(trans$trans)
@@ -333,7 +347,7 @@ cov_and_seas <- rbind(cc,covs_z)
 #               control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
 # # covariates=cov_and_seas)
 
-# #TMB
+#TMB
 dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DUE', EstCovar=TRUE, Covars=cov_and_seas)
 
 
@@ -564,7 +578,14 @@ best_landvars <- function(response, top){
 # nstream <- ncol(obs_ts)
 # ncov <- ncol(covs)
 
-# 5.3 - effect size regressions (look inside functions for details) ####
+# 5.3 - effect size regressions (these do not account for boxcox/power transformations) ####
+# look inside functions for details
+
+#this converts the scaled effect sizes back to their original scales, based on the original
+#SDs of the response and covariate(s). it cannot presently account for the effects of
+#transformation (and i doubt it can in general). if the model can't converge on untransformed
+#data, our only option is to log transform and report the effect sizes as such. see section
+#1.2 for more.
 eff_rescaler <- function(all_cov, seas){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
@@ -594,7 +615,9 @@ rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 #grab top landscape vars that correlate with effect size, plot and get stats
 eff_best <- best_landvars(rescaled_effect_size, 6)
 
-#look inside function for details
+#look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
+#if you log transformed the response. (note that this may have been done by default in section 1.2
+#if the response was anything other than OXYGEN, TEMP, PRESS, or PH
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #mode='exploration' is for use within the model fitting loop
     #automatically selects the best correlated landscape vars
@@ -620,6 +643,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     } else {
         if(mode == 'indiv'){
+            par(mfrow=c(1,1))
             cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
             plot(land[,landcols[landvars==var]], rescaled_effect_size,
                  xlab=var, ylab='D resp / D cov',
@@ -629,7 +653,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     }
 }
 eff_regress_plotter('indiv', 'BFIWs')
-eff_regress_plotter('exploration',, 'ElevWs')
+eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
 
@@ -662,6 +686,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     } else {
         if(mode == 'indiv'){
+            par(mfrow=c(1,1))
             cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
             for(j in 1:mmm){
                 plot(land[,landcols[landvars==var]], loadings[,j],

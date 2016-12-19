@@ -20,10 +20,10 @@ setwd('Z:/stream_nuts_DFA/data/')
 load('chemPhys_data/yys_bymonth.rda')
 source('../00_tmb_uncor_Rmat.R')
 
-#install packages that aren't already installed
+#install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
 package_list <- c('MARSS','viridis','vegan', 'e1071',
-                  'foreach', 'doParallel', 'caret')
+                  'foreach', 'doParallel', 'caret', 'Matrix')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
 # if (!require("manipulateR")) {
@@ -34,7 +34,15 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # }
 # for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
-# if (is.null(dev.list()) == TRUE){windows(record=TRUE)} #open new plot window unless already open
+#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.2
+#it's fine to comment out this block as long as you look out for errors below
+if (is.null(dev.list()) == TRUE){
+    if(.Platform$OS.type == "windows"){
+        windows(record=TRUE, width=16, height=9)
+    } else {
+        x11(width=16, height=9)
+    }
+}
 
 # 1 - CHOICES ####
 
@@ -152,7 +160,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     obs_ts2 <- data
     lambdas <- NULL
 
-    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){ #should include oxygen, press, ph, temp. add if missing
+    if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){
         if(transform=='boxcox'){
             pre <- preProcess(as.matrix(obs_ts2), method=c('BoxCox'), fudge=0.01)
             obs_ts2 <- predict(pre, obs_ts2)
@@ -168,6 +176,10 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
         } else {
             if(transform=='power'){
                 obs_ts2 <- obs_ts2^exp
+            } else{
+                if(transform=='log'){
+                    obs_ts2 <- log(obs_ts2)
+                }
             }
         }
     }
