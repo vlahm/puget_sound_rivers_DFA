@@ -863,7 +863,7 @@ model_out <-
 #save data frame mentioned above
 write.csv(model_out, file=paste0("../model_objects/",
                                  'param_tuning_dataframe_',
-                                 startyr, '-', endyr, '_', y_choice, '3.csv'))
+                                 startyr, '-', endyr, '_', y_choice, '.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
 
