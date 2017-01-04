@@ -16,11 +16,11 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-# source('../00_tmb_uncor_Rmat.R')
+source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
-package_list <- c('MARSS','viridis','vegan', 'e1071',
+package_list <- c('MARSS','viridis','vegan', 'e1071', 'imputeTS',
                   'foreach', 'doParallel', 'caret', 'Matrix')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
@@ -48,7 +48,7 @@ if (is.null(dev.list()) == TRUE){
 y_choice = 'SUSSOL'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('precip')
+cov_choices = c('meantemp', 'precip')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -61,9 +61,12 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 1
+ntrends = 2
 #error matrix can either use the MARSS specifications or the TMB ones ('DE', 'DUE', 'UNC')
-obs_err_var_struc = 'diagonal and equal'
+obs_err_var_struc = 'UNC'
+#UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
+#the D matrix to be small, thus artificially diminishing the impact of the covariates.
+scale = FALSE
 
 # 1.1 - subset datasets according to choices ####
 
@@ -88,9 +91,12 @@ yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55) #na_thresh is the 
     #this subsection that may require modification (unless you want to experiment with region
     #3 vs. region 4 stuff
 
+# remove site K: strong groundwater influence prior to 2005
+yy = subset(yy, select=-K)
+
 # subset by region
 if(region == '3'){
-    yy <- yy[,colnames(yy) %in% c('date','K','J','A','B','ZA','Q','H','T','G','F','E','C','R')]
+    yy <- yy[,colnames(yy) %in% c('date','J','K','A','B','ZA','Q','H','T','G','F','E','C','R')]
 } else {
     if(region == '4'){
         yy <- yy[,colnames(yy) %in% c('date','Z','I','L','M','N','O','P','S','U','X','V','W')]
@@ -135,7 +141,28 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
-# 1.2 - (transform), center, scale ####
+# 1.2 - perform minimal interpolation for zero-data months (these will cause TMB to crash) ####
+library(imputeTS)
+
+#locate rows where there are no data
+emptyrows = unname(which(rowSums(obs_ts, na.rm=T)==0))
+
+#check out the yy dataframe around those points. You may have to impute each individually if
+#you dont want to fill in too many non-problematic NAs. 'start' is the month corresponding
+#to the first observation that will be incorporated in the imputation. This is how i interpolated
+#the three zero-data months for SUSSOL
+yts <- ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)
+obs_ts[70:189,c('J','L','M')] <- data.frame(round(na.seasplit(yts, 'interpolation')))
+
+#make sure it worked as expected
+# defpar <- par(mfrow=c(3,1))
+# for(i in 1:ncol(yts)){
+#     plot(ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)[,i], col='purple')
+#     lines(yts[,i], col='orange')
+# }
+# par(defpar)
+
+# 1.3 - (transform), center, (scale) ####
 library(caret); library(e1071)
 
 #visualize which responses should be transformed to normal
@@ -154,8 +181,8 @@ transformables <- function(){
 # Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP will be transformed)
 # backtransformation of boxcox and power does not work as intended, so our only current option
 # is to log transform and then report effect size as change in log(response) per change in covariate
-# also center and scale all responses and covariates (check inside function for details)
-transformer <- function(data, transform, exp=NA, plot=FALSE){
+# also center and (scale) all responses and covariates (check inside function for details)
+transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     #plot=T to see the effect of transforming
     #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
 
@@ -187,7 +214,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     }
 
     sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
-    scaled <- scale(obs_ts2)
+    scaled <- scale(obs_ts2, scale=scale)
     # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
 
     if(plot){
@@ -203,8 +230,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='log', exp=NA, plot=T) #will want to apply a
-    #transformation once we get that worked out
+trans <- transformer(obs_ts, transform='none', exp=NA, scale=scale, plot=F)
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T) #verify
@@ -348,8 +374,9 @@ cov_and_seas <- rbind(cc,covs_z)
 # # covariates=cov_and_seas)
 
 #TMB
-dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DUE', EstCovar=TRUE, Covars=cov_and_seas)
-
+dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
+              EstCovar=TRUE, Covars=cov_and_seas)
+# saveRDS(dfa, '../saved_structures/best_sussol_UNC2mFIXEDatpc19782015.rds')
 
 # #get seasonal effects (I think this chunk is fully obsolete, even for MARSS, but
     #i'll leave it here just in case)
@@ -360,18 +387,20 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DUE', EstCovar=TRUE, Covars=cov
 # colnames(seas) = month.abb
 # seas
 
-# 4.1 - or load desired model output ####
+# 4.1 - save model object ####
 
-#use this to save objects to a suitable destination
-# saveRDS(obs_ts, '../saved_structures/temp.rds')
+# saveRDS(dfa, '../saved_structures/dfa_out1.rds')
+
+# 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-dfa <- readRDS('../round_4_legit_temperature/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
-cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
-cc <- readRDS('../saved_structures/fixed.rds')
-trans <- readRDS('../saved_structures/temp_trans.rds')
-obs_ts <- readRDS('../saved_structures/temp.rds')
-covs <- readRDS('../saved_structures/at.rds')
+dfa <- readRDS('../round_5_tempTurbSuss/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_5_tempTurbSuss/model_objects_sussol/SUSSOL_UNC_2m_fixed_factors_atpc_1978-2015.rds')
+# cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
+# cc <- readRDS('../saved_structures/fixed.rds')
+# trans <- readRDS('../saved_structures/temp_trans.rds')
+# obs_ts <- readRDS('../saved_structures/temp.rds')
+# covs <- readRDS('../saved_structures/at.rds')
 
 # 5 - plot estimated state processes, loadings, and model fits (MARSS) ####
 
@@ -530,7 +559,7 @@ fits_plotter_TMB <- function(dfa_obj){
         points(dat_z[i,], col='blue', pch=1, cex=1)
     }
 }
-fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+# fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
@@ -540,7 +569,7 @@ get_R2 <- function(dfa_obj){
     }
     return(list(min=min(R2), median=median(R2), max=max(R2)))
 }
-get_R2(dfa)
+# get_R2(dfa)
 
 # 5.2 - landscape variable setup ####
 
@@ -557,7 +586,8 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
-              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
+              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
+              'WsAreaSqKm')
 landcols <- which(colnames(land) %in% landvars)
 
 #this identifies the landscape vars that correlate best with the response (used below)
@@ -586,7 +616,7 @@ best_landvars <- function(response, top){
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
 #data, our only option is to log transform and report the effect sizes as such. see section
 #1.2 for more.
-eff_rescaler <- function(all_cov, seas){
+eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
         z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
@@ -604,6 +634,7 @@ eff_rescaler <- function(all_cov, seas){
         sd_response <- trans$sds[i]
         for(j in 1:ncov){
             sd_covar <- sd(covs[,j], na.rm=TRUE)
+            if(!scaled) sd_response = 1
             rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
         }
     }
@@ -652,7 +683,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-eff_regress_plotter('indiv', 'BFIWs')
+# eff_regress_plotter('indiv', 'BFIWs')
 eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
@@ -698,16 +729,15 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
     }
 }
 load_regress_plotter(mm, 'indiv', 'WtDepWs')
+load_regress_plotter(mm, 'exploration', , 'WtDepWs')
 
 # 6 - example of evaluating best TEMP model ####
 
 # check out all covariate effect plots just to see if there's anything interesting
 #that was missed during fitting
-defpar <- par(mfrow=c(3,3))
 for(i in landvars){
     eff_regress_plotter('indiv', i, 'ElevWs') #covarite effect
 }
-par(defpar)
 
 #site K is a common leverage point and is unaffected by air temp. checking to see if it's
 #tidally influenced. in the meantime, removing it from analysis, checking top cors
@@ -792,3 +822,4 @@ for(i in 1:12){
 }
 par(defpar)
 # dev.off()
+

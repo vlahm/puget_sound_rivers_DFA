@@ -16,13 +16,14 @@ rm(list=ls()); cat('\014') #clear env and console
 # 0 - setup ####
 setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
-setwd('Z:/stream_nuts_DFA/data/')
+# setwd('Z:/stream_nuts_DFA/data/')
+setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
 load('chemPhys_data/yys_bymonth.rda')
 source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
-package_list <- c('MARSS','viridis','vegan', 'e1071',
+package_list <- c('MARSS','viridis','vegan', 'e1071', 'imputeTS',
                   'foreach', 'doParallel', 'caret', 'Matrix')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
@@ -34,7 +35,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # }
 # for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
-#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.2
+#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.3
 #it's fine to comment out this block as long as you look out for errors below
 if (is.null(dev.list()) == TRUE){
     if(.Platform$OS.type == "windows"){
@@ -64,6 +65,9 @@ endyr = 2015
 method = 'fixed_individual'
 ntrends = 1
 obs_err_var_struc = 'diagonal and equal'
+#UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
+#the D matrix to be small, thus artificially diminishing the impact of the covariates.
+scale = FALSE
 
 # 1.1 - subset datasets according to choices ####
 
@@ -88,9 +92,12 @@ yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55)#na_thresh is the o
 #this subsection that may require modification (unless you want to experiment with region
 #3 vs. region 4 stuff)
 
+# remove site K: strong groundwater influence prior to 2005
+yy = subset(yy, select=-K)
+
 # subset by region
 if(region == '3'){
-    yy <- yy[,colnames(yy) %in% c('date','K','J','A','B','ZA','Q','H','T','G','F','E','C','R')]
+    yy <- yy[,colnames(yy) %in% c('date','J','K','A','B','ZA','Q','H','T','G','F','E','C','R')]
 } else {
     if(region == '4'){
         yy <- yy[,colnames(yy) %in% c('date','Z','I','L','M','N','O','P','S','U','X','V','W')]
@@ -135,7 +142,27 @@ if(region=='3_4' & average_regions==FALSE){
                                covdict[names(covdict) %in% cov_choices]])
 }
 
-# 1.2 - (transform), center, scale ####
+# 1.2 - perform minimal interpolation for zero-data months (these will cause TMB to crash) ####
+library(imputeTS)
+
+#locate rows where there are no data
+emptyrows = unname(which(rowSums(obs_ts[,-1], na.rm=T)==0))
+
+#check out the yy dataframe around those points. You may have to impute each individually if
+#you dont want to fill in too many non-problematic NAs. 'start' is the month corresponding
+#to the first observation that will be incorporated in the imputation.
+yts <- ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)
+obs_ts[70:189,c('J','L','M')] <- data.frame(round(na.seasplit(yts, 'interpolation')))
+
+#make sure it worked as expected
+# defpar <- par(mfrow=c(3,1))
+# for(i in 1:ncol(yts)){
+#     plot(ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)[,i], col='purple')
+#     lines(yts[,i], col='orange')
+# }
+# par(defpar)
+
+# 1.3 - (transform), center, (scale) ####
 library(caret); library(e1071)
 
 #visualize which responses should be transformed to normal
@@ -155,7 +182,7 @@ transformables <- function(){
 # backtransformation of boxcox and power does not work as intended, so our only current option
 # is to log transform and then report effect size as change in log(response) per change in covariate
 # also center and scale all responses and covariates (check inside function for details)
-transformer <- function(data, transform, exp=NA, plot=FALSE){
+transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     #plot=T to see the effect of transforming
     #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
 
@@ -187,7 +214,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     }
 
     sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
-    scaled <- scale(obs_ts2)
+    scaled <- scale(obs_ts2, scale=scale)
     # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
 
     if(plot){
@@ -203,8 +230,7 @@ transformer <- function(data, transform, exp=NA, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=.1, plot=F) #will want to apply a
-#transformation once we get that worked out
+trans <- transformer(obs_ts, transform='none', exp=.1, scale=scale, plot=F)
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T) #verify
@@ -487,7 +513,8 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
-              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws')
+              'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
+              'WsAreaSqKm')
 landcols <- which(colnames(land) %in% landvars)
 
 #this identifies the landscape vars that correlate best with the response (used in the loop)
@@ -516,8 +543,8 @@ best_landvars <- function(response, top){
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
 #data, our only option is to log transform and report the effect sizes as such. see section
-#1.2 for more.
-eff_rescaler <- function(all_cov, seas){
+#1.3 for more.
+eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
         z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
@@ -535,6 +562,7 @@ eff_rescaler <- function(all_cov, seas){
         sd_response <- trans$sds[i]
         for(j in 1:ncov){
             sd_covar <- sd(covs[,j], na.rm=TRUE)
+            if(!scaled) sd_response = 1
             rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
         }
     }
@@ -547,7 +575,7 @@ eff_rescaler <- function(all_cov, seas){
 # eff_best <- best_landvars(rescaled_effect_size, 6)
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
-#if you log transformed the response. (note that this may have been done by default in section 1.2
+#if you log transformed the response. (note that this may have been done by default in section 1.3
 #if the response was anything other than OXYGEN, TEMP, PRESS, or PH
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){ #look inside function for details
     #mode='exploration' is for use within the model fitting loop
@@ -785,11 +813,11 @@ model_out <-
                     cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
                     if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                                      EstCovar=FALSE, max_iter=4000)
+                                      EstCovar=FALSE, max_iter=8000)
                     } else {
                         dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
                                       EstCovar=TRUE, Covars=cov_and_seas,
-                                      max_iter=4000)
+                                      max_iter=8000)
                     }
 
                     #save model object
@@ -845,7 +873,7 @@ model_out <-
                     data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
                                seasonality=names(seasonality)[sss],
                                nparams=length(dfa$Optimization$par),
-                               LogLik=dfa$Optimization$value, AIC=dfa$AIC,
+                               NLL=dfa$Optimization$value, AIC=dfa$AIC,
                                min_R2=R2[[1]], median_R2=R2[[2]], max_R2=R2[[3]],
                                counts_func=unname(dfa$Optimization$counts[1]),
                                counts_gradient=unname(dfa$Optimization$counts[2]),
@@ -866,91 +894,3 @@ write.csv(model_out, file=paste0("../model_objects/",
                                  startyr, '-', endyr, '_', y_choice, '.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
-
-# 6.2 - load desired model output ####
-
-#or use this to save objects to a suitable destination
-# saveRDS(obs_ts, '../saved_structures/temp.rds')
-
-#load best temp model and all associated mumbo jumbo
-dfa <- readRDS('../round_4_legit_temperature/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
-cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
-cc <- readRDS('../saved_structures/fixed.rds')
-trans <- readRDS('../saved_structures/temp_trans.rds')
-obs_ts <- readRDS('../saved_structures/temp.rds')
-covs <- readRDS('../saved_structures/at.rds')
-
-# 7 - evaluate best TEMP model ####
-
-# check out all covariate effect plots just to see if there's anything interesting
-#that was missed during fitting
-defpar <- par(mfrow=c(3,3))
-for(i in landvars){
-    eff_regress_plotter('indiv', i, 'ElevWs') #covarite effect
-}
-par(defpar)
-
-#site K is a common leverage point and is unaffected by air temp. checking to see if it's
-#tidally influenced. in the meantime, removing it from analysis, checking top cors
-K_ind <- which(land$siteCode=='K')
-land_sub <- land[-K_ind,landcols] #subset landscape variables by those used in the analysis, remove K
-best <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, rescaled_effect_size[-K_ind]))))))
-
-#plot best cors along with fitted models
-defpar <- par(mfrow=c(2,2))
-full_names <- c('mean water table depth', 'base flow index', '% ice 2011', 'mean elevation')
-pal <- colorRampPalette(c('blue', 'red'))
-cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-for(i in 1:4){
-    plot(land_sub[,names(best)[1:4][i]], rescaled_effect_size[-K_ind],
-         xlab=full_names[i], ylab=expression(paste(Delta,'water temp /', Delta, 'air temp')),
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(rescaled_effect_size[-K_ind] ~ land_sub[,names(best)[1:4][i]])
-    abline(mod, col='gray', lty=2)
-}
-par(defpar)
-
-#why is water table depth such a strong factor? what else is it correlated with?
-rev(tail(sort(abs(apply(land[,43:ncol(land)], 2, function(x) cor(land$WtDepWs, x)))), 15))
-    #it's just elevation (note the returned correlations have been abs()'d
-
-#okay, so stream temp follows the regional air trend depending primarily on
-    #base flow, glaciation, and elevation
-
-#check out all common trend plots to see if anything was missed during fitting
-defpar <- par(mfrow=c(3,3))
-for(i in landvars){
-    load_regress_plotter(ncol(dfa$Estimates$Z), 'indiv', i, 'ElevWs') #common trend
-}
-par(defpar)
-
-#get the best ones
-best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,1]))))))
-best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,2]))))))
-
-#plot best cors along with fitted models
-defpar <- par(mfrow=c(3,2))
-
-pal <- colorRampPalette(c('blue', 'red'))
-cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
-                'riparian urbanization (high)', 'riparian urbanization (low)')
-for(i in 1:6){
-    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[-K_ind,1],
-         xlab=full_names[i], ylab='loading on common trend 1',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(dfa$Estimates$Z[-K_ind,1] ~ land_sub[,names(best1)[i]])
-    # abline(mod, col='gray', lty=2)
-}
-
-full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
-                'riparian open space development', 'coastal alluvium')
-for(i in 1:6){
-    plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[-K_ind,2],
-         xlab=names(best2)[i], ylab='loading on common trend 2',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(dfa$Estimates$Z[-K_ind,2] ~ land_sub[,names(best2)[i]])
-    abline(mod, col='gray', lty=2)
-}
-
-par(defpar)
