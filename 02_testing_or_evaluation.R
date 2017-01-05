@@ -16,11 +16,11 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-source('../00_tmb_uncor_Rmat.R')
+# source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
-package_list <- c('MARSS','viridis','vegan', 'e1071', 'imputeTS',
+package_list <- c('MARSS','viridis','vegan', 'e1071', 'imputeTS', 'stringr',
                   'foreach', 'doParallel', 'caret', 'Matrix')
 new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstudio.com/")
@@ -32,7 +32,7 @@ if(length(new_packages)) install.packages(new_packages, repos="http://cran.rstud
 # }
 # for(i in c(package_list, 'manipulateR')) library(i, character.only=TRUE) #and load them all
 
-#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.2
+#open new plot window unless already open; this is here to prevent issues with plot window size in section 1.3
 #it's fine to comment out this block as long as you look out for errors below
 if (is.null(dev.list()) == TRUE){
     if(.Platform$OS.type == "windows"){
@@ -68,10 +68,12 @@ obs_err_var_struc = 'UNC'
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
 scale = FALSE
 
-# 1.1 - subset datasets according to choices ####
+# 1.1 - subset data according to choices, remove problematic columns ####
+library(stringr)
 
-#chem/phys data manipulations
+# selects the right data
 yy <- eval(parse(text=y_choice))
+
 # subset by year and exclude columns with >= na_thresh proportion of NAs
 subsetter <- function(yy, start, end, na_thresh=1){
 
@@ -87,12 +89,72 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55) #na_thresh is the only thing in
-    #this subsection that may require modification (unless you want to experiment with region
-    #3 vs. region 4 stuff
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55)
 
 # remove site K: strong groundwater influence prior to 2005
 yy = subset(yy, select=-K)
+
+# this shows the proportion of each column that is made up of the most frequent single value.
+# For some variables (e.g. SUSSOL) there are tons of identical readings due to low precision.
+# Any column with > 0.1 representation by a single value should be examined and modified/removed,
+# especially if the repeated value skews the distribution. this skew may remain even after log
+# transforming, which can prevent convergence and/or result in a wonky model.
+(max_repeats <- apply(yy[,-1], 2, function(i) table(i)[1]/length(i[!is.na(i)])))
+(screwy <-  max_repeats[which(max_repeats > 0.05)]) #I'm concerned about anything over 0.05
+
+#get lists of all integer and non-integer vals in the frame (useful for exploring the next two chunks
+# int = numeric()
+# non = numeric()
+# for(i in 1:nrow(yy)){
+#     for(j in 2:ncol(yy)){
+#         if(!is.na(yy[i,j])){
+#             hasdecimal <- grepl('\\.', yy[i,j])
+#             if(!hasdecimal) int = append(int, yy[i,j])
+#             if(hasdecimal) non = append(non, yy[i,j])
+#         }
+#     }
+# }
+
+#here I'm jittering those values (all 1s) so that they vary between 0.5 and 1.5
+#I don't want to drop them because they represent almost all of my upland sites.
+#Site L also contains six 0s, the only ones in the whole set, so I'm treating them as 1s.
+    #scratch that. Adding artificial precision to all values that don't already have a tens place
+    #to smooth out the steps in the density function.
+if(y_choice == 'SUSSOL'){
+    for(i in 1:nrow(yy)){
+        # for(j in names(screwy)){ #uncomment these and comment the ones with '#*' to jitter only the worst
+        for(j in 2:ncol(yy)){
+            # yy[i,j] <- round(ifelse(yy[i,j] %in% 0:1, runif(1, 0.5, 1.5), yy[i,j]), 1)
+            if(!(is.na(yy[i,j]))){                                              #*
+                if(yy[i,j] == 0) yy[i,j] <- 1                                   #*
+                hasdecimal <- grepl('\\.', yy[i,j])                             #*
+                if(!hasdecimal){                                                #*
+                    yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
+                }                                                               #*
+            }                                                                   #*
+        }
+    }
+}
+
+#TURB has a different problem. All months preceding June 1989 were measured at integer precision,
+#so the same repeated-value skew problem arises, though it isn't so obvious by looking at the
+#overall proportion of duplicates. Here I'm jittering everything pre-June-1989.
+    #scratch that. Adding artificial precision to all values that don't already have a tens place
+    #to smooth out the steps in the density function.
+if(y_choice == 'TURB'){
+    for(i in 1:nrow(yy)){
+        # for(i in 1:137){ #uncomment these and comment the ones with '#*' to jitter only pre-june-1989
+        for(j in 2:ncol(yy)){
+            # yy[i,j] <- ifelse(is.na(yy[i,j]), NA, round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1))
+            if(!(is.na(yy[i,j]))){                                              #*
+                hasdecimal <- grepl('\\.', yy[i,j])                             #*
+                if(!hasdecimal){                                                #*
+                    yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
+                }                                                               #*
+            }                                                                   #*
+        }
+    }
+}
 
 # subset by region
 if(region == '3'){
@@ -145,14 +207,16 @@ if(region=='3_4' & average_regions==FALSE){
 library(imputeTS)
 
 #locate rows where there are no data
-emptyrows = unname(which(rowSums(obs_ts, na.rm=T)==0))
+(emptyrows = unname(which(rowSums(obs_ts, na.rm=TRUE)==0)))
 
 #check out the yy dataframe around those points. You may have to impute each individually if
 #you dont want to fill in too many non-problematic NAs. 'start' is the month corresponding
 #to the first observation that will be incorporated in the imputation. This is how i interpolated
 #the three zero-data months for SUSSOL
-yts <- ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)
-obs_ts[70:189,c('J','L','M')] <- data.frame(round(na.seasplit(yts, 'interpolation')))
+if(y_choice %in% c('SUSSOL', 'TURB')){
+    yts <- ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)
+    obs_ts[70:189,c('J','L','M')] <- data.frame(round(na.seasplit(yts, 'interpolation')))
+}
 
 #make sure it worked as expected
 # defpar <- par(mfrow=c(3,1))
@@ -205,8 +269,9 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
         } else {
             if(transform=='power'){
                 obs_ts2 <- obs_ts2^exp
-            } else{
+            } else {
                 if(transform=='log'){
+                    obs_ts2[obs_ts2==0] <- 0.01 #zeros become -Inf when logged (only a few 0s in dataset)
                     obs_ts2 <- log(obs_ts2)
                 }
             }
@@ -220,7 +285,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     if(plot){
         par(mfrow=c(4,3))
         for(i in 1:ncol(data)){
-            plot(density(data[,i], na.rm=TRUE), main='raw data')
+            plot(density(data[,i], na.rm=TRUE), main=paste0('raw data (', colnames(data)[i], ')'))
             plot(density(scaled[,i], na.rm=TRUE), main='transformed')
             qqnorm(scaled[,i], main='qqnorm transformed')
             qqline(scaled[,i], col='red', lwd=2)
@@ -230,7 +295,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=NA, scale=scale, plot=F)
+trans <- transformer(obs_ts, transform='log', exp=NA, scale=scale, plot=T)
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T) #verify
@@ -394,8 +459,11 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-dfa <- readRDS('../round_5_tempTurbSuss/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_5_tempTurbSuss/model_objects_sussol/SUSSOL_UNC_2m_fixed_factors_atpc_1978-2015.rds')
+# dfa <- readRDS('../round_5_tempTurbSuss/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+dfa_suss <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_UNC_2m_fixed_factors_atpc_1978-2015.rds')
+dfa_temp <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+dfa_turb <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_UNC_1m_fixed_factors_atpc_1978-2015.rds')
+
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
 # trans <- readRDS('../saved_structures/temp_trans.rds')
@@ -556,7 +624,7 @@ fits_plotter_TMB <- function(dfa_obj){
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
              ylab=rownames(dat_z)[i], xlab='day_index')
         lines(hiddenTrendOnly_fit[i,], col='green', lwd=2)
-        points(dat_z[i,], col='blue', pch=1, cex=1)
+        points(dat_z[i,], col='blue', pch=20, cex=1)
     }
 }
 # fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
@@ -580,7 +648,7 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
-#isolate landscape variables of interest
+#choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
@@ -615,7 +683,7 @@ best_landvars <- function(response, top){
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
 #data, our only option is to log transform and report the effect sizes as such. see section
-#1.2 for more.
+#1.3 for more.
 eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
@@ -647,7 +715,7 @@ rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 eff_best <- best_landvars(rescaled_effect_size, 6)
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
-#if you log transformed the response. (note that this may have been done by default in section 1.2
+#if you log transformed the response. (note that this may have been done by default in section 1.3
 #if the response was anything other than OXYGEN, TEMP, PRESS, or PH
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #mode='exploration' is for use within the model fitting loop

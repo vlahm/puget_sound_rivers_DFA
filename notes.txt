@@ -1,4 +1,4 @@
-next project:
+﻿next project:
 use Dynamic Factor Analysis (related to MARSS, or Dynamic linear models) to predict nutrient concentrations (nitrate, phosphate, N:P ratio) 
 based on monthly average air T, monthly average precip, annual snowpack?
 
@@ -26,10 +26,13 @@ May, or may not, doesn’t really matter for your analysis.  The goal is simply 
 2) Is there a link to climate?  If so, are the climate-linked systems similar in their watershed morphology, glaciers, vegetation, etc…
 3) Does the non-climate trends link to thinks like land use, watershed type, etc….
 
-change response var,
-###DO NOT comment out first call to tmb script
-set transformation to log + plot
-add 'WsAreaSqKm' as a landscape var
-redirect loop output and dataframe output to 'model_outputs_var' and 'model_objects_var'
-change working directory to:
-setwd"C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
+Things to remember for setting up the model fitting loop:
+change response var
+#DO NOT comment out first call to tmb script
+#set transformation type
+#redirect loop output and dataframe output to model_outputs_<var> and model_objects_<var>
+#change working directory to: setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
+#include or exclude the imputation bit
+
+#changed the transformer function on home version
+#changed section 1.1 a lot
