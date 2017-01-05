@@ -36,3 +36,32 @@ change response var
 
 #changed the transformer function on home version
 #changed section 1.1 a lot
+
+
+
+
+set up meeting with jessica lundquist
+
+resend draft email to gordon
+develop 4-6 figures for the dfa paper. send to gordon. 
+
+write up methods (long-form even if we go for pnas)
+then write up results
+see jessica before writing intro (before determining the "pitch")
+the pitch is either (if jessica says there's something new here):
+	1. climate change affects streams and rivers
+	2. not all rivers are the same. some are largely rain/snow/both dominated
+	3. theoretical models show that... (might get a clue to what gordon was thinking here if i look at the presentation he sent a while back)
+	4. ours is the first (that we know of) empirical demonstration of this
+or if there's not:
+	more hand-wavey
+in either case:
+	the sussol/turb stuff is not really necessary, and we can just add a few sentences about it.
+
+set up committee meeting for early spring quarter. 
+have full draft ready by then, and full presentation (doesnt have to be polished. can be simply: here's chap 1; here's chap 2)
+meeting can be about an hour
+get all my paperwork squared away by then. get signatures at the meeting
+	may need them to sign off and say "yeah, you're good to finish by this date"
+
+set up thesis defense date. find out when daniel is leaving (probably at the end of may)

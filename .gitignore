@@ -4,7 +4,6 @@
 *.pdf
 /data/climate_data/by_year/raw
 /data/climate_data/by_month/raw
-*.pptx
 *.cpp
 *.o
 *.dll
@@ -13,4 +12,6 @@
 /data/climate_data/by_year/obsolete
 *.png
 *.so
-/round*
+/round_[1-5]*
+/round_7*
+/round_6_TeTuSu_UNSCALED/model_objects*
