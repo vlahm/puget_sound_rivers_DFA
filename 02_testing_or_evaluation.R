@@ -45,10 +45,10 @@ if (is.null(dev.list()) == TRUE){
 # 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
-y_choice = 'TURB'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('precip')
+cov_choices = c('meantemp')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4'
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -295,7 +295,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas)
     return(out)
 }
-trans <- transformer(obs_ts, transform='log', exp=NA, scale=scale, plot=T)
+trans <- transformer(obs_ts, transform='none', exp=NA, scale=scale, plot=F)
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T) #verify
@@ -461,7 +461,8 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 #load best temp model and all associated mumbo jumbo
 # dfa <- readRDS('../round_5_tempTurbSuss/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
 dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
-dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_DUE_2m_fixed_factors_at_1978-2015.rds')
 dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_factors_pc_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
@@ -627,7 +628,7 @@ fits_plotter_TMB <- function(dfa_obj){
         points(dat_z[i,], col='blue', pch=20, cex=1)
     }
 }
-# fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
@@ -656,6 +657,13 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
               'WsAreaSqKm')
+# landvars <- c('ElevWs','PctImp2006WsRp100',
+#               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
+#               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
+#               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
+#               'OmWs',
+#               'PermWs','PopDen2010Ws',
+#               'WsAreaSqKm')
 landcols <- which(colnames(land) %in% landvars)
 
 #this identifies the landscape vars that correlate best with the response (used below)
@@ -676,7 +684,7 @@ best_landvars <- function(response, top){
 # nstream <- ncol(obs_ts)
 # ncov <- ncol(covs)
 
-# 5.3 - effect size regressions (these do not account for boxcox/power transformations) ####
+# 5.3 - effect size regressions (not set up for boxcox/power transformations) ####
 # look inside functions for details
 
 #this converts the scaled effect sizes back to their original scales, based on the original
@@ -716,7 +724,10 @@ eff_best <- best_landvars(rescaled_effect_size, 6)
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
 #if you log transformed the response. (note that this may have been done by default in section 1.3
-#if the response was anything other than OXYGEN, TEMP, PRESS, or PH
+#if the response was anything other than OXYGEN, TEMP, PRESS, or PH.
+#I have not yet built this function to handle multi-covariate models.
+#also note that if you used a log transform above, the y-axis here should be
+#'log(change_resp)/change_cov'
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #mode='exploration' is for use within the model fitting loop
     #automatically selects the best correlated landscape vars
@@ -734,24 +745,30 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         for(j in 1:ncol(eff_best[[1]])){
             for(i in 1:top){
                 cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+                mod <- lm(rescaled_effect_size[,j] ~ land[,land_ind[i,j]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
                 plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
                      xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
-                     main=paste('covar =', cov_choices[j]),
+                     main=paste('covar =', cov_choices[j], '- slope p = ', p),
                      col=cols, pch=colnames(trans$trans))
+                abline(mod)
             }
         }
     } else {
         if(mode == 'indiv'){
             par(mfrow=c(1,1))
             cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+            mod <- lm(rescaled_effect_size ~ land[,landcols[landvars==var]])
+            p <- round(summary(mod)$coefficients[2,4], 2)
             plot(land[,landcols[landvars==var]], rescaled_effect_size,
                  xlab=var, ylab='D resp / D cov',
-                 main=paste('covar =', cov_choices),
+                 main=paste('covar =', cov_choices, '- slope p = ', p),
                  col=cols, pch=colnames(trans$trans))
+            abline(mod)
         }
     }
 }
-# eff_regress_plotter('indiv', 'BFIWs')
+# eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
 eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
@@ -778,9 +795,13 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         for(j in 1:mmm){
             for(i in 1:top){
                 cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+                mod <- lm(loadings[,j] ~ land[,land_ind[i,j]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
                 plot(land[,land_ind[i,j]], loadings[,j],
                      xlab=colnames(land)[land_ind[i,j]], ylab='factor loading on hidden trend',
-                     main=paste('hidden trend', j), col=cols, pch=colnames(trans$trans))
+                     main=paste('hidden trend', j, 'slope p =', p),
+                     col=cols, pch=colnames(trans$trans))
+                abline(mod)
             }
         }
     } else {
@@ -788,48 +809,52 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
             par(mfrow=c(1,1))
             cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
             for(j in 1:mmm){
+                mod <- lm(loadings[,j] ~ land[,landcols[landvars==var]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
                 plot(land[,landcols[landvars==var]], loadings[,j],
                      xlab=var, ylab='factor loading on hidden trend',
-                     main=paste('hidden trend', j),
+                     main=paste('hidden trend', j, 'slope p =', p),
                      col=cols, pch=colnames(trans$trans))
+                abline(mod)
             }
         }
     }
 }
 load_regress_plotter(mm, 'indiv', 'WtDepWs')
-load_regress_plotter(mm, 'exploration', , 'WtDepWs')
+load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model ####
 
 # check out all covariate effect plots just to see if there's anything interesting
 #that was missed during fitting
 for(i in landvars){
-    eff_regress_plotter('indiv', i, 'ElevWs') #covarite effect
+    eff_regress_plotter('indiv', i, 'ElevWs') #covariate effect
 }
 
 #site K is a common leverage point and is unaffected by air temp. checking to see if it's
-#tidally influenced. in the meantime, removing it from analysis, checking top cors
-K_ind <- which(land$siteCode=='K')
-land_sub <- land[-K_ind,landcols] #subset landscape variables by those used in the analysis, remove K
-best <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, rescaled_effect_size[-K_ind]))))))
+#tidally influenced. in the meantime, removing it from analysis, checking top cors.
+#UPDATE: K has been removed from the analysis. See section 1.1
+# K_ind <- which(land$siteCode=='K')
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis, remove K
+best <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, rescaled_effect_size))))))
 
 #plot best cors along with fitted models
 defpar <- par(mfrow=c(2,2))
-full_names <- c('mean water table depth', 'base flow index', '% ice 2011', 'mean elevation')
+# full_names <- c('mean water table depth', 'base flow index', '% ice 2011', 'mean elevation')
 pal <- colorRampPalette(c('blue', 'red'))
 cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-for(i in 1:4){
-    plot(land_sub[,names(best)[1:4][i]], rescaled_effect_size[-K_ind],
-         xlab=full_names[i], ylab=expression(paste(Delta,'water temp /', Delta, 'air temp')),
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(rescaled_effect_size[-K_ind] ~ land_sub[,names(best)[1:4][i]])
+for(i in 4:4){
+    plot(land_sub[,names(best)[1:4][i]], rescaled_effect_size,
+         xlab=names(best)[i], ylab=expression(paste(Delta,'water temp /', Delta, 'air temp')),
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
+    mod <- lm(rescaled_effect_size ~ land_sub[,names(best)[1:4][i]])
     abline(mod, col='gray', lty=2)
 }
 par(defpar)
 
 #why is water table depth such a strong factor? what else is it correlated with?
 rev(tail(sort(abs(apply(land[,43:ncol(land)], 2, function(x) cor(land$WtDepWs, x)))), 15))
-#it's just elevation (note the returned correlations have been abs()'d
+#it's just elevation (note the returned correlations have been abs()'d)
 
 #okay, so stream temp follows the regional air trend depending primarily on
 #base flow, glaciation, and elevation
@@ -842,34 +867,42 @@ for(i in landvars){
 par(defpar)
 
 #get the best ones
-best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,1]))))))
-best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[-K_ind,2]))))))
+best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,1]))))))
+best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,2]))))))
+# best3 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,3]))))))
 
 #plot best cors along with fitted models
 defpar <- par(mfrow=c(3,2))
 
 pal <- colorRampPalette(c('blue', 'red'))
 cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
-                'riparian urbanization (high)', 'riparian urbanization (low)')
+# full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
+#                 'riparian urbanization (high)', 'riparian urbanization (low)')
 for(i in 1:6){
-    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[-K_ind,1],
-         xlab=full_names[i], ylab='loading on common trend 1',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(dfa$Estimates$Z[-K_ind,1] ~ land_sub[,names(best1)[i]])
-    # abline(mod, col='gray', lty=2)
-}
-
-full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
-                'riparian open space development', 'coastal alluvium')
-for(i in 1:6){
-    plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[-K_ind,2],
-         xlab=names(best2)[i], ylab='loading on common trend 2',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans)[-K_ind])
-    mod <- lm(dfa$Estimates$Z[-K_ind,2] ~ land_sub[,names(best2)[i]])
+    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
+         xlab=names(best1)[i], ylab='loading on common trend 1',
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
+    mod <- lm(dfa$Estimates$Z[,1] ~ land_sub[,names(best1)[i]])
     abline(mod, col='gray', lty=2)
 }
 
+# full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
+#                 'riparian open space development', 'coastal alluvium')
+for(i in 1:6){
+    plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,2],
+         xlab=names(best2)[i], ylab='loading on common trend 2',
+         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
+    mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best2)[i]])
+    abline(mod, col='gray', lty=2)
+}
+
+# for(i in 1:6){
+#     plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,3],
+#          xlab=names(best2)[i], ylab='loading on common trend 3',
+#          main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
+#     mod <- lm(dfa$Estimates$Z[,3] ~ land_sub[,names(best2)[i]])
+#     abline(mod, col='gray', lty=2)
+# }
 par(defpar)
 
 #use this code to compare monthly effects
@@ -900,7 +933,7 @@ for(i in landvars){
 }
 
 #site K is a common leverage point and is unaffected by air temp. checking to see if it's
-#tidally influenced. in the meantime, removing it from analysis, checking top cors
+#tidally influenced. in the meantime, removing it from analysis, checking top cors.
 #UPDATE: K has been removed from the analysis. See section 1.1
 # K_ind <- which(land$siteCode=='K')
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis

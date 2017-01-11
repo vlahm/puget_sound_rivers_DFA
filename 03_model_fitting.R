@@ -599,7 +599,7 @@ best_landvars <- function(response, top){
 # nstream <- ncol(obs_ts)
 # ncov <- ncol(covs)
 
-# 5.3 - effect size regressions (these do not account for boxcox/power transformations) ####
+# 5.3 - effect size regressions (not set up for boxcox/power transformations) ####
 # these functions are used later within the loop
 # look inside functions for details
 
@@ -640,7 +640,10 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
 #if you log transformed the response. (note that this may have been done by default in section 1.3
-#if the response was anything other than OXYGEN, TEMP, PRESS, or PH
+#if the response was anything other than OXYGEN, TEMP, PRESS, or PH.
+#I have not yet built this function to handle multi-covariate models.
+#also note that if you used a log transform above, the y-axis here should be
+#'log(change_resp)/change_cov'
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #mode='exploration' is for use within the model fitting loop
         #automatically selects the best correlated landscape vars
