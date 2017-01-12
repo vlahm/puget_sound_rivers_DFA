@@ -176,14 +176,3 @@ save(COND, FC, NH3_N, NO2_NO3, OP_DIS, OXYGEN, PH, PRESS, SUSSOL, TEMP, TP_P, TU
 # save(climate, list='climate', file="C:/Users/Mike/Desktop/Grad/Projects/Thesis/stream_nuts_DFA/data/climate.rda")
 
 
-
-# 7 add landscape chars####
-
-# land use:
-#     http://catalog.data.gov/dataset/u-s-conterminous-wall-to-wall-anthropogenic-land-use-trends-nwalt-1974-2012
-# watershed area
-# average elevation
-# elevation range (average river slope)
-# proximity
-# %glaciation
-
