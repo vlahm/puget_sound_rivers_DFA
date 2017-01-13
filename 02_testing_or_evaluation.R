@@ -17,7 +17,7 @@ setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
 # source('../00_tmb_uncor_Rmat.R')
-
+i
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
 package_list <- c('MARSS','viridis','vegan', 'e1071', 'imputeTS', 'stringr',
