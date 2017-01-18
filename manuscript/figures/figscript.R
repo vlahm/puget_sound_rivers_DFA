@@ -7,14 +7,23 @@ rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
 
-setwd('C:/Users/Mike/git/stream_nuts_DFA/manuscript/')
-setwd('~/git/puget_sound_rivers_DFA/manuscript')
-setwd('Z:/stream_nuts_DFA/manuscript/')
+setwd('C:/Users/Mike/git/stream_nuts_DFA/manuscript/figures')
+setwd('~/git/puget_sound_rivers_DFA/manuscript/figures')
 
 library(viridis)
+library(plotrix)
 
-load('Renv_image2.rda') #load all objects generated during the creation and postprocessing
-                       #of the best model
+print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
+    tmp <- par("usr")
+    text.x <- tmp[1]+xy[1]*diff(tmp[1:2])   #x position, diff=difference
+    text.y <- tmp[3]+xy[2]*diff(tmp[3:4])   #y position
+    text(x=text.x, y=text.y, labels=label, ...)
+}
+
+#load all objects generated during the creation and postprocessing of the best model
+load('Renv_image2.rda')
+
+#add percent watershed ice cover data from 2006, average with those from 2011
 ice2006 <- read.csv('PctIce2006Ws.csv', stringsAsFactors=FALSE)
 land <- merge(land,ice2006[,2:3], by.x='siteCode', by.y='site')
 land$Ice06_11 <- rowMeans(cbind(land$PctIce2006Ws, land$PctIce2011Ws))
@@ -27,93 +36,73 @@ if (is.null(dev.list()) == TRUE){
         x11(width=16, height=9)
     }
 }
-land$siteCode
 
 # 1 - effect size regression ####
 
-# land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
-
-pal <- colorRampPalette(c('blue', 'red'))
+pdf('effect_size_reg.pdf', width=7, height=6)
+defpar <- par(mar=c(5,5,2,5))
+pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
 plot(land$Ice06_11, rescaled_effect_size,
-     xlab='Watershed % ', main='', col=cols,
-     ylab=expression(paste(Delta, ' stream temp (', degree, 'C) / ',
-                            Delta, ' air temp (', degree, 'C)')),
-     pch=colnames(trans$trans))
-mod <- lm(rescaled_effect_size ~ land_sub[,names(best)[1:4][i]])
-abline(mod, col='gray', lty=2)
-
-#why is water table depth such a strong factor? what else is it correlated with?
-rev(tail(sort(abs(apply(land[,43:ncol(land)], 2, function(x) cor(land$WtDepWs, x)))), 15))
-#it's just elevation (note the returned correlations have been abs()'d)
-
-#okay, so stream temp follows the regional air trend depending primarily on
-#base flow, glaciation, and elevation
-
-#check out all common trend plots to see if anything was missed during fitting
-defpar <- par(mfrow=c(3,3))
-for(i in landvars){
-    load_regress_plotter(ncol(dfa$Estimates$Z), 'indiv', i, 'ElevWs') #common trend
-}
+     xlab='Watershed % ice cover', main='', bg=cols, col='black',
+     ylab=expression(paste(Delta, ' stream', degree, 'C ',
+                            Delta, ' air', degree, 'C'^-1)),
+     pch=21, cex=1.5, cex.lab=1.3, cex.axis=1, font=2, lwd=2)
+mod <- lm(rescaled_effect_size ~ land$Ice06_11)
+abline(mod, col='gray', lty=2, lwd=3)
+color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+             rect.col=colorRampPalette(c('brown', 'white'))(10),
+             align='r', gradient='y')
+text(3.39, 0.56, labels='Mean watershed')
+text(3.52, 0.54, labels='elevation (m)')
 par(defpar)
+dev.off()
 
-#get the best ones
-best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,1]))))))
-best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,2]))))))
-# best3 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,3]))))))
+# 2 - effect size regression ####
 
-#plot best cors along with fitted models
-defpar <- par(mfrow=c(3,2))
-
-pal <- colorRampPalette(c('blue', 'red'))
-cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-# full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
-#                 'riparian urbanization (high)', 'riparian urbanization (low)')
-for(i in 1:6){
-    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
-         xlab=names(best1)[i], ylab='loading on common trend 1',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
-    mod <- lm(dfa$Estimates$Z[,1] ~ land_sub[,names(best1)[i]])
-    abline(mod, col='gray', lty=2)
-}
-
-# full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
-#                 'riparian open space development', 'coastal alluvium')
-for(i in 1:6){
-    plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,2],
-         xlab=names(best2)[i], ylab='loading on common trend 2',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
-    mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best2)[i]])
-    abline(mod, col='gray', lty=2)
-}
-
-# for(i in 1:6){
-#     plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,3],
-#          xlab=names(best2)[i], ylab='loading on common trend 3',
-#          main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
-#     mod <- lm(dfa$Estimates$Z[,3] ~ land_sub[,names(best2)[i]])
-#     abline(mod, col='gray', lty=2)
-# }
+pdf('loadings_reg.pdf', width=7, height=6)
+defpar <- par(mar=c(5,5,2,5))
+pal <- colorRampPalette(c('brown', 'white'))
+cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+plot(land$Ice06_11, dfa$Estimates$Z[,1],
+     xlab='Watershed % ice cover', ylab='Trend 1 loadings',
+     main='', col='black', bg=cols,
+     pch=21, cex=1.5, cex.lab=1.3, cex.axis=1, font=2, lwd=2)
+mod <- lm(dfa$Estimates$Z[,1] ~ land$Ice06_11)
+abline(mod, col='gray', lty=2, lwd=3)
+color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
+             rect.col=colorRampPalette(c('brown', 'white'))(10),
+             align='r', gradient='y')
+text(3.39, 1.61, labels='Mean watershed')
+text(3.52, 1.53, labels='elevation (m)')
 par(defpar)
+dev.off()
 
-#use this code to compare monthly effects
-# pdf("C:/Users/Mike/Desktop/with_sitenames.pdf", width=10)
+# 3 - effect size by month ####
+
+pdf('loadings_reg.pdf', width=7, height=6)
 rescaled_seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
 defpar <- par(mfrow=c(3,2))
-pal <- colorRampPalette(c('blue', 'green'))
+pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$BFIWs, breaks=10))]
 for(i in 1:12){
-    mod <- lm(rescaled_seas[,i] ~ land$Ice06_11, weights=land$watershedA)
+    mod <- lm(rescaled_seas[,i] ~ land$Ice06_11)
     slope <- round(unname(mod$coefficients[2]), 2)
-    plot(land$Ice06_11, rescaled_seas[,i], main=paste(month.abb[i], 'slope =', slope),
-         ylab=paste(month.abb[i], 'change in water temp'), xlab='% ice',
-         ylim=c(min(rescaled_seas), max(rescaled_seas)), col=cols, cex=1,
-         pch=colnames(trans$trans))
-    abline(mod, col='gray', lty=2, lwd=2)
-    abline(h=0, col='red')
+    plot(land$Ice06_11, rescaled_seas[,i], main='',
+         ylab=paste(month.abb[i]), xlab='',
+         ylim=c(min(rescaled_seas), max(rescaled_seas)), col='black',
+         pch=21, cex=1.5, cex.lab=1.3, cex.axis=1, font=2, bg=cols)
+    abline(mod, col='gray', lty=2, lwd=2.5)
+    abline(h=0, col='blue', lwd=1, lty=1)
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    print.letter(label=paste0('m = ', slope, sig), xy=c(0.72,0.9), cex=1.2, font=1, col="black", pos=4)
 }
 par(defpar)
-# dev.off()
+dev.off()
+
+, 'change in water temp' (really the effect size though, right?
+                          make m italic?
