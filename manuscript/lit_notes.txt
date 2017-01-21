@@ -1,0 +1,62 @@
+what we know:
+
+#### (Iris Stewart-Frey) ####
+https://www.scu.edu/cas/ess/faculty-and-staff/iris-stewart-frey/ 
+
+(Stewart et al., 2005)
+streamflow timing for snowmelt dominated streams has changed toward an earlier spring over the past several decades; western US
+
+(Fritze et al., 2011)
+a set of highly vulnerable basins has experienced runoff regime shifts such that previously snowmelt dominated watersheds are now mainly rain dominated
+	(dozens throughout western US)
+	
+Stream temperatures are affected by many factors, such as the heat exchange at the air/water interface, 
+	and the temperature of the contributing hydrologic component to a stream reach
+
+(Ficklin et al., 2012b, JAWRA)
+hydrologic contributions to mountainous subbasins in California are likely to experience a shift towards earlier in the year. 
+	Spring and Summer flows are likely to decrease substantially (Fig. 4), and the ratio of snowmelt to rain runoff is expected to decrease 
+
+#### stewart etal. 2005 ####
+
+Spring streamflow during the last five decades has shifted so that the major April–July streamflow peak now arrives one or more weeks earlier,
+resulting in declining fractions of spring and early summer river discharge; western us
+	little change in total annual discharge though
+	
+the average annual temperature have increased 1°–2°C since the 1940s over the (north) western part of North America, especially during the
+winter and spring seasons (Karl et al. 1993; Lettenmaier et al. 1994; Dettinger and Cayan 1995; Vincent et al. 1999)
+
+Winter and spring warming causes an increased fraction of the precipitation to come as rain, resulting in a reduced snowpack and an even earlier melt.
+
+Evidence for the shift includes earlier snowmelt onsets and advances in the center of mass of the annual hydrograph, which
+is called center timing (CT). Consistent with these advances are decreased spring and early summer (AMJJ) 
+fractional flows and increasing fractions of annual flow occurring earlier in the water year. The months with the
+largest positive fractional flow trends in the western contiguous United States are March and April, while those in Canada and Alaska are April and May.
+
+#### barnett et al 2005 ####
+
+It is generally thought that increasing greenhouse gases will cause the global hydrological cycle to intensify1, with benefits for water
+availability1,6, although a possible exacerbation of hydrological extremes may counteract the benefits to some degree. However, in
+regions where the land surface hydrology is dominated by winter snow accumulation and spring melt, the performance of water
+management systems such as reservoirs, designed on the basis of the timing of runoff, is much more strongly related to temperature
+than to precipitation changes.
+
+despite model uncertainty, there is no indication for a seasonal shift of precipitation to the summer and autumn
+
+Studies in various regions of the globe indicate that the stream-flow regime in snowmelt-dominated river basins is most
+sensitive to wintertime increases in temperature12,13
+
+In this review, we suggest that the simplest of changes associated with global warming (a modest increase in near-surface air temperature)
+will be responsible for alterations of the hydrological cycle in snowmelt-dominated regions via seasonal shifts in stream-flow.
+Without adequate water storage capacity, these changes will lead to regional water shortages.
+
+#### Lisi et al 2015 ####
+In this study, surface snowpack typically melts by mid-July; thus, advective fluxes from upstream snowmelt may rapidly diminish as summer 
+
+Steeper watersheds that retain more snow had negative sensitivities to air temperature during early summer (cooling with warmer air) and positive sensitivities in late summer
+
+Regional to local scale analyses reveal that the geomorphic characteristics of watersheds (e.g., elevation, slope, area, lakes, dams, and glaciers) 
+often control water temperature relationships to air temperature [e.g., Kelleher et al., 2012; Fellman et al., 2014; Luce et al., 2014]
+
+#### Arismendi, I., M. Safeeq, J. B. Dunham, and S. L. Johnson (2014), Can air temperatures be used to project influences of climate change on stream temperature, Environ. Res. Lett., 9,1–12
+

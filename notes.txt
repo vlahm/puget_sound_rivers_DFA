@@ -67,3 +67,49 @@ get all my paperwork squared away by then. get signatures at the meeting
 set up thesis defense date. find out when daniel is leaving (probably at the end of may)
 
 project the map so it doesnt look weird
+
+
+#########--------------###########
+after lundquist meeting
+
+NOVELTIES: (this is actually pre-lundquist and unverified)
+
+whereas lisi et al found most snow to melt by early summer in their boreal streams, we see that buffering capacity is at its maximum in Jul and Aug, then the 
+"catch-up" period begins and goes through october.
+
+there also seems to be an "anti-buffering" effect from nov through apr
+
+we know snowpack will lessen, snowmelt timing will shift, ratio of snowmelt to rain runoff will decrease,
+	but now we can show that the buffering capacity of snowpack will shift, so that peak warming will occur
+	earlier for streams that are currently snow-dominated.
+	
+	
+TODO:
+
+##figure##
+color points by zone? (rain, rain-on-snow, snow)
+group together as plots a,b,c, so that i don't have to show the color.legend three times.
+will have to specify in the legend that % watershed ice cover is averaged across 2006, 2011, and taken from x data source
+say the significant slopes are at 0.1 level
+in the by-month plot, change y axis to just "change in water temp"
+plots 1 and 2: slopes, r2s on the plot?
+combine 1 and 2?
+mention that common trend 2 wasnt significant. absorbed error	
+figure out what the y axis represents
+consider putting elevation on the x axis and coloring by something else
+
+##literature##
+beechie+biehl 2008 biological conservation (gordon's suggestion)
+Yearsly and Nijssen are the modelers who are most likely to have done our thing already - backed up the models with data
+dan moore does this stuff too
+chris franz - aug-sept should be the most important months for buffering??
+iris stewart - identified the center of mass shift in the hydrograph
+check CIG 2009 (jessica's email) and probably other CIG reports too, to see if this has already been done
+
+##other##
+ave watershed slope should be included as a landscape variable?
+instead of elevation, use percent of watershed area above 3000 feet, e.g.
+compose monthly at best, yearly at worst time series of snowfall (or snow depth by year) and discharge
+	nrcs snowtel data
+	CIG reports may also link to snow data
+	here's what i'll use for snow: snowpack last month-snowpath this month (but only accept positive differences - the rest are assigned 0)

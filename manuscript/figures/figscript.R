@@ -5,7 +5,81 @@
 
 rm(list=ls()); cat('\014') #clear env and console
 
-# 0 - setup ####
+# 0 - setup part 1 ####
+# load("C:/Users/Mike/git/stream_nuts_DFA/data/chemPhys_data/yys_byyear_mean.rda")
+# meantemp <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_year/obsolete/meantemp3 .csv")
+#
+# library(viridis)
+#
+# #open plot window if not already open
+# if (is.null(dev.list()) == TRUE){
+#     if(.Platform$OS.type == "windows"){
+#         windows(record=TRUE, width=16, height=9)
+#     } else {
+#         x11(width=16, height=9)
+#     }
+# }
+#
+# #prepare by-year temp data
+# y_choice <- 'TEMP'
+# cov_choices <- c('meantemp')
+# startyr <- 1978
+# endyr <- 2014
+#
+# yy <- eval(parse(text=y_choice))
+#
+# # subset by year and exclude columns with >= na_thresh proportion of NAs
+# subsetter <- function(yy, start, end, na_thresh=1){
+#
+#     #extract year subset
+#     years <- as.numeric(format(yy$date, '%Y'))
+#     yy <- yy[years >= start & years <= end, ]
+#
+#     #extract subset of columns with <= na_thresh proportion of NAs
+#     col_na_prop <- apply(yy, 2, function(x) sum(is.na(x)) / length(x))
+#     yy <- yy[,col_na_prop <= na_thresh]
+#
+#     rownames(yy) <- 1:nrow(yy)
+#
+#     return(yy)
+# }
+# yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55)
+#
+# years <- as.numeric(format(yy[,1], '%Y')) #could use as dates if necessary, as integer years for now
+# obs.ts <- yy[,-1]
+#
+# covs <- climate[climate$Date >= startyr & climate$Date <= endyr, colnames(climate) %in% cov_choices]
+#
+# # 2 - plot response variable time series
+# par(mar=c(4,4,4,4))
+# colors1 <- viridis(ncol(yy)-1, end=1)
+# ymin <- min(yy[,-1], na.rm=TRUE)
+# ymax <- max(yy[,-1], na.rm=TRUE)
+#
+# plot(years, yy[,2], type='l', col=colors1[1], ylim=c(ymin,ymax), xlab='Time',
+#      # main=paste(y_choice),
+#      ylab='TEMP', xaxt='n', xaxs='i', yaxs='i')
+# for(i in 3:ncol(yy)){
+#     lines(years, yy[,i], type='l', col=colors1[i-1])
+# }
+# axis(side=1, at=years[c(T,F)], labels=years[c(T,F)])
+#
+# #overlay time series average
+# xxx <- as.numeric(format(rep(yy[,1], ncol(yy)-1), '%Y'))
+# yyy <- as.vector(as.matrix(yy[,-1]))
+# xxx <- xxx[which(!is.na(yyy))]
+# yyy <- yyy[!is.na(yyy)]
+# agg <- aggregate(yyy, by=list(xxx), FUN=mean)
+# # loess_out <- loess(agg$x ~ agg$Group.1, span=.2, degree=2)
+# # lines(agg$Group.1, loess_out$fit, col='blue', lwd=3)
+#
+# #overlay air temp trend
+# lines(agg$Group.1, meantemp$at[which(as.numeric(substr(meantemp$date,1,4)) %in% agg$Group.1)],
+#       col='red', lwd=3)
+# legend(x='bottomleft', legend=c('Air temp'), lwd=3, col=c('red'))
+# # legend(x='bottomleft', legend=c('Water Temp', 'Air temp'), lwd=3, col=c('blue','red'))
+
+# 0 - setup part 2 ####
 
 setwd('C:/Users/Mike/git/stream_nuts_DFA/manuscript/figures')
 # setwd('~/git/puget_sound_rivers_DFA/manuscript/figures')
@@ -37,13 +111,49 @@ if (is.null(dev.list()) == TRUE){
     }
 }
 
-# 1 - effect size regression ####
+# 1 - series plot ####
+
+par(mar=c(4,4,4,4))
+
+yearsbymo <- substr(yy$date,1,4)
+yy <- as.data.frame(apply(yy[,-1], 2, function(i) tapply(i, yearsbymo, mean, na.rm=TRUE)))
+covs <- tapply(covs, yearsbymo, mean)
+library(data.table)
+yy <- as.data.frame(setDT(yy, keep.rownames = TRUE)[])
+yy[is.na(yy)] <- NA #turn NaNs into NAs
+
+ymin <- min(yy[,-1], na.rm=TRUE) - .2
+ymax <- max(yy[,-1], na.rm=TRUE)
+
+# colors1 <- viridis(ncol(yy)-1, end=1)
+palette <- colorRampPalette(colors=c("gray90", "black"))
+colors1 <- palette(24)
+col_ind <- rep_len(1:24, length.out=24)
+
+plot(yy[,1], yy[,2], type='l', col=colors1[col_ind[1]], ylim=c(ymin,ymax), xlab='Time',
+     ylab='TEMP', xaxt='n', xaxs='i', yaxs='i')
+for(i in 3:(ncol(yy)-1)){
+    lines(yy[,1], yy[,i], type='l', col=colors1[col_ind[i-1]])
+    # chili <- readline('>')
+
+    #left off here. plot the climate trend first, then step through each river and note the ones that
+    #dont follow suit. designate these with color in the plot
+
+    #also maybe choose something other than grayscale for the background
+}
+axis(side=1, at=yy[,1][c(T,F)], labels=yy[,1][c(T,F)])
+
+lines(yy[,1], covs, col='red', lwd=3)
+legend(x='bottomleft', legend=c('Air temp'), lwd=3, col=c('red'))
+
+
+# 2 - effect size regression ####
 
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
-pdf('01_effect_size_reg.pdf', width=7, height=6)
+# pdf('01_effect_size_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -63,11 +173,11 @@ color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
 text(3.39, 0.56, labels='Mean watershed')
 text(3.52, 0.54, labels='elevation (m)')
 par(defpar)
-dev.off()
+# dev.off()
 
-# 2 - effect size regression ####
+# 3 - effect size regression ####
 
-pdf('02_loadings_reg.pdf', width=7, height=6)
+# pdf('02_loadings_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -84,11 +194,11 @@ color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
 text(3.39, 1.61, labels='Mean watershed')
 text(3.52, 1.53, labels='elevation (m)')
 par(defpar)
-dev.off()
+# dev.off()
 
-# 3 - effect size by month ####
+# 4 - effect size by month ####
 
-pdf('03_eff_size_bymonth.pdf', width=8, height=8)
+# pdf('03_eff_size_bymonth.pdf', width=8, height=8)
 rescaled_seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
 defpar <- par(mfrow=c(4,3), oma=c(5,5,1,1), mar=c(0.5,0.5,0.5,0.5))
 pal <- colorRampPalette(c('brown', 'white'))
@@ -115,4 +225,11 @@ mtext(expression(paste(bold('Monthly')~bold(Delta)~bold('stream')~bold(degree)~b
                      bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
       side=2, outer=TRUE, line=3)
 par(defpar)
-dev.off()
+# dev.off()
+
+# 5 - slope comparison ####
+
+# plot the slopes for each monthly series, see if they're different. if so, change river color on the map
+# and have it correspond to the line color in the plot. consider a "mean line+sd polygon" approach, wither
+# with linear models or with the time series themselves
+
