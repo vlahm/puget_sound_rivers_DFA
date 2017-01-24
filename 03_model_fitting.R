@@ -48,11 +48,11 @@ if (is.null(dev.list()) == TRUE){
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice = 'SUSSOL'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
-    # maxtemp maxtemp_anom hdd hdd_anom.
+    # maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
     #specify all of the ones that will be used later in the fitting loop
-cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd')
+cov_choices = c('meantemp', 'precip', 'maxtemp', 'hydroDrought', 'hdd', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
-region = '3_4'
+region = '3_4'#code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
 #which years to include?
@@ -101,7 +101,7 @@ yy = subset(yy, select=-K)
 (max_repeats <- apply(yy[,-1], 2, function(i) table(i)[1]/length(i[!is.na(i)])))
 (screwy <-  max_repeats[which(max_repeats > 0.05)]) #I'm concerned about anything over 0.05
 
-#get lists of all integer and non-integer vals in the frame (useful for exploring the next two chunks
+#get lists of all integer and non-integer vals in the frame (useful for exploring the next two chunks)
 # int = numeric()
 # non = numeric()
 # for(i in 1:nrow(yy)){
@@ -119,41 +119,41 @@ yy = subset(yy, select=-K)
 #Site L also contains six 0s, the only ones in the whole set, so I'm treating them as 1s.
     #scratch that. Adding artificial precision to all values that don't already have a tens place
     #to smooth out the steps in the density function.
-if(y_choice == 'SUSSOL'){
-    for(i in 1:nrow(yy)){
-        for(j in 2:ncol(yy)){
-        # for(j in names(screwy)){ #uncomment these and comment the ones with '#*' to jitter only the worst
-            # yy[i,j] <- round(ifelse(yy[i,j] %in% 0:1, runif(1, 0.5, 1.5), yy[i,j]), 1)
-            if(!(is.na(yy[i,j]))){                                              #*
-                if(yy[i,j] == 0) yy[i,j] <- 1                                   #*
-                hasdecimal <- grepl('\\.', yy[i,j])                             #*
-                if(!hasdecimal){                                                #*
-                    yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
-                }                                                               #*
-            }                                                                   #*
-        }
-    }
-}
+# if(y_choice == 'SUSSOL'){
+#     for(i in 1:nrow(yy)){
+#         for(j in 2:ncol(yy)){
+#         # for(j in names(screwy)){ #uncomment these and comment the ones with '#*' to jitter only the worst
+#             # yy[i,j] <- round(ifelse(yy[i,j] %in% 0:1, runif(1, 0.5, 1.5), yy[i,j]), 1)
+#             if(!(is.na(yy[i,j]))){                                              #*
+#                 if(yy[i,j] == 0) yy[i,j] <- 1                                   #*
+#                 hasdecimal <- grepl('\\.', yy[i,j])                             #*
+#                 if(!hasdecimal){                                                #*
+#                     yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
+#                 }                                                               #*
+#             }                                                                   #*
+#         }
+#     }
+# }
 
 #TURB has a different problem. All months preceding June 1989 were measured at integer precision,
 #so the same repeated-value skew problem arises, though it isn't so obvious by looking at the
 #overall proportion of duplicates. Here I'm jittering everything pre-June-1989.
     #scratch that. Adding artificial precision to all values that don't already have a tens place
     #to smooth out the steps in the density function.
-if(y_choice == 'TURB'){
-    for(i in 1:nrow(yy)){
-    # for(i in 1:137){ #uncomment these and comment the ones with '#*' to jitter only pre-june-1989
-        for(j in 2:ncol(yy)){
-            # yy[i,j] <- ifelse(is.na(yy[i,j]), NA, round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1))
-            if(!(is.na(yy[i,j]))){                                              #*
-                hasdecimal <- grepl('\\.', yy[i,j])                             #*
-                if(!hasdecimal){                                                #*
-                    yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
-                }                                                               #*
-            }                                                                   #*
-        }
-    }
-}
+# if(y_choice == 'TURB'){
+#     for(i in 1:nrow(yy)){
+#     # for(i in 1:137){ #uncomment these and comment the ones with '#*' to jitter only pre-june-1989
+#         for(j in 2:ncol(yy)){
+#             # yy[i,j] <- ifelse(is.na(yy[i,j]), NA, round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1))
+#             if(!(is.na(yy[i,j]))){                                              #*
+#                 hasdecimal <- grepl('\\.', yy[i,j])                             #*
+#                 if(!hasdecimal){                                                #*
+#                     yy[i,j] <- round(runif(1, yy[i,j]-0.5, yy[i,j]+0.5), 1)     #*
+#                 }                                                               #*
+#             }                                                                   #*
+#         }
+#     }
+# }
 
 # subset by region
 if(region == '3'){
@@ -175,7 +175,7 @@ obs_ts <- yy[,-1]
 covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt',
                 'maxtemp_anom'='mt_anom_1900.99','precip'='pc','precip_anom'='pc_anom_1900.99',
                 'hydroDrought'='hdr','hydroDrought_anom'='hdr_anom_1900.99','hdd'='hd',
-                'hdd_anom'='hd_anom_1900.99')
+                'hdd_anom'='hd_anom_1900.99', 'snowmelt'='snowmelt')
 
 if(region=='3_4' & average_regions==FALSE){
     # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
@@ -196,6 +196,12 @@ if(region=='3_4' & average_regions==FALSE){
     load(file=paste0('climate_data/by_month/climate',
                      region, '.rda'))
     covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
+
+    #add snowmelt
+    snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
+    covs <- merge(covs, snowmelt, by='date', all=TRUE)
+
+    #subset by year and covariate choices
     covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
                                substr(covs$date,1,4) <= endyr,
                            colnames(covs) %in%
@@ -851,6 +857,8 @@ seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling fu
 #subset particular covariatess from the full covariate matrix:
 covariates <- list(at=covs_z[1,], mt=covs_z[2,], pc=covs_z[3,], hdr=covs_z[4,],
                    hd=covs_z[5,], atpc=covs_z[c(1,3),], none=NULL)
+#covariates <- list(at=covs_z[1,], atpc=covs_z[c(1,3),], sn=covs_z[6,],
+                    # atsn=covs_z[c(1,6),])
 
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)

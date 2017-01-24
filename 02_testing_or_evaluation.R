@@ -47,10 +47,10 @@ if (is.null(dev.list()) == TRUE){
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
-# maxtemp maxtemp_anom hdd hdd_anom
-cov_choices = c('meantemp')
+# maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
+cov_choices = c('meantemp', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
-region = '3_4'
+region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
 #seasonality model choices: 'fixed_collective', 'fixed_individual', 'fourier'
@@ -102,7 +102,7 @@ yy = subset(yy, select=-K)
 (max_repeats <- apply(yy[,-1], 2, function(i) table(i)[1]/length(i[!is.na(i)])))
 (screwy <-  max_repeats[which(max_repeats > 0.05)]) #I'm concerned about anything over 0.05
 
-#get lists of all integer and non-integer vals in the frame (useful for exploring the next two chunks
+#get lists of all integer and non-integer vals in the frame (useful for exploring the next two chunks)
 # int = numeric()
 # non = numeric()
 # for(i in 1:nrow(yy)){
@@ -176,7 +176,7 @@ obs_ts <- yy[,-1]
 covdict <- list('meantemp'='at','meantemp_anom'='at_anom_1900.99','maxtemp'='mt',
                 'maxtemp_anom'='mt_anom_1900.99','precip'='pc','precip_anom'='pc_anom_1900.99',
                 'hydroDrought'='hdr','hydroDrought_anom'='hdr_anom_1900.99','hdd'='hd',
-                'hdd_anom'='hd_anom_1900.99')
+                'hdd_anom'='hd_anom_1900.99', 'snowmelt'='snowmelt')
 
 if(region=='3_4' & average_regions==FALSE){
     # load(file='C:/Users/Mike/git/stream_nuts_DFA/data/climate_data/by_month/climate3.rda')
@@ -197,6 +197,12 @@ if(region=='3_4' & average_regions==FALSE){
     load(file=paste0('climate_data/by_month/climate',
                      region, '.rda'))
     covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
+
+    #add snowmelt
+    snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
+    covs <- merge(covs, snowmelt, by='date', all=TRUE)
+
+    #subset by year and covariate choices
     covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
                                substr(covs$date,1,4) <= endyr,
                            colnames(covs) %in%
