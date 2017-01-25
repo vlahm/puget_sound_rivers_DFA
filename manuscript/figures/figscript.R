@@ -82,7 +82,7 @@ rm(list=ls()); cat('\014') #clear env and console
 # 0 - setup part 2 ####
 
 setwd('C:/Users/Mike/git/stream_nuts_DFA/manuscript/figures')
-# setwd('~/git/puget_sound_rivers_DFA/manuscript/figures')
+setwd('~/git/puget_sound_rivers_DFA/manuscript/figures')
 
 library(viridis)
 library(plotrix)
@@ -199,21 +199,22 @@ par(defpar)
 # 4 - effect size by month ####
 
 # pdf('03_eff_size_bymonth.pdf', width=8, height=8)
-rescaled_seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
+# seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
+seas <- dfa$Estimates$D[,1:12]
 defpar <- par(mfrow=c(4,3), oma=c(5,5,1,1), mar=c(0.5,0.5,0.5,0.5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$BFIWs, breaks=10))]
 for(i in 1:12){
-    mod <- lm(rescaled_seas[,i] ~ land$Ice06_11)
+    mod <- lm(seas[,i] ~ land$Ice06_11)
     slope <- round(unname(mod$coefficients[2]), 2)
-    plot(land$Ice06_11, rescaled_seas[,i], main='', yaxt='n', xaxt='n',
+    plot(land$Ice06_11, seas[,i], main='', yaxt='n', xaxt='n',
          ylab=paste(month.abb[i]), xlab='', type='n', bty='l',
-         ylim=c(min(rescaled_seas), max(rescaled_seas)))
+         ylim=c(min(seas), max(seas)))
     abline(h=0, col='royalblue', lwd=2, lty=1)
     abline(mod, col='gray40', lty=2, lwd=2.5)
-    points(land$Ice06_11, rescaled_seas[,i], col='black', pch=21,
+    points(land$Ice06_11, seas[,i], col='black', pch=21,
            cex=1.5, cex.lab=1.3, cex.axis=1, font=2, bg=cols)
-    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.3, '*', '')
     print.letter(label=substitute(paste(x, '. ', italic('m'), ' = ', y, z),
                                   list(x=month.abb[i], y=sprintf('%+1.2f', slope), z=sig)),
                  xy=c(0.5,0.9), cex=1.2, font=1, col="black", pos=4)
@@ -221,8 +222,8 @@ for(i in 1:12){
     if(i %in% c(1,4,7,10)) axis(2, las=2)
 }
 mtext('Watershed % ice cover', side=1, outer=TRUE, line=3, font=2)
-mtext(expression(paste(bold('Monthly')~bold(Delta)~bold('stream')~bold(degree)~bold('C ')~
-                     bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
+mtext(expression(paste(bold('Monthly')~bold(Delta)~bold('stream')~bold(degree)~bold('C '))),
+                     # ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
       side=2, outer=TRUE, line=3)
 par(defpar)
 # dev.off()

@@ -48,7 +48,7 @@ if (is.null(dev.list()) == TRUE){
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
-cov_choices = c('meantemp', 'snowmelt')
+cov_choices = c('meantemp')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -596,28 +596,31 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
     }
 }
+# pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=6, onefile=TRUE)
 process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     ylbl <- names(obs_ts)
-    clr <- viridis(nn) #colors may not line up with series plots in section 2
+    # clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     minZ <- 0
     Z_rot <- dfa_obj$Estimates$Z
     ylm <- c(-1,1)*max(abs(Z_rot))
     for(i in 1:ntrends) {
         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
-             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col=clr)
+             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col='black')
         for(j in 1:nn) {
-            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
-            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2, col=clr[j])}
+            # if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
+            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2)}
+            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2)}
             abline(h=0, lwd=1.5, col="gray")
         }
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
     }
 }
 loading_plotter_TMB(dfa, mm)
+# dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
 # identical(full_fit, dfa$Fits)
@@ -625,8 +628,10 @@ loading_plotter_TMB(dfa, mm)
 
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
-    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    for(i in 1:ncol(obs_ts)){
+    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # for(i in 1:ncol(obs_ts)){
+    for(i in 1){
         plot(dfa_obj$Fits[i,], type='l', lwd=2,
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
              ylab=rownames(dat_z)[i], xlab='day_index')
