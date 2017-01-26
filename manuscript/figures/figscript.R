@@ -95,7 +95,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 }
 
 #load all objects generated during the creation and postprocessing of the best model
-load('Renv_image2.rda')
+load('Renv_image3.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011
 ice2006 <- read.csv('PctIce2006Ws.csv', stringsAsFactors=FALSE)
@@ -175,7 +175,7 @@ text(3.52, 0.54, labels='elevation (m)')
 par(defpar)
 # dev.off()
 
-# 3 - effect size regression ####
+# 3 - loading regression ####
 
 # pdf('02_loadings_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
@@ -198,23 +198,25 @@ par(defpar)
 
 # 4 - effect size by month ####
 
-# pdf('03_eff_size_bymonth.pdf', width=8, height=8)
+pdf('03_eff_size_bymonth.pdf', width=8, height=8)
 # seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
 seas <- dfa$Estimates$D[,1:12]
+seas <- seas+matrix(rep(trans$means,ncol(seas)), ncol=ncol(seas))
 defpar <- par(mfrow=c(4,3), oma=c(5,5,1,1), mar=c(0.5,0.5,0.5,0.5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$BFIWs, breaks=10))]
+overall_mean <- mean(seas)
 for(i in 1:12){
     mod <- lm(seas[,i] ~ land$Ice06_11)
     slope <- round(unname(mod$coefficients[2]), 2)
     plot(land$Ice06_11, seas[,i], main='', yaxt='n', xaxt='n',
          ylab=paste(month.abb[i]), xlab='', type='n', bty='l',
          ylim=c(min(seas), max(seas)))
-    abline(h=0, col='royalblue', lwd=2, lty=1)
+    abline(h=overall_mean, col='royalblue', lwd=2, lty=1)
     abline(mod, col='gray40', lty=2, lwd=2.5)
     points(land$Ice06_11, seas[,i], col='black', pch=21,
            cex=1.5, cex.lab=1.3, cex.axis=1, font=2, bg=cols)
-    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.3, '*', '')
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.05, '*', '')
     print.letter(label=substitute(paste(x, '. ', italic('m'), ' = ', y, z),
                                   list(x=month.abb[i], y=sprintf('%+1.2f', slope), z=sig)),
                  xy=c(0.5,0.9), cex=1.2, font=1, col="black", pos=4)
@@ -222,11 +224,11 @@ for(i in 1:12){
     if(i %in% c(1,4,7,10)) axis(2, las=2)
 }
 mtext('Watershed % ice cover', side=1, outer=TRUE, line=3, font=2)
-mtext(expression(paste(bold('Monthly')~bold(Delta)~bold('stream')~bold(degree)~bold('C '))),
+mtext(expression(paste(bold('Mean monthly water temp (')~bold(degree)~bold('C)'))),
                      # ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
       side=2, outer=TRUE, line=3)
 par(defpar)
-# dev.off()
+dev.off()
 
 # 5 - slope comparison ####
 

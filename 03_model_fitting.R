@@ -558,6 +558,16 @@ fits_plotter_TMB <- function(dfa_obj){
 }
 # fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
+residuals_plotter <- function(dfa_obj){
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    for(i in 1:ncol(obs_ts)){
+        plot(dat_z[i,] - dfa$Fits[i,], ylab=rownames(dat_z)[i], xlab='day_index',
+             pch=20)
+        abline(h=0, col='gray', lwd=2)
+    }
+}
+# residuals_plotter(dfa)
+
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
     for(i in 1:nrow(dat_z)){
@@ -935,6 +945,7 @@ model_out <-
                     process_plotter_TMB(dfa, mmm)
                     loading_plotter_TMB(dfa, mmm)
                     fits_plotter_TMB(dfa)
+                    residuals_plotter(dfa)
                     if(!is.null(covariates[[cov]])) eff_regress_plotter(mode='exploration')
                     load_regress_plotter(mmm, mode='exploration')
 

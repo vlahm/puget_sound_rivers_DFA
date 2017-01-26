@@ -16,7 +16,7 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-# source('../00_tmb_uncor_Rmat.R')
+source('../00_tmb_uncor_Rmat.R')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
@@ -285,6 +285,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     }
 
     sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
+    means <- apply(obs_ts2, 2, mean, na.rm=TRUE)
     scaled <- scale(obs_ts2, scale=scale)
     # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
 
@@ -298,7 +299,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
         }
     }
 
-    out <- list(trans=scaled, sds=sds, lambdas=lambdas)
+    out <- list(trans=scaled, sds=sds, lambdas=lambdas, means=means)
     return(out)
 }
 trans <- transformer(obs_ts, transform='none', exp=NA, scale=scale, plot=F)
@@ -461,6 +462,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # 4.1 - save model object ####
 
 # saveRDS(dfa, '../saved_structures/dfa_out1.rds')
+# save.image('../saved_structures/temp_due_2m_at.rda')
 
 # 4.2 - or load desired model object ####
 
@@ -583,20 +585,28 @@ dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_
 library(viridis)
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
+    # par(mai=c(0.1,0.6,0.1,0.1), omi=c(0.6,0.1,0,0.1), mfcol=c(2, 2))
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     xlbl <- int_dates
     y_ts <- int_dates
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     for(i in 1:ntrends){
         plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
-             ylim=ylm, xlab="", ylab="", xaxt="n")
+             ylim=ylm, xlab='', xaxt="n", ylab='')
         abline(h=0, col="gray")
         lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
+        # mtext(paste("Process",i), side=3, line=-2)
         mtext(paste("Process",i), side=3, line=0.5)
+        xlbl = xlbl*c(rep(0,11),1)
+        if(i==2){
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
+        # mtext('Day Index', side=1, line=2.5)
+        }
     }
+    # mtext(expression(paste('Water ', degree, 'C (de-meaned)')),
+    #       side=2, line=-1.5, outer=TRUE)
 }
-# pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=6, onefile=TRUE)
+# pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
 process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
@@ -609,14 +619,21 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     ylm <- c(-1,1)*max(abs(Z_rot))
     for(i in 1:ntrends) {
         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
-             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5), col='black')
+             lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5),
+             col='black', bty='L')
+        # mtext(paste("Process",i), side=3, line=-2)
         for(j in 1:nn) {
             # if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
-            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2)}
-            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2)}
+            lab_size=1.2
+            if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=lab_size)}
+            if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=lab_size)}
             abline(h=0, lwd=1.5, col="gray")
         }
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
+        # if(i==2){
+        #     mtext('Site ID', side=1, line=2.5)
+        # }
+        # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
 }
 loading_plotter_TMB(dfa, mm)
@@ -626,20 +643,36 @@ loading_plotter_TMB(dfa, mm)
 # identical(full_fit, dfa$Fits)
 # hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
 
+# pdf('../manuscript/figures/05_fits_and_residuals.pdf', width=7, height=6)
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
-    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    par(mfrow=c(1,1), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    # for(i in 1:ncol(obs_ts)){
-    for(i in 1){
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # par(mfrow=c(2,1))
+    for(i in 1:ncol(obs_ts)){
+    # for(i in 3){
         plot(dfa_obj$Fits[i,], type='l', lwd=2,
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
-             ylab=rownames(dat_z)[i], xlab='day_index')
-        lines(hiddenTrendOnly_fit[i,], col='green', lwd=2)
+             # ylab=expression(paste('Water ', degree, 'C (de-meaned)')),
+             # xlab='Day Index', col='gray40')
+             ylab=rownames(dat_z)[i], xlab='day_index', col='gray40')
+        lines(hiddenTrendOnly_fit[i,], col='black', lwd=2)
         points(dat_z[i,], col='blue', pch=20, cex=1)
     }
 }
 fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+
+residuals_plotter <- function(dfa_obj){
+    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    for(i in 3){
+    # for(i in 1:ncol(obs_ts)){
+        plot(dat_z[i,] - dfa$Fits[i,], xlab='Day Index',
+             ylab='Residual Error', pch=20, col='blue')
+             # ylab=rownames(dat_z)[i], pch=20)
+        abline(h=0, col='black', lwd=3, lty=2)
+    }
+}
+residuals_plotter(dfa)
+# dev.off()
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
