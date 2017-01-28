@@ -1,0 +1,28 @@
+To download this data for use in a spreadsheet, such as Microsoft Excel,
+you must save this table as a text file using File->Save As... in your
+browser.  You can then import that text file into your spreadsheet program.
+For mean daily tables, data values are for the dates listed starting at
+midnight PST.
+
+A key to quality codes for this data set appears at the end of this file.
+
+05A070--Stillaguamish R. nr Silvana
+
+DATE         TIME    FLOW (cfs)   QUALITY
+----------   -----   ----------   -------
+10/23/2007   09:20         4460         1
+11/27/2007   09:50         1610         1
+12/18/2007   09:20         1690         1
+01/29/2008   09:30         1370         1
+02/26/2008   10:30      No Data       201
+03/18/2008   09:50         3540         1
+04/22/2008   09:15         2020         1
+05/20/2008   09:15        11800         1
+06/17/2008   09:25         4670         1
+07/29/2008   09:55         1200         1
+08/19/2008   09:40          577         1
+09/23/2008   09:30          680         1
+
+Quality Codes Key:
+1 - Good quality REVIEWED data
+201 - Data not recorded
