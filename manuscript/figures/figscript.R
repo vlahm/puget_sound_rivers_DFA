@@ -96,6 +96,9 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 
 #load all objects generated during the creation and postprocessing of the best model
 load('Renv_image3.rda')
+#this is the "best temp" dfa from 02_testing_or_evaluation as of 1/28/17
+dfa <- readRDS('../manuscript/figures/other_dfa.rds')
+# dfa <- readRDS('other_dfa.rds')
 
 #add percent watershed ice cover data from 2006, average with those from 2011
 ice2006 <- read.csv('PctIce2006Ws.csv', stringsAsFactors=FALSE)
@@ -177,7 +180,7 @@ par(defpar)
 
 # 3 - loading regression ####
 
-# pdf('02_loadings_reg.pdf', width=7, height=6)
+pdf('02b_loadings_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -194,7 +197,7 @@ color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
 text(3.39, 1.61, labels='Mean watershed')
 text(3.52, 1.53, labels='elevation (m)')
 par(defpar)
-# dev.off()
+dev.off()
 
 # 4 - effect size by month ####
 

@@ -595,7 +595,12 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
               'WsAreaSqKm')
-landcols <- which(colnames(land) %in% landvars)
+
+#get the indices of each of these variables in the main land dataframe
+landcols <- rep(NA, length(landvars))
+for(i in 1:length(landvars)){
+    landcols[i] <- which(colnames(land) == landvars[i])
+}
 
 #this identifies the landscape vars that correlate best with the response (used in the loop)
 best_landvars <- function(response, top){

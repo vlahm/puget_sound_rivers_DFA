@@ -600,11 +600,11 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
         xlbl = xlbl*c(rep(0,11),1)
         if(i==2){
         axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
-        # mtext('Day Index', side=1, line=2.5)
+        mtext('Month Index', side=1, line=2.5)
         }
     }
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')),
-    #       side=2, line=-1.5, outer=TRUE)
+          # side=2, line=-1.5, outer=TRUE)
 }
 # pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
 process_plotter_TMB(dfa, mm)
@@ -631,7 +631,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         }
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
         # if(i==2){
-        #     mtext('Site ID', side=1, line=2.5)
+            # mtext('Site ID', side=1, line=2.5)
         # }
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
@@ -647,29 +647,31 @@ loading_plotter_TMB(dfa, mm)
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    # par(mfrow=c(2,1))
+    # par(mfrow=c(2,1), mar=c(.5,.5,.5,.5), oma=c(3,3,0,0))
     for(i in 1:ncol(obs_ts)){
     # for(i in 3){
         plot(dfa_obj$Fits[i,], type='l', lwd=2,
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
-             # ylab=expression(paste('Water ', degree, 'C (de-meaned)')),
-             # xlab='Day Index', col='gray40')
-             ylab=rownames(dat_z)[i], xlab='day_index', col='gray40')
+             # col='gray40', xaxt='n', ylim=c(-10,10))
+             ylab=rownames(dat_z)[i], xlab='month_index', col='gray40')
         lines(hiddenTrendOnly_fit[i,], col='black', lwd=2)
         points(dat_z[i,], col='blue', pch=20, cex=1)
     }
+    # mtext(expression(paste('Water ', degree, 'C (de-meaned)')), 2, 2)
+    # mtext('Month Index', 1, 2, T)
 }
 fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 residuals_plotter <- function(dfa_obj){
-    # par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
-    for(i in 3){
-    # for(i in 1:ncol(obs_ts)){
-        plot(dat_z[i,] - dfa$Fits[i,], xlab='Day Index',
-             ylab='Residual Error', pch=20, col='blue')
-             # ylab=rownames(dat_z)[i], pch=20)
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # for(i in 3){
+    for(i in 1:ncol(obs_ts)){
+        plot(dat_z[i,] - dfa$Fits[i,],
+             # ylab='', pch=20, col='blue')
+             xlab='Month Index', ylab=rownames(dat_z)[i], pch=20)
         abline(h=0, col='black', lwd=3, lty=2)
     }
+    # mtext('Residual Error', 2, 2)
 }
 residuals_plotter(dfa)
 # dev.off()
@@ -708,7 +710,12 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
 #               'OmWs',
 #               'PermWs','PopDen2010Ws',
 #               'WsAreaSqKm')
-landcols <- which(colnames(land) %in% landvars)
+
+#get the indices of each of these variables in the main land dataframe
+landcols <- rep(NA, length(landvars))
+for(i in 1:length(landvars)){
+    landcols[i] <- which(colnames(land) == landvars[i])
+}
 
 #this identifies the landscape vars that correlate best with the response (used below)
 best_landvars <- function(response, top){
@@ -864,7 +871,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-load_regress_plotter(mm, 'indiv', 'WtDepWs')
+load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
 load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model ####
@@ -915,20 +922,33 @@ best1 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z
 best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,2]))))))
 # best3 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z[,3]))))))
 
-#plot best cors along with fitted models
-defpar <- par(mfrow=c(3,2))
+#plot best cors with loadings along with fitted models
 
+# pdf('../manuscript/figures/02b_loadings_reg.pdf', width=7, height=6)
 pal <- colorRampPalette(c('blue', 'red'))
 cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-# full_names <- c('organic matter', 'base flow', 'coastal alluvium', 'runoff',
-#                 'riparian urbanization (high)', 'riparian urbanization (low)')
+# full_names <- c('Total runoff (mm)', 'Water table depth (cm)', '% Coastal alluvium',
+#                 'Base Flow Index', '% Ice', 'Rock Depth (cm)')
+# full_names <- c('% Ice', '% Coastal alluvium','Total runoff (mm)', 'Rock Depth (cm)',
+#                 'Soil permeability (cm/hr)', '% Cropland')
+defpar <- par(mfrow=c(3,2), mar=c(4,.5,.5,.5), oma=c(4,5,0,0))
 for(i in 1:6){
-    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
-         xlab=names(best1)[i], ylab='loading on common trend 1',
-         main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
     mod <- lm(dfa$Estimates$Z[,1] ~ land_sub[,names(best1)[i]])
-    abline(mod, col='gray', lty=2)
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.05, ' *', '')
+    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
+         xlab=paste0(names(best1)[i], sig),
+         # xlab=paste0(full_names[i], sig),
+         # main='blue=low elev, red=high elev',
+         col=cols, pch=colnames(trans$trans), yaxt='n')
+    abline(mod, col='gray', lty=2, lwd=2)
+    if(i %in% c(1,3,5)){
+        axis(2)
+    }
 }
+mtext('Loadings on common trend 1', 2, outer=TRUE, line=2.5)
+mtext('Watershed variable', 1, outer=TRUE, line=1.5)
+par(defpar)
+# dev.off()
 
 # full_names <- c('rock depth', 'riparian road density', 'soil permeability', '% ice 2011',
 #                 'riparian open space development', 'coastal alluvium')
