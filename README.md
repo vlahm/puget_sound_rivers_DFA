@@ -41,7 +41,13 @@ It's crucial to make sure your model fits the data. Here's an example model fit 
 
 ### Estimated common trends and their factor loadings
 
-Model selection via AIC determined that 2 was the optimum number of common trends to represent the 24 time series. Here are the ![trends and their loadings](manuscript/figures/04_processes_and_loadings.pdf). At this point, the trends represent watershed attributes that account for variation in stream temperature *not* explained by regional air temperature. The loadings indicate the degree to which each stream's temperature can be represented by the corresponding common trend. I've left the site names off the map above, but you can see them ![here](manuscript/figures/map/sites.png) (note that ZA is referred to as AA on this map).
+Model selection via AIC determined that 2 was the optimum number of common trends to represent the 24 time series. Here are the trends and their loadings:
+
+![trends and their loadings](manuscript/figures/04_processes_and_loadings.png)
+
+At this point, the trends represent watershed attributes that account for variation in stream temperature *not* explained by regional air temperature. The loadings indicate the degree to which each stream's temperature can be represented by the corresponding common trend. I've left the site names off the map above, but you can see them in the uglier map below. (Note that ZA is referred to as AA on this map).
+
+[sitemap](manuscript/figures/map/sites.png)
 
 ### Water-air temperature coupling
 
@@ -55,7 +61,13 @@ Watersheds with more permanent ice have streams that are less coupled to air tem
 
 ### Watershed predictors of de-coupling
 
-I mentioned that there were 2 common trends identified. These trends represent additional sources of variation that explain the water temperature trends over time. Any variation explained by the common trends was *not* accounted for by the covariates, so these trends should correspond to various sub-regional influences on water temperature. Let's see which watershed attributes correlate best with the common trends! Here are the six best predictors of ![trend 1](/manuscript/figures/02b_loadings_reg.pdf) and ![trend 2](/manuscript/figures/02c_loadings_reg.pdf). Asterisks indicate significant slopes. Point color shows relative elevation (red=high, blue=low).
+I mentioned that there were 2 common trends identified. These trends represent additional sources of variation that explain the water temperature trends over time. Any variation explained by the common trends was *not* accounted for by the covariates, so these trends should correspond to various sub-regional influences on water temperature. Let's see which watershed attributes correlate best with the common trends! Here are the six best predictors of trend 1:
+
+![trend 1](/manuscript/figures/02b_loadings_reg.png) 
+
+Asterisks indicate significant slopes. Point color shows relative elevation (red=high, blue=low). Here's trend 2:
+
+![trend 2](/manuscript/figures/02c_loadings_reg.png)
 
 It looks like mean annual runoff shows the strongest positive loading onto common trend 1, suggesting a connection between discharge (volume of river flow per unit time) and water-air decoupling. Naturally, if a river has more water in it, it will be more difficult to heat and cool, and the model has captured this fact! The percentage of watershed lithography classified as "coastal alluvium" is also positively loaded. This type of material is characteristic of coastal lowlands, suggesting a possible connection between overall proximity to the marine layer of Puget Sound and water-air decoupling. Of course, further analysis will be necessary before these conclusions will have any weight. Take a look at the other watershed variables in the graph and see whether you can interpret them in the context of the study.
 

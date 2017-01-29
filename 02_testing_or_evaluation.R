@@ -598,15 +598,16 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
         # mtext(paste("Process",i), side=3, line=-2)
         mtext(paste("Process",i), side=3, line=0.5)
         xlbl = xlbl*c(rep(0,11),1)
-        if(i==2){
-        axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
-        mtext('Month Index', side=1, line=2.5)
-        }
+        # if(i==2){
+        # axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
+        # mtext('Month Index', side=1, line=2.5)
+        # }
     }
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')),
-          # side=2, line=-1.5, outer=TRUE)
+    # side=2, line=-1.5, outer=TRUE)
 }
 # pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
+# png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
 process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
@@ -631,7 +632,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         }
         mtext(paste("Factor loadings on process",i),side=3,line=0.5)
         # if(i==2){
-            # mtext('Site ID', side=1, line=2.5)
+        # mtext('Site ID', side=1, line=2.5)
         # }
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
@@ -644,6 +645,7 @@ loading_plotter_TMB(dfa, mm)
 # hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
 
 # pdf('../manuscript/figures/05_fits_and_residuals.pdf', width=7, height=6)
+# png('../manuscript/figures/05_fits_and_residuals.png', width=7, height=6, units='in', res=96, type='cairo')
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
@@ -924,6 +926,7 @@ best2 <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, dfa$Estimates$Z
 
 #plot best cors with loadings along with fitted models
 
+# png('../manuscript/figures/02c_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 # pdf('../manuscript/figures/02b_loadings_reg.pdf', width=7, height=6)
 pal <- colorRampPalette(c('blue', 'red'))
 cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
@@ -934,10 +937,13 @@ cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
 defpar <- par(mfrow=c(3,2), mar=c(4,.5,.5,.5), oma=c(4,5,0,0))
 for(i in 1:6){
     mod <- lm(dfa$Estimates$Z[,1] ~ land_sub[,names(best1)[i]])
+    # mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best1)[i]])
+    # mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best2)[i]])
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.05, ' *', '')
-    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
+    # plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
+    # plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,2],
          xlab=paste0(names(best1)[i], sig),
-         # xlab=paste0(full_names[i], sig),
+         xlab=paste0(full_names[i], sig),
          # main='blue=low elev, red=high elev',
          col=cols, pch=colnames(trans$trans), yaxt='n')
     abline(mod, col='gray', lty=2, lwd=2)
@@ -946,6 +952,7 @@ for(i in 1:6){
     }
 }
 mtext('Loadings on common trend 1', 2, outer=TRUE, line=2.5)
+# mtext('Loadings on common trend 2', 2, outer=TRUE, line=2.5)
 mtext('Watershed variable', 1, outer=TRUE, line=1.5)
 par(defpar)
 # dev.off()

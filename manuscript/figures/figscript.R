@@ -156,7 +156,8 @@ land_sub <- land[,landcols] #subset landscape variables by those used in the ana
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
-# pdf('01_effect_size_reg.pdf', width=7, height=6)
+pdf('01_effect_size_reg.pdf', width=7, height=6)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -176,11 +177,12 @@ color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
 text(3.39, 0.56, labels='Mean watershed')
 text(3.52, 0.54, labels='elevation (m)')
 par(defpar)
-# dev.off()
+dev.off()
 
 # 3 - loading regression ####
 
-pdf('02b_loadings_reg.pdf', width=7, height=6)
+# png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+pdf('02_loadings_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -201,7 +203,8 @@ dev.off()
 
 # 4 - effect size by month ####
 
-pdf('03_eff_size_bymonth.pdf', width=8, height=8)
+png('03_eff_size_bymonth.png', width=8, height=8, units='in', res=96, type='cairo')
+# pdf('03_eff_size_bymonth.pdf', width=8, height=8)
 # seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
 seas <- dfa$Estimates$D[,1:12]
 seas <- seas+matrix(rep(trans$means,ncol(seas)), ncol=ncol(seas))
