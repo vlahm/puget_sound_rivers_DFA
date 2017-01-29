@@ -47,7 +47,7 @@ Model selection via AIC determined that 2 was the optimum number of common trend
 
 At this point, the trends represent watershed attributes that account for variation in stream temperature *not* explained by regional air temperature. The loadings indicate the degree to which each stream's temperature can be represented by the corresponding common trend. I've left the site names off the map above, but you can see them in the uglier map below. (Note that ZA is referred to as AA on this map).
 
-[sitemap](manuscript/figures/map/sites.png)
+![sitemap](manuscript/figures/map/sites.png)
 
 ### Water-air temperature coupling
 
