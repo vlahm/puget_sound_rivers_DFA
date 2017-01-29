@@ -47,7 +47,9 @@ Model selection via AIC determined that 2 was the optimum number of common trend
 
 Now let's see which streams show the highest coupling between water temperature and the regional air temperature. To do this, we'll look at the effect sizes of the covariate (air temperature) with respect to each river. Coupling should be thought of as change in the response (water temperature) per unit change in the covariate (air temperature), which is the definition of an effect size.
 
-I used regression analysis to determine the watershed attribute that best accounted for variation in water-air temperature coupling. Candidates included watershed area, average watershed slope and elevation, and several metrics of human land use and urbanization. The best predictors all related to elevation, with the percentage of permanent ice in each watershed (essentially glaciation) being the best predictor of all. Here's a plot of ![coupling (y) versus ice cover (x)](manuscript/figures/01_effect_size_reg.pdf).
+I used regression analysis to determine the watershed attribute that best accounted for variation in water-air temperature coupling. Candidates included watershed area, average watershed slope and elevation, and several metrics of human land use and urbanization. The best predictors all related to elevation, with the percentage of permanent ice in each watershed (essentially glaciation) being the best predictor of all. Here's a plot of coupling (y) versus ice cover (x):
+
+![coupling (y) versus ice cover (x)](manuscript/figures/01_effect_size_reg.png).
 
 Watersheds with more permanent ice have streams that are less coupled to air temperature!
 
@@ -61,7 +63,9 @@ As for trend 2, none of the watershed variables have significant slopes when reg
 
 ### Seasonal breakdown of ice vs. water temperature
 
-![This figure](manuscript/figures/03_eff_size_bymonth.pdf) shows the relationship between the percentage of watershed area covered in permanent ice (glaciation) and mean monthly water temperature over the entire 1978-2015 time series. You can see that watersheds with more glacial ice (and certainly more snowfall) are consistently colder than those with less. Asterisks denote significant slopes. You can also trace the seasonal change in temperature if scan through the plots in order. It fluctuates cyclically around the yearly mean temperature, represented by the blue line. More interestingly, this figure shows that the steepest slopes occur in July and August, when the cooling effect of ice is most pronounced. I'm currently adding interaction effects to the model that will allow me to see the seasonal change in *coupling*, rather than just raw temperature.
+![This figure](manuscript/figures/03_eff_size_bymonth.png) 
+
+This figure shows the relationship between the percentage of watershed area covered in permanent ice (glaciation) and mean monthly water temperature over the entire 1978-2015 time series. You can see that watersheds with more glacial ice (and certainly more snowfall) are consistently colder than those with less. Asterisks denote significant slopes. You can also trace the seasonal change in temperature if scan through the plots in order. It fluctuates cyclically around the yearly mean temperature, represented by the blue line. More interestingly, this figure shows that the steepest slopes occur in July and August, when the cooling effect of ice is most pronounced. I'm currently adding interaction effects to the model that will allow me to see the seasonal change in *coupling*, rather than just raw temperature.
 
 ### Conclusions
 
