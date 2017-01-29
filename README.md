@@ -17,10 +17,10 @@
 + Air temperature and seasonal effects are included as covariates in the observation component. Any variation in water temp not accounted for by the covariates loads onto the common trends, which may represent one or more watershed-scale drivers of water temp.
 + By evaluating the effects of the covariates and the common trends, region-scale and watershed-scale drivers can be teased apart!
 
-1.  x<sub>t</sub> = x<sub>t-1</sub> + w<sub>t</sub>
-2.  y<sub>t</sub> = Zx<sub>t</sub> + Dd<sub>t</sub> + v<sub>t</sub>
+x<sub>t</sub> = x<sub>t-1</sub> + w<sub>t</sub>
+y<sub>t</sub> = Zx<sub>t</sub> + Dd<sub>t</sub> + v<sub>t</sub>
 
-x<sub>t</sub> (the common trends at time t) depends on x from the previous time step and some normal error, w<sub>t</sub>. This is the definition of a random walk. y<sub>t</sub> contains the observed water temperature data at time t. Z contains the factor loadings that relate each observation to each common trend. D and d are effect sizes (change in water temperature per change in air temperature) and covariates (here air temperature and some seasonal factors to estimate), respectively. Finally, v<sub>t</sub> is an additional error term. 
+x<sub>t</sub> (the common trends at time t) depends on x from the previous time step and some normal error, w<sub>t</sub>. This is the definition of a random walk. y<sub>t</sub> contains the observed water temperature data at time t. Z contains the factor loadings that relate each observation to each common trend. D and d are effect sizes (change in water temperature per change in air temperature) and covariates (here air temperature and some seasonal factors to estimate), respectively. Finally, v<sub>t</sub> represents observation error. 
 
 ## Data
 + Monthly time series of water temperature from 24 streams emptying into Puget Sound (1978-2015).
@@ -69,5 +69,5 @@ This is a work in progress, but it's clear that stream temperature in glaciated 
 
 Contact Mike Vlah at:
 + vlahm13@gmail[dot]com
-+ [https://github.com/vlahm](https://github.com/vlahm)
-+ [linkedin.com/in/michaelvlah](linkedin.com/in/michaelvlah)
++ [github.com/vlahm](https://github.com/vlahm)
++ [linkedin.com/in/michaelvlah](https://www.linkedin.com/in/michaelvlah)
