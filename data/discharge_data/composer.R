@@ -1,8 +1,9 @@
 #discharge data composer
-#all data in cfs
+#all data expressed in CFS
 
 rm(list=ls()); cat('\014')
 setwd('~/git/puget_sound_rivers_DFA/data/discharge_data')
+setwd('C:/Users/Mike/git/stream_nuts_dfa/data/discharge_data')
 
 # compose daily data ####
 
@@ -147,12 +148,29 @@ rm(list=ls()[which(ls() != 'discharge')])
 discharge$stillaguamish_sf[is.nan(discharge$stillaguamish_sf)] <- NA
 discharge$stillaguamish_main[is.nan(discharge$stillaguamish_main)] <- NA
 
-#remove garbage rows
+#remove garbage rows and Nisqually column
 discharge <- discharge[-(1336:nrow(discharge)),]
+discharge <- subset(discharge, select=-nisqually)
 
 #change site names to site IDs
-elwha-Z, duckabush-I, skokomish-L, deschutes-M, puyallup-J, green lo-B, hi-N, cedar lo-A, hi-O,
-sammamish-Z, snohomish-H, skykomish-Q, snoqualmie lo-R, hi-P, stillaguamish main-G/T nfl-U nfh-V sf-S,
-skagit lo-F hi-W, samish-E, nooksack lo-C, hi-X
+# site_names <- list(elwha='Z', duckabush='I', skokomish='L', deschutes='M', puyallup='J',
+#                    green_lo='B', green_hi='N', cedar_lo='A', cedar_hi='O', sammamish_issaquah='Z',
+#                    snohomish='H', skykomish='Q', snoqualmie_lo='R', snoqialmie_hi='P',
+#                    stillaguamish_main='G', #stillaguamish_main also equals 'T', but only data for one
+#                    stillaguamish_nf_lo='U', stillaguamish_nf_hi='V', stillaguamish_sf='S', skagit_low='F',
+#                    skagit_hi='W', samish='E', nooksack_low='C', nooksack_hi='X')
 
-#interpolate missing data
+names(discharge)[2:ncol(discharge)] <- c('O','A','M','I','Z','N','B','X','C','J','E','ZA','W','F',
+                                         'L','Q','H','P','R','U','V','S','G')
+
+#sort by colname
+discharge <- cbind(discharge$date, discharge[,-1][,order(names(discharge)[-1])])
+colnames(discharge)[1] <- 'date'
+discharge$date <- as.character(discharge$date)
+
+#sort by date
+discharge <- discharge[order(discharge$date),]
+discharge <- discharge[-(1:27),]
+
+#write file
+write.csv(discharge, 'discharge.csv', row.names=FALSE)

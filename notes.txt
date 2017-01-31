@@ -113,3 +113,17 @@ compose monthly at best, yearly at worst time series of snowfall (or snow depth 
 	nrcs snowtel data
 	CIG reports may also link to snow data
 	here's what i'll use for snow: snowpack last month-snowpath this month (but only accept positive differences - the rest are assigned 0)
+include the loadings regression as corroboration of the effect size regression. the idea is, air temp drives stream temp, but if it doesn't here's why (snowmelt)
+	and here's the hidden trend to describe the rivers that dont follow suit.
+	
+gordon meeting 1/25/17:
+	must get monthly breakout to have same y axis as effect size plot. i.e. gotta find coupling by month, or more likely by season
+	see if this can be done under the current setup. if not, run separate dfas by season.
+	include temperature and total precip as covariates, then
+		do post-hoc regression of either:
+			1) change in discharge vs. % ice or total area above 3000 ft for rising limb of hydrograph and falling limb/flat period (late summer, early fall)
+				make sure this synchs up with cluster analysis of best seasons before using those seasons.
+			2) separate regression of change in temp versus % ice or total area above 3000 ft 
+			OR
+			1) multiple regression including discharge and snow as predictors of temp
+		may also have to run a separate dfa to figure out what discharge trends exist
