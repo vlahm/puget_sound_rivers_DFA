@@ -18,6 +18,7 @@
 + By evaluating the effects of the covariates and the common trends, region-scale and watershed-scale drivers can be teased apart!
 
 x<sub>t</sub> = x<sub>t-1</sub> + w<sub>t</sub>
+
 y<sub>t</sub> = Zx<sub>t</sub> + Dd<sub>t</sub> + v<sub>t</sub>
 
 x<sub>t</sub> (the common trends at time t) depends on x from the previous time step and some normal error, w<sub>t</sub>. This is the definition of a random walk. y<sub>t</sub> contains the observed water temperature data at time t. Z contains the factor loadings that relate each observation to each common trend. D and d are effect sizes (change in water temperature per change in air temperature) and covariates (here air temperature and some seasonal factors to estimate), respectively. Finally, v<sub>t</sub> represents observation error. 
