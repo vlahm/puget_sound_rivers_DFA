@@ -30,7 +30,9 @@ x<sub>t</sub> (the common trends at time t) depends on x from the previous time 
 
 ## Report
 
-First, here's a ![map](manuscript/figures/map/map_withlabels.tif) of the Puget Sound region, with water temperature monitoring sites as red dots. The colored topography shows the area corresponding to our average air temperature data.
+![map](manuscript/figures/map/map.png) 
+
+This is the Puget Sound region of western Washington state, with water temperature monitoring sites as red dots. The colored topography shows the area across which historical air temperature readings have been averaged.
 
 Note that the water temperature series have been centered (de-meaned) so that differences in absolute temperature between streams will not effect the model outcome. These series have *not* been scaled due to a curiosity of DFA design for which I won't go into detail here. Air temperature has been centered and scaled, mainly in the interest of comparing effect sizes between covariates (In other models I have included precipitation, heating degree days, etc.).
 
