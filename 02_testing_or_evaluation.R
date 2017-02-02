@@ -5,8 +5,8 @@
 #NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
 #collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
 #if R crashes when you try to use runDFA,
-    #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
-    #no data or 1 data point. these timepoints must either be removed or imputed.
+#use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
+#no data or 1 data point. these timepoints must either be removed or imputed.
 #to quickly access any of the function definitions, put the cursor on the function name and hit F2
 
 # rm(list=ls()); cat('\014') #clear env and console
@@ -16,7 +16,8 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-source('../00_tmb_uncor_Rmat.R')
+DISCHARGE <- read.csv('discharge_data/discharge.csv')
+snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
 #imputeTS, RColorBrewer, cluster, fpc
@@ -45,28 +46,33 @@ if (is.null(dev.list()) == TRUE){
 # 1 - CHOICES ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
+# also DISCHARGE (from USGS)
 y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
-# maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
+# maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015;
+#also, Ihaven't actually used snowmelt in a model yet, so there could be bugs)
 cov_choices = c('meantemp')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
 #seasonality model choices: 'fixed_collective', 'fixed_individual', 'fourier'
-    #collective vs. indiv is no longer relevant. choose either "fixed_..." option to get
-    #an appropriate fixed-effect cc matrix, or "fourier" to get a simpler one
+#collective vs. indiv is no longer relevant. choose either "fixed_..." option to get
+#an appropriate fixed-effect cc matrix, or "fourier" to get a simpler one
 method = 'fixed_individual'
 #which years to include?
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
 ntrends = 2
-#error matrix can either use the MARSS specifications or the TMB ones ('DE', 'DUE', 'UNC')
+#error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
 scale = FALSE
+na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
+#be sure to visit section 3.1, where you can add time interval factors and interaction effects
+#to the covariate matrix
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -89,7 +95,7 @@ subsetter <- function(yy, start, end, na_thresh=1){
 
     return(yy)
 }
-yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=0.55)
+yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=na_thresh)
 
 # remove site K: strong groundwater influence prior to 2005
 yy = subset(yy, select=-K)
@@ -118,8 +124,8 @@ yy = subset(yy, select=-K)
 #here I'm jittering those values (all 1s) so that they vary between 0.5 and 1.5
 #I don't want to drop them because they represent almost all of my upland sites.
 #Site L also contains six 0s, the only ones in the whole set, so I'm treating them as 1s.
-    #scratch that. Adding artificial precision to all values that don't already have a tens place
-    #to smooth out the steps in the density function.
+#scratch that. Adding artificial precision to all values that don't already have a tens place
+#to smooth out the steps in the density function.
 # if(y_choice == 'SUSSOL'){
 #     for(i in 1:nrow(yy)){
 #         # for(j in names(screwy)){ #uncomment these and comment the ones with '#*' to jitter only the worst
@@ -139,8 +145,8 @@ yy = subset(yy, select=-K)
 #TURB has a different problem. All months preceding June 1989 were measured at integer precision,
 #so the same repeated-value skew problem arises, though it isn't so obvious by looking at the
 #overall proportion of duplicates. Here I'm jittering everything pre-June-1989.
-    #scratch that. Adding artificial precision to all values that don't already have a tens place
-    #to smooth out the steps in the density function.
+#scratch that. Adding artificial precision to all values that don't already have a tens place
+#to smooth out the steps in the density function.
 # if(y_choice == 'TURB'){
 #     for(i in 1:nrow(yy)){
 #         # for(i in 1:137){ #uncomment these and comment the ones with '#*' to jitter only pre-june-1989
@@ -239,7 +245,7 @@ library(caret); library(e1071)
 transformables <- function(){
     par(mfrow=c(4,4))
     for(i in c('COND', 'FC', 'NH3_N', 'NO2_NO3', 'OP_DIS', 'OXYGEN',
-               'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB')){
+               'PH', 'PRESS', 'SUSSOL', 'TEMP', 'TP_P', 'TURB', 'DISCHARGE')){
         x <- as.numeric(as.matrix(eval(parse(text=i))[,-1]))
         plot(density(x, na.rm=TRUE), main=i)
         qqnorm(x, main=paste(i, 'qqnorm'))
@@ -397,9 +403,52 @@ ZZgen <- function(){
 }
 ZZ <- ZZgen() # 'ZZ' is loadings matrix (some elements set to zero for identifiability)
 
+#combine seasonality and covariate matrices
 cov_and_seas <- rbind(cc,covs_z)
 
-# 3.1 - see if region 3 and 4 climate variables differ ####
+# 3.1 - add time interval effects and covariate:focal_month:interval interactions to dd ####
+
+#look inside function for details
+factorizer <- function(sections, focal_months){
+
+    #create factor of even intervals across time series
+    #argument 'sections' is the number of time intervals to divide the time series into
+    section_length <- ncol(covs_z) / sections
+
+    if(!(is.integer(section_length))){
+        values_to_add <- ncol(dat_z) - sections*floor(section_length)
+        message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
+                      'section(s) will be one observation longer'))
+        vals <- rep(floor(section_length), sections)
+        for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+    }
+
+    interval_fac <- factor(sort(rep(1:sections, times=vals)))
+
+    #create model matrix for desired interactions (for which months would you like to see
+    #the interaction of covariate:interval:month?
+    #(i.e. change in covariate per month during each time interval)
+    #I'm interested in hydrograph change in november-december and may-june, so I'm specifying their
+    #corresponding numbers as the "focal_months"
+    #WARNING: this function assumes your time series begins in January
+    month_fac <- rep(0, 12)
+    month_fac[focal_months] <- month.abb[focal_months]
+    month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
+
+    return(data.frame(series_interval=interval_fac, focal_months=month_fac))
+}
+facs <- factorizer(5, c(5,6,11,12)) #these need to be set
+
+#create model matrix for interval effect
+interval_effect <- model.matrix( ~ facs[,1] -1)
+
+#create model matrix for covariate:interval:focal_month interactions
+interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
+
+#bind them to the covariates and seasonality components (keeping the same name to preserve code)
+cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
+
+# 3.2 - see if region 3 and 4 climate variables differ ####
 #feel free to uncomment and experiment with this stuff just to verify that
 #the regions barely differ in climate
 
@@ -445,13 +494,32 @@ cov_and_seas <- rbind(cc,covs_z)
 #               control=list(minit=1, maxit=100, allow.degen=TRUE), silent=2, form='dfa')#,
 # # covariates=cov_and_seas)
 
-#TMB
+param_counter <- function(){
+    err_strucs = list('DE'=2, 'DUE'=nrow(dat_z), 'EVCV'=2, 'UNC'=nrow(dat_z)*2)
+    R_params = unname(unlist(err_strucs[names(err_strucs)==obs_err_var_struc]))
+    nparam = prod(dim(ZZ)) + (nrow(cov_and_seas)*nrow(ZZ)) + R_params
+    ndata = length(unlist(which(!is.na(dat_z))))
+    message(paste('number of data points (n):', ndata))
+    message(paste('number of parameters (p):', nparam))
+    message(paste('n/p ratio (ideally > 10):', ndata/nparam))
+}
+param_counter()
+
+#prepare TMB script
+if(obs_err_var_struc %in% c('DE', 'DUE', 'UNC')){
+    source('../00_tmb_uncor_Rmat_DE_DUE_UNC.R')
+} else if(obs_err_var_struc == 'EVCV'){
+    source('../00_tmb_uncor_Rmat_EVCV.R')
+} else message("invalid R error structure. must be 'DE', 'DUE', 'UNC' or 'EVCV'")
+
+#run model with TMB
 dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
               EstCovar=TRUE, Covars=cov_and_seas)
+
 # saveRDS(dfa, '../saved_structures/best_sussol_UNC2mFIXEDatpc19782015.rds')
 
 # #get seasonal effects (I think this chunk is fully obsolete, even for MARSS, but
-    #i'll leave it here just in case)
+#i'll leave it here just in case)
 # CC_out = coef(dfa, type="matrix")$C
 # # The time series of net seasonal effects
 # seas = CC_out %*% cc[,1:12]
@@ -581,7 +649,7 @@ dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_
 # }
 # fits_plotter()
 
-# 5.1 - plot processes, loadings, fits, and get R^2 (TMB) ####
+# 5.1 - plot processes, loadings, fits, residuals, ACF, and get R^2 (TMB) ####
 library(viridis)
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
@@ -651,7 +719,7 @@ fits_plotter_TMB <- function(dfa_obj){
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
     # par(mfrow=c(2,1), mar=c(.5,.5,.5,.5), oma=c(3,3,0,0))
     for(i in 1:ncol(obs_ts)){
-    # for(i in 3){
+        # for(i in 3){
         plot(dfa_obj$Fits[i,], type='l', lwd=2,
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
              # col='gray40', xaxt='n', ylim=c(-10,10))
@@ -678,6 +746,17 @@ residuals_plotter <- function(dfa_obj){
 residuals_plotter(dfa)
 # dev.off()
 
+ACF_plotter <- function(dfa_obj){
+    par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
+    # for(i in 3){
+    for(i in 1:ncol(obs_ts)){
+        acf(dat_z[i,] - dfa$Fits[i,], na.action=na.pass,
+            # ylab='', pch=20, col='blue')
+            ylab=rownames(dat_z)[i], pch=20)
+    }
+}
+ACF_plotter()
+
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
     for(i in 1:nrow(dat_z)){
@@ -686,7 +765,7 @@ get_R2 <- function(dfa_obj){
     }
     return(list(min=min(R2), median=median(R2), max=max(R2)))
 }
-# get_R2(dfa)
+get_R2(dfa)
 
 # 5.2 - landscape variable setup ####
 
@@ -748,7 +827,8 @@ best_landvars <- function(response, top){
 eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(nrow(all_cov) > 2){
-        z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+        # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+        z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
     } else {
         z_effect_size <- dfa$Estimates$D
     }
@@ -821,7 +901,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-# eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
+eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
 eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
@@ -942,14 +1022,14 @@ for(i in 1:6){
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.05, ' *', '')
     # plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
     # plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,2],
-         xlab=paste0(names(best1)[i], sig),
-         xlab=paste0(full_names[i], sig),
-         # main='blue=low elev, red=high elev',
-         col=cols, pch=colnames(trans$trans), yaxt='n')
-    abline(mod, col='gray', lty=2, lwd=2)
-    if(i %in% c(1,3,5)){
-        axis(2)
-    }
+    xlab=paste0(names(best1)[i], sig),
+    xlab=paste0(full_names[i], sig),
+    # main='blue=low elev, red=high elev',
+    col=cols, pch=colnames(trans$trans), yaxt='n')
+abline(mod, col='gray', lty=2, lwd=2)
+if(i %in% c(1,3,5)){
+    axis(2)
+}
 }
 mtext('Loadings on common trend 1', 2, outer=TRUE, line=2.5)
 # mtext('Loadings on common trend 2', 2, outer=TRUE, line=2.5)
@@ -1155,7 +1235,7 @@ rescaled_seas <- apply(dfa$Estimates$D[,1:12], 2, function(x) x * trans$sds)
 defpar <- par(mfrow=c(3,2))
 pal <- colorRampPalette(c('blue', 'green'))
 cols <- pal(10)[as.numeric(cut(land$BFIWs, breaks=10))]
-for(i in 1:12){
+for(i in 1:12){i
     mod <- lm(rescaled_seas[,i] ~ land$RdDensWsRp100)
     slope <- round(unname(mod$coefficients[2]), 2)
     plot(land$RdDensWsRp100, rescaled_seas[,i], main=paste(month.abb[i], 'slope =', slope),
