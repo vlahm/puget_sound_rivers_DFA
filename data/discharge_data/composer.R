@@ -5,6 +5,10 @@ rm(list=ls()); cat('\014')
 setwd('~/git/puget_sound_rivers_DFA/data/discharge_data')
 setwd('C:/Users/Mike/git/stream_nuts_dfa/data/discharge_data')
 
+library(devtools)
+# install_github('vlahm/manipulateR')
+library(manipulateR)
+
 # compose daily data ####
 
 #read in all files
@@ -62,11 +66,15 @@ for(i in 1:length(files)){
 }
 
 #re-sort
+discharge2$date <- as.character(discharge2$date)
 discharge2 <- discharge2[order(substr(discharge2$date,1,4), substr(discharge2$date,6,7)),]
 discharge2 <- discharge2[-(1:3),]
 
 #merge
-discharge <- rbind(discharge, discharge2)
+disch2_2008 <- discharge2[1:9,]
+best_2008 <- disch2_2008
+best_2008[is.na(best_2008)] <- as.numeric(disch_2008[is.na(best_2008)])
+discharge <- rbind(discharge[-(748:768),], best_2008, discharge2[-(1:9),])
 
 #clean up
 # rm(list=ls()[!grepl('discharge', ls())])
@@ -82,65 +90,65 @@ out <- data.frame('date'=date, 'stillaguamish_nf_hi'=x$x)[order(substr(date,1,4)
 row.names(out) <- 1:nrow(out)
 discharge <- merge(discharge, out, by='date', all=TRUE)
 
-#compose 15 minute by-year sites####
+#compose 15 minute by-year sites (not worth it. too little data)####
 
-#stallaguamish south fork
-files <- dir('15_min/by_year/stillaguamish_sf')
-discharge3 <- data.frame(date=character())
-for(i in 1:length(files)){
-    print(files[i])
-    # x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/2005.TXT'),
-    x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/', files[i]),
-                  skip=12, widths=c(11,9,15,20), stringsAsFactors=FALSE, strip.white=TRUE)
-    x <- x[,1:3]
-    colnames(x)<-c('date', 'time', 'discharge')
-    # unique(x$discharge[!grepl('0',x$discharge)])
-    # which(x$discharge=='h other station')
-    x$discharge[x$discharge %in% c('Ice', 'Eqp', 'IEWED data', 'ut within 2x', 'h other station',
-                                   'ation across ga', 'ut within 2x', 'another station',
-                                   '- unreliable', 'visional data', 'visional data -', '',
-                                   'xceeded (data w', 'No Data')] <- NA
-    x$discharge <- as.numeric(x$discharge)
-    x <- aggregate(x$discharge, list(year=substr(x$date,7,10), month=substr(x$date,1,2)), mean, na.rm=TRUE)
-    date <- paste(x$year, x$month, '15', sep='-')
-    out <- data.frame('date'=date, 'stillaguamish_sf'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
-    row.names(out) <- 1:nrow(out)
-    discharge3 <- rbind(discharge3, out)
-}
-
-#merge and clean
-discharge <- merge(discharge, discharge3, by='date', all=TRUE)
-rm(list=ls()[which(ls() != 'discharge')])
-
-#stallaguamish mainstem
-files <- dir('15_min/by_year/stillaguamish_main')
-discharge3 <- data.frame(date=character())
-for(i in 1:length(files)){
-    print(files[i])
-    # x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/2005.TXT'),
-    x <- read.fwf(paste0('15_min/by_year/stillaguamish_main/', files[i]),
-                  skip=12, widths=c(11,9,15,20), stringsAsFactors=FALSE, strip.white=TRUE)
-    x <- x[,1:3]
-    colnames(x)<-c('date', 'time', 'discharge')
-    # unique(x$discharge[!grepl('0',x$discharge)])
-    # which(x$discharge=='h other station')
-    x$discharge[x$discharge %in% c('Ice', 'Eqp', 'IEWED data', 'ut within 2x', 'h other station',
-                                   'ation across ga', 'ut within 2x', 'another station',
-                                   '- unreliable', 'visional data', 'visional data -', '',
-                                   'xceeded (data w', 'No Data', 'ded', 't rating = Fair',
-                                   'easurement - wi', 'by cooperator a', 'less than 1/2x',
-                                   'hecked', 'nt threshold')] <- NA
-    x$discharge <- as.numeric(x$discharge)
-    x <- aggregate(x$discharge, list(year=substr(x$date,7,10), month=substr(x$date,1,2)), mean, na.rm=TRUE)
-    date <- paste(x$year, x$month, '15', sep='-')
-    out <- data.frame('date'=date, 'stillaguamish_main'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
-    row.names(out) <- 1:nrow(out)
-    discharge3 <- rbind(discharge3, out)
-}
-
-#merge and clean
-discharge <- merge(discharge, discharge3, by='date', all=TRUE)
-rm(list=ls()[which(ls() != 'discharge')])
+# #stallaguamish south fork
+# files <- dir('15_min/by_year/stillaguamish_sf')
+# discharge3 <- data.frame(date=character())
+# for(i in 1:length(files)){
+#     print(files[i])
+#     # x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/2005.TXT'),
+#     x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/', files[i]),
+#                   skip=12, widths=c(11,9,15,20), stringsAsFactors=FALSE, strip.white=TRUE)
+#     x <- x[,1:3]
+#     colnames(x)<-c('date', 'time', 'discharge')
+#     # unique(x$discharge[!grepl('0',x$discharge)])
+#     # which(x$discharge=='h other station')
+#     x$discharge[x$discharge %in% c('Ice', 'Eqp', 'IEWED data', 'ut within 2x', 'h other station',
+#                                    'ation across ga', 'ut within 2x', 'another station',
+#                                    '- unreliable', 'visional data', 'visional data -', '',
+#                                    'xceeded (data w', 'No Data')] <- NA
+#     x$discharge <- as.numeric(x$discharge)
+#     x <- aggregate(x$discharge, list(year=substr(x$date,7,10), month=substr(x$date,1,2)), mean, na.rm=TRUE)
+#     date <- paste(x$year, x$month, '15', sep='-')
+#     out <- data.frame('date'=date, 'stillaguamish_sf'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
+#     row.names(out) <- 1:nrow(out)
+#     discharge3 <- rbind(discharge3, out)
+# }
+#
+# #merge and clean
+# discharge <- merge(discharge, discharge3, by='date', all=TRUE)
+# rm(list=ls()[which(ls() != 'discharge')])
+#
+# #stallaguamish mainstem
+# files <- dir('15_min/by_year/stillaguamish_main')
+# discharge3 <- data.frame(date=character())
+# for(i in 1:length(files)){
+#     print(files[i])
+#     # x <- read.fwf(paste0('15_min/by_year/stillaguamish_sf/2005.TXT'),
+#     x <- read.fwf(paste0('15_min/by_year/stillaguamish_main/', files[i]),
+#                   skip=12, widths=c(11,9,15,20), stringsAsFactors=FALSE, strip.white=TRUE)
+#     x <- x[,1:3]
+#     colnames(x)<-c('date', 'time', 'discharge')
+#     # unique(x$discharge[!grepl('0',x$discharge)])
+#     # which(x$discharge=='h other station')
+#     x$discharge[x$discharge %in% c('Ice', 'Eqp', 'IEWED data', 'ut within 2x', 'h other station',
+#                                    'ation across ga', 'ut within 2x', 'another station',
+#                                    '- unreliable', 'visional data', 'visional data -', '',
+#                                    'xceeded (data w', 'No Data', 'ded', 't rating = Fair',
+#                                    'easurement - wi', 'by cooperator a', 'less than 1/2x',
+#                                    'hecked', 'nt threshold')] <- NA
+#     x$discharge <- as.numeric(x$discharge)
+#     x <- aggregate(x$discharge, list(year=substr(x$date,7,10), month=substr(x$date,1,2)), mean, na.rm=TRUE)
+#     date <- paste(x$year, x$month, '15', sep='-')
+#     out <- data.frame('date'=date, 'stillaguamish_main'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
+#     row.names(out) <- 1:nrow(out)
+#     discharge3 <- rbind(discharge3, out)
+# }
+#
+# #merge and clean
+# discharge <- merge(discharge, discharge3, by='date', all=TRUE)
+# rm(list=ls()[which(ls() != 'discharge')])
 
 # final fixes ####
 

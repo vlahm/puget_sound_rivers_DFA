@@ -102,9 +102,9 @@ if(file.exists('dfa1tmb.cpp')){
     write(dfa_model, file = "dfa1tmb_temp.cpp")
     t2<-read.table('dfa1tmb_temp.cpp',sep="\t",stringsAsFactors=F,comment.char='', quote = "")
     file.remove('dfa1tmb_temp.cpp')
-    #t1<-data.frame(t1[-which(t1==''),])
-    #t2<-data.frame(strsplit(dfa_model,fixed=T,'\n'))
-    #t2<-data.frame(t2[-which(t2==''),])
+    # t1<-data.frame(t1[-which(t1==''),])
+    # t2<-data.frame(strsplit(dfa_model,fixed=T,'\n'))
+    # t2<-data.frame(t2[-which(t2==''),])
     if(nrow(t1)==nrow(t2) & sum(t1!=t2)==0){
     dyn.load(dynlib("dfa1tmb"))
   }else{
@@ -118,17 +118,17 @@ if(file.exists('dfa1tmb.cpp')){
     dyn.load(dynlib("dfa1tmb"))
 }
 
-# if(!exists('dfamodel')){
-# 	write(dfa_model, file = "dfa1tmb.cpp")
-# 	dfamodel<-dfa_model
-# 	compile("dfa1tmb.cpp")
-# 	dyn.load(dynlib("dfa1tmb"))
-# }else if(dfa_model != dfamodel){
-# 	write(dfa_model, file = "dfa1tmb.cpp")
-# 	dfamodel<-dfa_model
-# 	compile("dfa1tmb.cpp")
-# 	dyn.load(dynlib("dfa1tmb"))
-# }
+if(!exists('dfamodel')){
+	write(dfa_model, file = "dfa1tmb.cpp")
+	dfamodel<-dfa_model
+	compile("dfa1tmb.cpp")
+	dyn.load(dynlib("dfa1tmb"))
+}else if(dfa_model != dfamodel){
+	write(dfa_model, file = "dfa1tmb.cpp")
+	dfamodel<-dfa_model
+	compile("dfa1tmb.cpp")
+	dyn.load(dynlib("dfa1tmb"))
+}
 
 
 dfa_model_EVCV<- "
@@ -227,7 +227,8 @@ if(file.exists('dfa1tmb_EVCV.cpp')){
     write(dfa_model, file = "dfa1tmb_EVCV_temp.cpp")
     t2<-read.table('dfa1tmb_EVCV_temp.cpp',sep="\t",stringsAsFactors=F,comment.char='', quote = "")
     file.remove('dfa1tmb_EVCV_temp.cpp')
-  if(nrow(t1)==nrow(t2) & sum(t1!=t2)==0){
+  # if(nrow(t1)==nrow(t2) & sum(t1!=t2)==0){
+  if(identical(t1,t2)){
     dyn.load(dynlib("dfa1tmb_EVCV"))
   }else{
     write(dfa_model_EVCV, file = "dfa1tmb_EVCV.cpp")
@@ -239,17 +240,17 @@ if(file.exists('dfa1tmb_EVCV.cpp')){
     compile("dfa1tmb_EVCV.cpp")
     dyn.load(dynlib("dfa1tmb_EVCV"))
 }
-# if(!exists('dfamodel_EVCV')){
-# 	write(dfa_model_EVCV, file = "dfa1tmb_EVCV.cpp")
-# 	dfamodel_EVCV<-dfa_model_EVCV
-# 	compile("dfa1tmb_EVCV.cpp")
-# 	dyn.load(dynlib("dfa1tmb_EVCV"))
-# }else if(dfa_model_EVCV != dfamodel_EVCV){
-# 	write(dfa_model_EVCV, file = "dfa1tmb_EVCV.cpp")
-# 	dfamodel_EVCV<-dfa_model_EVCV
-# 	compile("dfa1tmb_EVCV.cpp")
-# 	dyn.load(dynlib("dfa1tmb_EVCV"))
-# }
+if(!exists('dfamodel_EVCV')){
+	write(dfa_model_EVCV, file = "dfa1tmb_EVCV.cpp")
+	dfamodel_EVCV<-dfa_model_EVCV
+	compile("dfa1tmb_EVCV.cpp")
+	dyn.load(dynlib("dfa1tmb_EVCV"))
+}else if(dfa_model_EVCV != dfamodel_EVCV){
+	write(dfa_model_EVCV, file = "dfa1tmb_EVCV.cpp")
+	dfamodel_EVCV<-dfa_model_EVCV
+	compile("dfa1tmb_EVCV.cpp")
+	dyn.load(dynlib("dfa1tmb_EVCV"))
+}
 
 #This function generates the Z matrix based on the number of times series and the number of states that are estimated. It is called from with the model run.
 ZmatGen<-function(Data,NumStates){
@@ -480,7 +481,7 @@ runDFA<-function(obs,NumStates=1,ErrStruc='DE',EstCovar=FALSE,Covars=NULL,indivC
 #
 # newmethodR<-pl1$R
 
-setwd(StoreOldWD)
+# setwd(StoreOldWD)
 
 
 
