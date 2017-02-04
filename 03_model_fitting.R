@@ -12,9 +12,9 @@
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
-# setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 # setwd('~/git/puget_sound_rivers_DFA/data')
-setwd('Z:/stream_nuts_DFA/data/')
+# setwd('Z:/stream_nuts_DFA/data/')
 # setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
 load('chemPhys_data/yys_bymonth.rda')
 DISCHARGE <- read.csv('discharge_data/discharge.csv', stringsAsFactors=FALSE, colClasses=c('date'='Date'))
@@ -74,7 +74,7 @@ na_thresh = 0.55
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
 transform = 'log'
-  
+
 #be sure to visit section 3.1, where you can add time interval factors and interaction effects
 #to the covariate matrix
 
@@ -86,17 +86,17 @@ yy <- eval(parse(text=y_choice))
 
 # subset by year and exclude columns with >= na_thresh proportion of NAs
 subsetter <- function(yy, start, end, na_thresh=1){
-  
+
   #extract year subset
   years <- as.numeric(format(yy$date, '%Y'))
   yy <- yy[years >= start & years <= end, ]
-  
+
   #extract subset of columns with <= na_thresh proportion of NAs
   col_na_prop <- apply(yy, 2, function(x) sum(is.na(x)) / length(x))
   yy <- yy[,col_na_prop <= na_thresh]
-  
+
   rownames(yy) <- 1:nrow(yy)
-  
+
   return(yy)
 }
 yy <- subsetter(yy, start=startyr, end=endyr, na_thresh=na_thresh)
@@ -207,11 +207,11 @@ if(region=='3_4' & average_regions==FALSE){
   load(file=paste0('climate_data/by_month/climate',
                    region, '.rda'))
   covs <- eval(parse(text=ls()[grep('climate.{1,3}', ls())]))
-  
+
   #add snowmelt
   snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
   covs <- merge(covs, snowmelt, by='date', all=TRUE)
-  
+
   #subset by year and covariate choices
   covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
                            substr(covs$date,1,4) <= endyr,
@@ -265,17 +265,17 @@ transformables <- function(){
 transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
   #plot=T to see the effect of transforming
   #transform can be 'boxcox' or 'power'. if 'power', must specify an exp
-  
+
   obs_ts2 <- data
   lambdas <- NULL
-  
+
   #it won't transform if the response is any of the four below. this was convenient once, but seems restrictive now.
   #if you want to transform these, go for it.
   if(!(y_choice %in% c('OXYGEN','PRESS','PH','TEMP'))){
     if(transform=='boxcox'){
       pre <- preProcess(as.matrix(obs_ts2), method=c('BoxCox'), fudge=0.01)
       obs_ts2 <- predict(pre, obs_ts2)
-      
+
       lambdas <- sapply(pre$bc, function(x) x$lambda)
       unchanged <- setdiff(names(obs_ts2), names(lambdas))
       if(length(unchanged) > 0){
@@ -295,11 +295,11 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
       }
     }
   }
-  
+
   sds <- apply(obs_ts2, 2, sd, na.rm=TRUE)
   scaled <- scale(obs_ts2, scale=scale)
   # backtransformed <- (lambdas * scaled * sd(obs_ts2) + 1) ^ (1/lambdas)
-  
+
   if(plot){
     par(mfrow=c(4,3))
     for(i in 1:ncol(data)){
@@ -309,7 +309,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
       qqline(scaled[,i], col='red', lwd=2)
     }
   }
-  
+
   out <- list(trans=scaled, sds=sds, lambdas=lambdas)
   return(out)
 }
@@ -370,7 +370,7 @@ ccgen <- function(meth=method){
   if(meth %in% c('fixed_collective', 'fixed_individual')){
     year_block <- diag(12)
     nyears <- endyr-startyr+1
-    
+
     cc <- Reduce(function(x,y) {cbind(x,y)},
                  eval(parse(text=paste0('list(',
                                         paste(rep('year_block', nyears,), sep=', ', collapse=', '),
@@ -414,11 +414,11 @@ cov_and_seas <- rbind(cc,covs_z)
 
 #look inside function for details
 factorizer <- function(sections, focal_months){
-  
+
   #create factor of even intervals across time series
   #argument 'sections' is the number of time intervals to divide the time series into
   section_length <- ncol(covs_z) / sections
-  
+
   if(!(is.integer(section_length))){
     values_to_add <- ncol(dat_z) - sections*floor(section_length)
     message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
@@ -426,9 +426,9 @@ factorizer <- function(sections, focal_months){
     vals <- rep(floor(section_length), sections)
     for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
   }
-  
+
   interval_fac <- factor(sort(rep(1:sections, times=vals)))
-  
+
   #create model matrix for desired interactions (for which months would you like to see
   #the interaction of covariate:interval:month?
   #(i.e. change in covariate per month during each time interval)
@@ -438,7 +438,7 @@ factorizer <- function(sections, focal_months){
   month_fac <- rep(0, 12)
   month_fac[focal_months] <- month.abb[focal_months]
   month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
-  
+
   return(data.frame(series_interval=interval_fac, focal_months=month_fac))
 }
 # facs <- factorizer(5, c(11,12,5,6))
@@ -652,6 +652,10 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
+#add watershed area over 1000m column
+WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
+land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
@@ -659,7 +663,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm')
+              'WsAreaSqKm','WsAreaOver1000')
 
 #get the indices of each of these variables in the main land dataframe
 landcols <- rep(NA, length(landvars))
@@ -670,7 +674,7 @@ for(i in 1:length(landvars)){
 #this identifies the landscape vars that correlate best with the response (used in the loop)
 best_landvars <- function(response, top){
   #response = loadings or rescaled_effect_sizes; top = top n vars
-  
+
   best_cols = best_names = best_cors = matrix(NA, nrow=top, ncol=ncol(response))
   for(i in 1:ncol(response)){
     all_cors <- as.vector(cor(response[,i], land[landcols]))
@@ -702,10 +706,10 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
   } else {
     z_effect_size <- dfa$Estimates$D
   }
-  
+
   nstream <- nrow(z_effect_size)
   ncov <- ncol(z_effect_size)
-  
+
   #convert effects back to original scale (units response/units covar)
   #x/sd(response) = 1/sd(covar); x is the effect size scale factor
   rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
@@ -717,7 +721,7 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
       rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
     }
   }
-  
+
   return(rescaled_effect_size)
 }
 # rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
@@ -738,9 +742,9 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
   #if using 'indiv', must select a var name
   #col_scale determines which variable to color the points by
   #green is high, black is low
-  
+
   pal <- colorRampPalette(c('black', 'green'))
-  
+
   if(mode == 'exploration'){
     land_ind <- eff_best[[1]]
     top <- nrow(land_ind)
@@ -780,10 +784,10 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
   #if using 'indiv', must select a var name
   #col_scale determines which variable to color the points by
   #green is high, black is low
-  
+
   loadings <- dfa$Estimates$Z
   pal <- colorRampPalette(c('black', 'green'))
-  
+
   if(mode == 'exploration'){
     land_ind <- load_best[[1]]
     top <- nrow(land_ind)
@@ -951,12 +955,13 @@ covariates <- list(pc=rbind(covs_z2[2,]), sn=rbind(covs_z2[3,]),
 #just like the other loops below
 sections <- 5
 focal_months <- c(5,6,11,12)
+covSeas_only = FALSE #switch this to TRUE if you're only using covs and seasonal effects
 
 # troubleshooting
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 #stock parameters for troubleshooting
-# RRR='DE'; mmm=1; cov=1; sss=1
+RRR='DE'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 #sourcing the appropriate TMB script based on the chosen error structure
@@ -967,110 +972,110 @@ if('EVCV' %in% R_strucs) source('../00_tmb_uncor_Rmat_EVCV.R') else source('../0
 #and stream_nuts_DFA/model_outputs. The variable "model_out" is a summary data frame of diagnostic stuff
 #that will be dealt with next
 model_out <-
-  foreach(RRR=R_strucs, .combine=rbind) %:% # **R
-  foreach(mmm=ntrends, .combine=rbind) %:%
-  foreach(sss=1:length(seasonality), .combine=rbind) %:% # **s
-  foreach(cov=1:length(covariates), .combine=rbind,
-          .packages='viridis') %dopar% {
-            
-            #re-run TMB script for each new R process
-            if('EVCV' %in% R_strucs) source('../00_tmb_uncor_Rmat_EVCV.R') else
-              source('../00_tmb_uncor_Rmat_DE_DUE_UNC.R')
-            
-            # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
-            
-            #create covariate + seasonality + interaction + interval matrix
-            covs_z <- covariates[[cov]] #for name consistency
-            if(T){ #switch this to F if you're only using covs and seasonality
-              facs <- factorizer(sections, focal_months)
-              interval_effect <- model.matrix( ~ facs[,1] -1)
-              interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-              cov_and_seas <- rbind(seasonality[[sss]], covs_z,
-                                    t(interval_effect), t(interactions))
-            } else {
-              cov_and_seas <- rbind(seasonality[[sss]],covs_z)
-            }
-            
-            #fit model with TMB
-            if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
-              dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                            EstCovar=FALSE)
-            } else {
-              dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
-                            EstCovar=TRUE, Covars=cov_and_seas)
-            }
-            
-            #save model object
-            saveRDS(dfa, file=paste0("../model_objects_", tolower(y_choice), "/",
-                                     y_choice, '_', RRR, '_', mmm, 'm_',
-                                     names(seasonality)[sss], '_', names(covariates)[cov], '_',
-                                     startyr, '-', endyr, '.rds'))
-            
-            #landscape variable correlations
-            if(!is.null(covs_z)){
-              rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
-              eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
-            }
-            loadings <- dfa$Estimates$Z
-            load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
-            
-            #format influential landscape var names and cors for export
-            load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
-              load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
-            
-            for(i in 1:ncol(load_best[[1]])){
-              assign(paste0('load_names', i), paste(load_best[[2]][,i], collapse=','))
-              assign(paste0('load_cors', i), paste(load_best[[3]][,i], collapse=','))
-            }
-            if(!is.null(covs_z)){
-              for(i in 1:ncol(eff_best[[1]])){
-                assign(paste0('eff_names', i), paste(eff_best[[2]][,i], collapse=','))
-                assign(paste0('eff_cors', i), paste(eff_best[[3]][,i], collapse=','))
-              }
-            }
-            
-            #open plot device
-            pdf(file=paste0("../model_outputs_", tolower(y_choice), "/",
-                            y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
-                            names(covariates)[cov], '_',
-                            startyr, '-', endyr, '.pdf'),
-                onefile=TRUE)
-            
-            #plot hidden processes, loadings, model fits, and landscape regressions
-            process_plotter_TMB(dfa, mmm)
-            loading_plotter_TMB(dfa, mmm)
-            fits_plotter_TMB(dfa)
-            residuals_plotter(dfa)
-            ACF_plotter(dfa)
-            if(!is.null(covs_z)) eff_regress_plotter(mode='exploration')
-            load_regress_plotter(mmm, mode='exploration')
-            
-            #close plot device
-            dev.off()
-            
-            #get min, median, max R^2
-            R2 <- get_R2(dfa)
-            
-            #store params, etc. in dataframe
-            data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
-                       seasonality=names(seasonality)[sss],
-                       nparams=length(dfa$Optimization$par),
-                       ndatapts=length(unlist(which(!is.na(dat_z)))),
-                       n_p_ratio=length(unlist(which(!is.na(dat_z)))) / length(dfa$Optimization$par),
-                       NLL=dfa$Optimization$value, AIC=dfa$AIC,
-                       min_R2=R2[[1]], meidian_R2=R2[[2]], max_R2=R2[[3]],
-                       counts_func=unname(dfa$Optimization$counts[1]),
-                       counts_gradient=unname(dfa$Optimization$counts[2]),
-                       convergence=dfa$Optimization$convergence,
-                       message=paste('0',dfa$Optimization$message),
-                       load_names1=load_names1,load_names2=load_names2,
-                       load_names3=load_names3,load_names4=load_names4,
-                       load_cors1=load_cors1,load_cors2=load_cors2,
-                       load_cors3=load_cors3,load_cors4=load_cors4,
-                       eff_names1=eff_names1,eff_names2=eff_names2,
-                       eff_cors1=eff_cors1,eff_cors2=eff_cors2,
-                       stringsAsFactors=FALSE)
-          }
+    foreach(RRR=R_strucs, .combine=rbind) %:% # **R
+    foreach(mmm=ntrends, .combine=rbind) %:%
+    foreach(sss=1:length(seasonality), .combine=rbind) %:% # **s
+    foreach(cov=1:length(covariates), .combine=rbind,
+    .packages='viridis') %dopar% {
+
+    #re-run TMB script for each new R process
+    if('EVCV' %in% R_strucs) source('../00_tmb_uncor_Rmat_EVCV.R') else
+      source('../00_tmb_uncor_Rmat_DE_DUE_UNC.R')
+
+    # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
+
+    #create covariate + seasonality + interaction + interval matrix
+    covs_z <- covariates[[cov]] #for name consistency
+    if(!covSeas_only){
+      facs <- factorizer(sections, focal_months)
+      interval_effect <- model.matrix( ~ facs[,1] -1)
+      interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
+      cov_and_seas <- rbind(seasonality[[sss]], covs_z,
+                            t(interval_effect), t(interactions))
+    } else {
+      cov_and_seas <- rbind(seasonality[[sss]],covs_z)
+    }
+
+    #fit model with TMB
+    if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
+      dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                    EstCovar=FALSE)
+    } else {
+      dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
+                    EstCovar=TRUE, Covars=cov_and_seas)
+    }
+
+    #save model object
+    saveRDS(dfa, file=paste0("../model_objects_", tolower(y_choice), "/",
+                             y_choice, '_', RRR, '_', mmm, 'm_',
+                             names(seasonality)[sss], '_', names(covariates)[cov], '_',
+                             startyr, '-', endyr, '.rds'))
+
+    #landscape variable correlations
+    if(!is.null(covs_z)){
+      rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
+      eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
+    }
+    loadings <- dfa$Estimates$Z
+    load_best <- best_landvars(loadings, 6) #vars best correlated with loadings
+
+    #format influential landscape var names and cors for export
+    load_names1=load_names2=load_names3=load_names4=load_cors1=load_cors2=load_cors3=
+      load_cors4=eff_names1=eff_names2=eff_cors1=eff_cors2=NA #placeholders
+
+    for(i in 1:ncol(load_best[[1]])){
+      assign(paste0('load_names', i), paste(load_best[[2]][,i], collapse=','))
+      assign(paste0('load_cors', i), paste(load_best[[3]][,i], collapse=','))
+    }
+    if(!is.null(covs_z)){
+      for(i in 1:ncol(eff_best[[1]])){
+        assign(paste0('eff_names', i), paste(eff_best[[2]][,i], collapse=','))
+        assign(paste0('eff_cors', i), paste(eff_best[[3]][,i], collapse=','))
+      }
+    }
+
+    #open plot device
+    pdf(file=paste0("../model_outputs_", tolower(y_choice), "/",
+                    y_choice, '_', RRR, '_', mmm, 'm_', names(seasonality)[sss], '_',
+                    names(covariates)[cov], '_',
+                    startyr, '-', endyr, '.pdf'),
+        onefile=TRUE)
+
+    #plot hidden processes, loadings, model fits, and landscape regressions
+    process_plotter_TMB(dfa, mmm)
+    loading_plotter_TMB(dfa, mmm)
+    fits_plotter_TMB(dfa)
+    residuals_plotter(dfa)
+    ACF_plotter(dfa)
+    if(!is.null(covs_z)) eff_regress_plotter(mode='exploration')
+    load_regress_plotter(mmm, mode='exploration')
+
+    #close plot device
+    dev.off()
+
+    #get min, median, max R^2
+    R2 <- get_R2(dfa)
+
+    #store params, etc. in dataframe
+    data.frame(R=RRR, m=mmm, cov=names(covariates)[cov],
+               seasonality=names(seasonality)[sss],
+               nparams=length(dfa$Optimization$par),
+               ndatapts=length(unlist(which(!is.na(dat_z)))),
+               n_p_ratio=length(unlist(which(!is.na(dat_z)))) / length(dfa$Optimization$par),
+               NLL=dfa$Optimization$value, AIC=dfa$AIC,
+               min_R2=R2[[1]], meidian_R2=R2[[2]], max_R2=R2[[3]],
+               counts_func=unname(dfa$Optimization$counts[1]),
+               counts_gradient=unname(dfa$Optimization$counts[2]),
+               convergence=dfa$Optimization$convergence,
+               message=paste('0',dfa$Optimization$message),
+               load_names1=load_names1,load_names2=load_names2,
+               load_names3=load_names3,load_names4=load_names4,
+               load_cors1=load_cors1,load_cors2=load_cors2,
+               load_cors3=load_cors3,load_cors4=load_cors4,
+               eff_names1=eff_names1,eff_names2=eff_names2,
+               eff_cors1=eff_cors1,eff_cors2=eff_cors2,
+               stringsAsFactors=FALSE)
+  }
 
 #save data frame mentioned above
 write.csv(model_out, file=paste0("../model_objects_", tolower(y_choice), "/",

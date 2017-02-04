@@ -16,7 +16,7 @@ setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 setwd('~/git/puget_sound_rivers_DFA/data')
 setwd('Z:/stream_nuts_DFA/data/') #set to data folder
 load('chemPhys_data/yys_bymonth.rda')
-DISCHARGE <- read.csv('discharge_data/discharge.csv')
+DISCHARGE <- read.csv('discharge_data/discharge.csv', stringsAsFactors=FALSE, colClasses=c('date'='Date'))
 snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
 
 #install packages that aren't already installed (see https://github.com/kaskr/adcomp for TMB package)
@@ -73,6 +73,9 @@ scale = FALSE
 na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #be sure to visit section 3.1, where you can add time interval factors and interaction effects
 #to the covariate matrix
+#transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
+#run function transformables() to see whether your response needs to be transformed.
+transform = 'none'
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -308,7 +311,7 @@ transformer <- function(data, transform, exp=NA, scale, plot=FALSE){
     out <- list(trans=scaled, sds=sds, lambdas=lambdas, means=means)
     return(out)
 }
-trans <- transformer(obs_ts, transform='none', exp=NA, scale=scale, plot=F)
+trans <- transformer(obs_ts, transform=transform, exp=NA, scale=scale, plot=F)
 
 dat_z <- t(trans$trans)
 # mean(dat_z[1,], na.rm=T); sd(dat_z[1,], na.rm=T) #verify
@@ -527,19 +530,17 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # colnames(seas) = month.abb
 # seas
 
-# 4.1 - save model object ####
+# 4.1 - save model object or global environment image ####
 
 # saveRDS(dfa, '../saved_structures/dfa_out1.rds')
-# save.image('../saved_structures/temp_due_2m_at.rda')
+save.image('../manuscript/figures/temp_due_3m_at_EVCV.rda')
 
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-# dfa <- readRDS('../round_5_tempTurbSuss/model_objects/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
-# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_UNC_2m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_temp/TEMP_DUE_2m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_factors_pc_1978-2015.rds')
+# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
+dfa <- readRDS('../round_8_interactions_discharge/model_objects_temp_EVCV/TEMP_DUE_3m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_factors_pc_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -676,7 +677,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
 }
 # pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-process_plotter_TMB(dfa, mm)
+# process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
@@ -705,7 +706,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
 }
-loading_plotter_TMB(dfa, mm)
+# loading_plotter_TMB(dfa, mm)
 # dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
@@ -730,7 +731,7 @@ fits_plotter_TMB <- function(dfa_obj){
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')), 2, 2)
     # mtext('Month Index', 1, 2, T)
 }
-fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+# fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
 
 residuals_plotter <- function(dfa_obj){
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
@@ -743,7 +744,7 @@ residuals_plotter <- function(dfa_obj){
     }
     # mtext('Residual Error', 2, 2)
 }
-residuals_plotter(dfa)
+# residuals_plotter(dfa)
 # dev.off()
 
 ACF_plotter <- function(dfa_obj){
@@ -755,7 +756,7 @@ ACF_plotter <- function(dfa_obj){
             ylab=rownames(dat_z)[i], pch=20)
     }
 }
-ACF_plotter()
+# ACF_plotter()
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
@@ -765,7 +766,7 @@ get_R2 <- function(dfa_obj){
     }
     return(list(min=min(R2), median=median(R2), max=max(R2)))
 }
-get_R2(dfa)
+# get_R2(dfa)
 
 # 5.2 - landscape variable setup ####
 
@@ -776,6 +777,10 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
+#add watershed area over 1000m column
+WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
+land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
@@ -783,7 +788,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm')
+              'WsAreaSqKm','WsAreaOver1000')
 # landvars <- c('ElevWs','PctImp2006WsRp100',
 #               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
 #               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
@@ -853,7 +858,7 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
 rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 
 #grab top landscape vars that correlate with effect size, plot and get stats
-eff_best <- best_landvars(rescaled_effect_size, 6)
+# eff_best <- best_landvars(rescaled_effect_size, 6)
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
 #if you log transformed the response. (note that this may have been done by default in section 1.3
@@ -901,8 +906,8 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
-eff_regress_plotter('exploration', , 'ElevWs')
+# eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
+# eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
 
@@ -953,8 +958,8 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
-load_regress_plotter(mm, 'exploration', , 'ElevWs')
+# load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
+# load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model ####
 
@@ -968,26 +973,26 @@ for(i in landvars){
 #tidally influenced. in the meantime, removing it from analysis, checking top cors.
 #UPDATE: K has been removed from the analysis. See section 1.1
 # K_ind <- which(land$siteCode=='K')
-land_sub <- land[,landcols] #subset landscape variables by those used in the analysis, remove K
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis.
 best <- rev(tail(sort(abs(apply(land_sub, 2, function(x) cor(x, rescaled_effect_size))))))
 
 #plot best cors along with fitted models
-defpar <- par(mfrow=c(2,2))
+defpar <- par(mfrow=c(3,2))
 # full_names <- c('mean water table depth', 'base flow index', '% ice 2011', 'mean elevation')
 pal <- colorRampPalette(c('blue', 'red'))
 cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
-for(i in 4:4){
-    plot(land_sub[,names(best)[1:4][i]], rescaled_effect_size,
+for(i in 1:6){
+    plot(land_sub[,names(best)[1:6][i]], rescaled_effect_size,
          xlab=names(best)[i], ylab=expression(paste(Delta,'water temp /', Delta, 'air temp')),
          main='blue=low elev, red=high elev', col=cols, pch=colnames(trans$trans))
-    mod <- lm(rescaled_effect_size ~ land_sub[,names(best)[1:4][i]])
+    mod <- lm(rescaled_effect_size ~ land_sub[,names(best)[1:6][i]])
     abline(mod, col='gray', lty=2)
 }
 par(defpar)
 
 #why is water table depth such a strong factor? what else is it correlated with?
 rev(tail(sort(abs(apply(land[,43:ncol(land)], 2, function(x) cor(land$WtDepWs, x)))), 15))
-#it's just elevation (note the returned correlations have been abs()'d)
+#it's probably just elevation (note the returned correlations have been abs()'d)
 
 #okay, so stream temp follows the regional air trend depending primarily on
 #base flow, glaciation, and elevation
@@ -1017,13 +1022,12 @@ cols <- pal(10)[as.numeric(cut(land_sub$ElevWs, breaks=10))]
 defpar <- par(mfrow=c(3,2), mar=c(4,.5,.5,.5), oma=c(4,5,0,0))
 for(i in 1:6){
     mod <- lm(dfa$Estimates$Z[,1] ~ land_sub[,names(best1)[i]])
-    # mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best1)[i]])
     # mod <- lm(dfa$Estimates$Z[,2] ~ land_sub[,names(best2)[i]])
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.05, ' *', '')
-    # plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
+    plot(land_sub[,names(best1)[i]], dfa$Estimates$Z[,1],
     # plot(land_sub[,names(best2)[i]], dfa$Estimates$Z[,2],
     xlab=paste0(names(best1)[i], sig),
-    xlab=paste0(full_names[i], sig),
+    # xlab=paste0(full_names[i], sig),
     # main='blue=low elev, red=high elev',
     col=cols, pch=colnames(trans$trans), yaxt='n')
 abline(mod, col='gray', lty=2, lwd=2)

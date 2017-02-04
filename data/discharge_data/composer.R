@@ -34,9 +34,13 @@ for(i in 1:length(files)){
 }
 
 #re-sort
-discharge <- discharge[order(substr(discharge$date,1,4), substr(discharge$date,6,7)),]
+discharge$date <- as.Date(discharge$date)
+discharge <- discharge[order(discharge$date),]
+# discharge <- discharge[order(substr(discharge$date,1,4), substr(discharge$date,6,7)),]
 
 #clean up
+discharge <- discharge[-(1:27),]
+rownames(discharge) <- 1:nrow(discharge)
 rm(list=ls()[which(ls() != 'discharge')])
 
 #compose 15 minute data ####
@@ -66,29 +70,33 @@ for(i in 1:length(files)){
 }
 
 #re-sort
-discharge2$date <- as.character(discharge2$date)
-discharge2 <- discharge2[order(substr(discharge2$date,1,4), substr(discharge2$date,6,7)),]
+discharge2$date <- as.Date(discharge2$date)
+# discharge2 <- discharge2[order(substr(discharge2$date,1,4), substr(discharge2$date,6,7)),]
+discharge2 <- discharge2[order(discharge2$date),]
 discharge2 <- discharge2[-(1:3),]
+rownames(discharge2) <- 1:nrow(discharge2)
 
 #merge
+disch_2008 <- discharge[1171:1179,]
 disch2_2008 <- discharge2[1:9,]
 best_2008 <- disch2_2008
 best_2008[is.na(best_2008)] <- as.numeric(disch_2008[is.na(best_2008)])
-discharge <- rbind(discharge[-(748:768),], best_2008, discharge2[-(1:9),])
+discharge <- rbind(discharge[-(1171:1179),], best_2008, discharge2[-(1:9),])
+rownames(discharge) <- 1:nrow(discharge)
 
 #clean up
 # rm(list=ls()[!grepl('discharge', ls())])
 rm(list=ls()[which(ls() != 'discharge')])
 
-#one more consolidated 15 minute site
-x <- read.table('15_min/stillaguamish_nf_hi.txt', header=FALSE, skip=29, stringsAsFactors=FALSE)
-x <- x[,c(3,6)]
-colnames(x) <- c('date', 'discharge')
-x <- aggregate(x$discharge, list(year=substr(x$date,1,4), month=substr(x$date,6,7)), mean, na.rm=TRUE)
-date <- paste(x$year, x$month, '15', sep='-')
-out <- data.frame('date'=date, 'stillaguamish_nf_hi'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
-row.names(out) <- 1:nrow(out)
-discharge <- merge(discharge, out, by='date', all=TRUE)
+#one more consolidated 15 minute site (not worth it)
+# x <- read.table('15_min/stillaguamish_nf_hi.txt', header=FALSE, skip=29, stringsAsFactors=FALSE)
+# x <- x[,c(3,6)]
+# colnames(x) <- c('date', 'discharge')
+# x <- aggregate(x$discharge, list(year=substr(x$date,1,4), month=substr(x$date,6,7)), mean, na.rm=TRUE)
+# date <- paste(x$year, x$month, '15', sep='-')
+# out <- data.frame('date'=date, 'stillaguamish_nf_hi'=x$x)[order(substr(date,1,4), substr(date,6,7)),]
+# row.names(out) <- 1:nrow(out)
+# discharge <- merge(discharge, out, by='date', all=TRUE)
 
 #compose 15 minute by-year sites (not worth it. too little data)####
 
@@ -153,32 +161,37 @@ discharge <- merge(discharge, out, by='date', all=TRUE)
 # final fixes ####
 
 #replace NaNs with NAs
-discharge$stillaguamish_sf[is.nan(discharge$stillaguamish_sf)] <- NA
-discharge$stillaguamish_main[is.nan(discharge$stillaguamish_main)] <- NA
+# discharge$stillaguamish_sf[is.nan(discharge$stillaguamish_sf)] <- NA
+# discharge$stillaguamish_main[is.nan(discharge$stillaguamish_main)] <- NA
 
 #remove garbage rows and Nisqually column
-discharge <- discharge[-(1336:nrow(discharge)),]
+# discharge <- discharge[-(1336:nrow(discharge)),]
 discharge <- subset(discharge, select=-nisqually)
 
 #change site names to site IDs
 # site_names <- list(elwha='Z', duckabush='I', skokomish='L', deschutes='M', puyallup='J',
-#                    green_lo='B', green_hi='N', cedar_lo='A', cedar_hi='O', sammamish_issaquah='Z',
+#                    green_lo='B', green_hi='N', cedar_lo='A', cedar_hi='O', sammamish_issaquah='ZA',
 #                    snohomish='H', skykomish='Q', snoqualmie_lo='R', snoqialmie_hi='P',
 #                    stillaguamish_main='G', #stillaguamish_main also equals 'T', but only data for one
 #                    stillaguamish_nf_lo='U', stillaguamish_nf_hi='V', stillaguamish_sf='S', skagit_low='F',
 #                    skagit_hi='W', samish='E', nooksack_low='C', nooksack_hi='X')
 
 names(discharge)[2:ncol(discharge)] <- c('O','A','M','I','Z','N','B','X','C','J','E','ZA','W','F',
-                                         'L','Q','H','P','R','U','V','S','G')
+                                         'L','Q','H','P','R','U')#,'V','S','G')
 
 #sort by colname
 discharge <- cbind(discharge$date, discharge[,-1][,order(names(discharge)[-1])])
 colnames(discharge)[1] <- 'date'
-discharge$date <- as.character(discharge$date)
+
+#add rows for missing months
+discharge <- merge(discharge,
+      data.frame(date=seq.Date(discharge$date[1], discharge$date[nrow(discharge)], 'month')),
+      all=T)
 
 #sort by date
 discharge <- discharge[order(discharge$date),]
-discharge <- discharge[-(1:27),]
+# discharge <- discharge[-(1:27),]
+rownames(discharge) <- 1:nrow(discharge)
 
 #write file
 write.csv(discharge, 'discharge.csv', row.names=FALSE)

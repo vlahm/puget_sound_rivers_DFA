@@ -7,8 +7,8 @@ obsolete/
 *.o
 *.dll
 *.so
-/round_[1-5]*
-/round_7*
-/round_6_TeTuSu_UNSCALED/model_objects*
+/round_[1-7]*
+/round_8_interactions_discharge/model_objects_temp_evcv/*.rds
+/round_8_interactions_discharge/model_objects_discharge/*.rds
 ~*
 */model_outputs*

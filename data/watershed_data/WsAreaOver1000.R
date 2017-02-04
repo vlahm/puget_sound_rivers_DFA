@@ -14,4 +14,4 @@ for(i in 1:length(elev_inds)){
     out$WsAreaOver1000[i] <- propOver1000
 }
 
-write.csv(out, 'WsAreaOver1000.csv')
+write.csv(out, 'WsAreaOver1000.csv', row.names=FALSE)
