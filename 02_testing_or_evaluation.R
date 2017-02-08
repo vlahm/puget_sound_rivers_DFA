@@ -47,11 +47,11 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'TEMP'
+y_choice = 'DISCHARGE'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015;
 #also, Ihaven't actually used snowmelt in a model yet, so there could be bugs)
-cov_choices = c('meantemp')
+cov_choices = c('precip', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -75,7 +75,7 @@ na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'none'
+transform = 'log'
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -533,13 +533,14 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # 4.1 - save model object or global environment image ####
 
 # saveRDS(dfa, '../saved_structures/dfa_out1.rds')
-save.image('../manuscript/figures/temp_due_3m_at_EVCV.rda')
+save.image('../manuscript/figures/discharge_due_3m_pcsn.rda')
 
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
 dfa <- readRDS('../round_8_interactions_discharge/model_objects_temp_EVCV/TEMP_DUE_3m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge/DISCHARGE_DUE_3m_fixed_factors_pcsn_1978-2015.rds')
+# dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
 # dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_factors_pc_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
