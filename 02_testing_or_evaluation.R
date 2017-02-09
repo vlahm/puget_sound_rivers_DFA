@@ -6,7 +6,7 @@
 #collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
 #if R crashes when you try to use runDFA,
 #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
-#no data or 1 data point. these timepoints must either be removed or imputed.
+#no data or 1 data point. these timepoints must either be removed or imputed (see section 1.2).
 #to quickly access any of the function definitions, put the cursor on the function name and hit F2
 
 # rm(list=ls()); cat('\014') #clear env and console
@@ -47,11 +47,11 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'DISCHARGE'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015;
 #also, Ihaven't actually used snowmelt in a model yet, so there could be bugs)
-cov_choices = c('precip', 'snowmelt')
+cov_choices = c('meantemp')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
@@ -71,11 +71,15 @@ obs_err_var_struc = 'DUE'
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
 scale = FALSE
 na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
-#be sure to visit section 3.1, where you can add time interval factors and interaction effects
+#be sure to visit section 3.1i, where you can add time interval factors and interaction effects
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'log'
+transform = 'none'
+#number of intervals to divide the time series into, for examining change over time
+sections <- 'none' #can choose 'none'
+#the months to focus on for by-month effect size (1 is jan...)
+focal_months <- c(5,6,7,8)
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -416,17 +420,19 @@ factorizer <- function(sections, focal_months){
 
     #create factor of even intervals across time series
     #argument 'sections' is the number of time intervals to divide the time series into
-    section_length <- ncol(covs_z) / sections
+    if(sections!='none'){
+        section_length <- ncol(covs_z) / sections
 
-    if(!(is.integer(section_length))){
-        values_to_add <- ncol(dat_z) - sections*floor(section_length)
-        message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
-                      'section(s) will be one observation longer'))
-        vals <- rep(floor(section_length), sections)
-        for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
-    }
+        if(!(is.integer(section_length))){
+            values_to_add <- ncol(dat_z) - sections*floor(section_length)
+            message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
+                          'section(s) will be one observation longer'))
+            vals <- rep(floor(section_length), sections)
+            for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+        }
 
-    interval_fac <- factor(sort(rep(1:sections, times=vals)))
+        interval_fac <- factor(sort(rep(1:sections, times=vals)))
+    } else interval_fac <- rep(NA, ncol(dat_z))
 
     #create model matrix for desired interactions (for which months would you like to see
     #the interaction of covariate:interval:month?
@@ -440,16 +446,20 @@ factorizer <- function(sections, focal_months){
 
     return(data.frame(series_interval=interval_fac, focal_months=month_fac))
 }
-facs <- factorizer(5, c(5,6,11,12)) #these need to be set
+facs <- factorizer(sections=sections, focal_months=focal_months) #these need to be set
 
 #create model matrix for interval effect
 interval_effect <- model.matrix( ~ facs[,1] -1)
 
-#create model matrix for covariate:interval:focal_month interactions
-interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-
+#create model matrix for covariate:(interval):focal_month interactions
 #bind them to the covariates and seasonality components (keeping the same name to preserve code)
-cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
+if(sections != 'none'){
+    interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
+    cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
+} else {
+    interactions <- model.matrix( ~ t(covs_z):facs[,2] - 1)
+    cov_and_seas <- rbind(cov_and_seas, t(interactions))
+}
 
 # 3.2 - see if region 3 and 4 climate variables differ ####
 #feel free to uncomment and experiment with this stuff just to verify that
@@ -533,13 +543,16 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # 4.1 - save model object or global environment image ####
 
 # saveRDS(dfa, '../saved_structures/dfa_out1.rds')
-save.image('../manuscript/figures/discharge_due_3m_pcsn.rda')
+save.image('../manuscript/figures/temp_due_4m_at_noSections_may-aug.rda')
 
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-dfa <- readRDS('../round_8_interactions_discharge/model_objects_temp_EVCV/TEMP_DUE_3m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge/DISCHARGE_DUE_3m_fixed_factors_pcsn_1978-2015.rds')
+# dfa <- readRDS('../round_8_interactions_discharge/model_objects_temp_EVCV/TEMP_DUE_3m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_8_interactions_discharge/temp_may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_8_interactions_discharge/temp_noSections_may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge/DISCHARGE_DUE_3m_fixed_factors_pcsn_1978-2015.rds')
+dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge2/DISCHARGE_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
 # dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_turb/TURB_DUE_2m_fixed_factors_pc_1978-2015.rds')
 

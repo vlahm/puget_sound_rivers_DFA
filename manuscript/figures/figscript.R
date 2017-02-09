@@ -3,6 +3,9 @@
 #created: 1/13/17
 #plots of best temperature model: temp_due_2m_fixed_at_1978-2015
 
+#before making figures from a particular model run, gotta run through the
+#02_testing_or_evaluation script and save the image as an .rda file.
+
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup (choose temp/discharge here) ####
@@ -23,10 +26,12 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 }
 
 #load all objects generated during the creation and postprocessing of the best model
-#best temp as of 2/3/17
-# load('temp_due_3m_at_EVCV.rda')
+#best temp as of 2/8/17
+load('temp_due_4m_at_noSections_may-aug.rda')
 #best discharge as of 2/3/17
-load('discharge_due_3m_pcsn.rda')
+# load('discharge_due_3m_pcsn.rda')
+#new one for the sake of comparing discharge and water temp via air temp (2/8/17)
+# load('discharge_due_4m_at.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -181,11 +186,13 @@ landcov = land$Ice06_11
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
-ints <- which(grepl('t\\(covs_z\\):.*', csi_names))
+ints <- which(grepl('t\\(covs_z\\)a?t?:.*', csi_names))
 mos <- c(intersect(month.abb, unique(str_match(csi_names[ints], '.*?\\](?:.*])?(.+)')[,2])), '0')
 moInts <- matrix(NA, nrow=nrow(csi), ncol=length(mos), dimnames=list(NULL,mos))
 for(i in 1:length(mos)){
-    moInts[,i] <- rowSums(csi[,grepl(paste0('.+', mos[i]), csi_names)], na.rm=TRUE)
+    moInts[,i] <- csi[,grepl(paste0('.+', mos[i]), csi_names)]
+    # moInts[,i] <- rowSums(csi[,grepl(paste0('.+', mos[i]), csi_names)], na.rm=TRUE)# &
+                                  # grepl(paste0('.+', 'at'), csi_names)], na.rm=TRUE)
 }
 moInts <- moInts/sd(covs) #restore to original scale
 colnames(moInts)[length(mos)] <- 'All other months'
@@ -227,7 +234,7 @@ landcov = land$Ice06_11
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
-ints <- which(grepl('t\\(covs_z\\):.*', csi_names))
+ints <- which(grepl('t\\(covs_z\\)a?t?:.*', csi_names))
 mos <- c(intersect(month.abb, unique(str_match(csi_names[ints], '.*?\\](?:.*])?(.+)')[,2])), '0')
 sects <- unique(str_match(csi_names[ints], '.*?\\](\\d)')[,2])
 moSectInts <- array(NA, dim=c(nrow(csi), length(mos), length(sects)),
@@ -235,7 +242,8 @@ moSectInts <- array(NA, dim=c(nrow(csi), length(mos), length(sects)),
 for(i in 1:length(mos)){
     for(j in 1:length(sects)){
         moSectInts[,i,j] <- csi[,which(grepl(paste0('.+', mos[i]), csi_names) &
-                                           grepl(paste0('.*?:.*?\\]', sects[j]), csi_names))]
+                                       grepl(paste0('.*?:.*?\\]', sects[j]), csi_names) &
+                                       grepl(paste0('.+', 'at'), csi_names))]
     }
 }
 moSectInts <- moSectInts/sd(covs) #restore to original scale
@@ -252,7 +260,7 @@ covOrder <- order(landcov)
 cn=0
 for(i in covOrder){ #rivers
     cn = cn + 1
-    plot(1:dim(moSectInts)[3], moSectInts[i,j,], type='n',
+    plot(1:dim(moSectInts)[3], moSectInts[i,1,], type='n',
          ylim=c(min(moSectInts[,,]), max(moSectInts[,,])),
          bty='n', xaxt='n', yaxt='n')
     if(cn %in% c(12,24)) axis(1)
@@ -272,6 +280,7 @@ mtext(expression(paste(bold(Delta)~bold('water')~bold(degree)~bold('C')
       side=2, outer=TRUE, line=3)
 mtext('Time series quintile (1978-2015)', side=1, outer=TRUE, line=3, font=2)
 
+par(defpar)
 dev.off()
 # 7 - TEMP slope comparison ####
 
@@ -313,7 +322,7 @@ mtext('Year', side=1, outer=TRUE, line=3, font=2)
 dev.off()
 
 
-# 1 - DISCHARGE series plot (needs work) ####
+# 8 - DISCHARGE series plot (needs work) ####
 
 defpar <- par(mar=c(4,4,4,4))
 
@@ -352,7 +361,7 @@ axis(side=1, at=yy[,1][c(T,F)], labels=yy[,1][c(T,F)])
 legend(x='topleft', legend=c('Precip'), lwd=3, col=c('red'))
 par(defpar)
 
-# 2 - DISCHARGE effect size regression (untouched) ####
+# 9 - DISCHARGE effect size regression (untouched) ####
 
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
@@ -387,7 +396,7 @@ axis(1, at=seq(0,80,20))
 par(defpar)
 # dev.off()
 
-# 3 - DISCHARGE loading regression (untouched) ####
+# 10 - DISCHARGE loading regression (untouched) ####
 
 # png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 pdf('02_loadings_reg.pdf', width=7, height=6)
@@ -409,7 +418,7 @@ text(3.52, 1.53, labels='elevation (m)')
 par(defpar)
 dev.off()
 
-# 4 - DISCHARGE water temp by month (untouched) ####
+# 11 - DISCHARGE water temp by month (untouched) ####
 
 # png('04_temp_bymonth.png', width=8, height=8, units='in', res=96, type='cairo')
 # pdf('04_temp_bymonth.pdf', width=8, height=8)
@@ -443,7 +452,7 @@ mtext(expression(paste(bold('Mean monthly water temp (')~bold(degree)~bold('C)')
 par(defpar)
 # dev.off()
 
-# 5 - DISCHARGE effect size by month ####
+# 12 - DISCHARGE effect size by month ####
 
 # png('03_eff_size_bymonth.png', width=8, height=8, units='in', res=96, type='cairo')
 pdf('06_discharge_eff_size_bymonth.pdf', width=8, height=8)
@@ -454,13 +463,13 @@ landcov = land$Ice06_11
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
-ints <- which(grepl('t\\(covs_z\\)pc:.*', csi_names))
+ints <- which(grepl('t\\(covs_z\\)p?c?:.*', csi_names))
 mos <- c(intersect(month.abb, unique(str_match(csi_names[ints], '.*?\\](?:.*])?(.+)')[,2])), '0')
 moInts <- matrix(NA, nrow=nrow(csi), ncol=length(mos), dimnames=list(NULL,mos))
 for(i in 1:length(mos)){
     moInts[,i] <- rowSums(csi[,grepl(paste0('.+', mos[i]), csi_names)], na.rm=TRUE)
 }
-moInts <- moInts/sd(covs)[,1] #restore to original scale
+moInts <- exp(moInts/sd(covs))#[,1])) #restore to original scale
 colnames(moInts)[length(mos)] <- 'All other months'
 defpar <- par(mfrow=c(length(mos),1), oma=c(5,5,1,1), mar=c(0.5,0.5,0.5,0.5))
 pal <- colorRampPalette(c('brown', 'white'))
@@ -487,12 +496,13 @@ for(i in 1:length(mos)){
 # mtext('Watershed area over 1000m (%)', side=1, outer=TRUE, line=3, font=2)
 mtext('Watershed % ice cover', side=1, outer=TRUE, line=3, font=2)
 mtext(expression(paste(bold(Delta)~bold('Q (cfs) / ')
-                       ~bold(Delta)~bold('precip. (cm)'), sep='')),
+                       ~boldi(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
+                       # ~bold(Delta)~bold('precip. (cm)'), sep='')),
       side=2, outer=TRUE, line=3)
 par(defpar)
 dev.off()
 
-# 6 - DISCHARGE effect size over time ####
+# 13 - DISCHARGE effect size over time ####
 library(viridis)
 
 pdf('08_discharge_eff_size_over_time.pdf', width=10, height=10)
@@ -501,7 +511,7 @@ landcov = land$Ice06_11
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
-ints <- which(grepl('t\\(covs_z\\)pc:.*', csi_names))
+ints <- which(grepl('t\\(covs_z\\)p?c?:.*', csi_names))
 mos <- c(intersect(month.abb, unique(str_match(csi_names[ints], '.*?\\](?:.*])?(.+)')[,2])), '0')
 sects <- unique(str_match(csi_names[ints], '.*?\\](\\d)')[,2])
 moSectInts <- array(NA, dim=c(nrow(csi), length(mos), length(sects)),
@@ -509,11 +519,11 @@ moSectInts <- array(NA, dim=c(nrow(csi), length(mos), length(sects)),
 for(i in 1:length(mos)){
     for(j in 1:length(sects)){
         moSectInts[,i,j] <- csi[,which(grepl(paste0('.+', mos[i]), csi_names) &
-                                       grepl(paste0('.*?:.*?\\]', sects[j]), csi_names) &
-                                       grepl('pc', csi_names))]
+                                       grepl(paste0('.*?:.*?\\]', sects[j]), csi_names))]# &
+                                       # grepl('pc', csi_names))]
     }
 }
-moSectInts <- moSectInts/sd(covs[,1]) #restore to original scale
+moSectInts <- exp(moSectInts/sd(covs))#[,1])) #restore to original scale
 dimnames(moSectInts)[[2]][length(mos)] <- 'All other months'
 defpar <- par(mfcol=c(12,2), oma=c(5,5,5,5), mar=c(0,0,0,0))
 snowpal <- colorRampPalette(c('red', 'blue'))
@@ -527,8 +537,8 @@ covOrder <- order(landcov)
 cn=0
 for(i in covOrder){ #rivers
     cn = cn + 1
-    plot(1:dim(moSectInts)[3], moSectInts[i,j,], type='n',
-         ylim=c(min(moSectInts[,,]), (max(moSectInts[,,])/4)),
+    plot(1:dim(moSectInts)[3], moSectInts[i,1,], type='n',
+         ylim=c(min(moSectInts[,,]), (max(moSectInts[,,]))),
          bty='n', xaxt='n', yaxt='n')
     if(cn %in% c(12,19)) axis(1)
     # if(cn==1) axis(4, line=-1.5, labels=FALSE)
@@ -547,8 +557,9 @@ mtext(expression(paste(bold(Delta)~bold('Q (cfs) / ')
       side=2, outer=TRUE, line=3)
 mtext('Time series quintile (1978-2015)', side=1, outer=TRUE, line=3, font=2)
 
+par(defpar)
 dev.off()
-# 7 - DISCHARGE slope comparison ####
+# 14 - DISCHARGE slope comparison ####
 
 pdf('10_discharge_byMo_overTime.pdf', width=10, height=10, onefile=TRUE)
 landcov = land$WsAreaOver1000*100
@@ -585,3 +596,20 @@ for(j in 1:12){
 }
 dev.off()
 
+
+# 15 - save stuff for later ####
+
+#save effect sizes for discharge vs. temp plot
+# saveRDS(moInts, '../../saved_structures/moInts_discharge_due_4m_at.rds')
+# saveRDS(moInts, '../../saved_structures/moInts_temp_due_4m_at_may-aug.rds')
+
+# 16 - DISCHARGE vs. TEMP ####
+
+#load the discharge data in setup
+disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_4m_at.rds')
+temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_4m_at_may-aug.rds')
+"A"  "B"  "C"  "E"  "F"  "G"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "S"  "T"  "U"
+[20] "V"  "W"  "X"  "Z"  "ZA"
+"A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
+
+plot(disch_moInts[,4], temp_moInts[,4][-c(6,17,18,20,22)], pch=names(obs_ts))

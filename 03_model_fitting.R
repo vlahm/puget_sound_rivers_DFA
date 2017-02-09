@@ -12,10 +12,10 @@
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
-setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+# setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 # setwd('~/git/puget_sound_rivers_DFA/data')
 # setwd('Z:/stream_nuts_DFA/data/')
-# setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
+setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
 load('chemPhys_data/yys_bymonth.rda')
 DISCHARGE <- read.csv('discharge_data/discharge.csv', stringsAsFactors=FALSE, colClasses=c('date'='Date'))
 snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
@@ -48,7 +48,7 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'DISCHARGE'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
 #also, Ihaven't actually used snowmelt in a model yet, so there could be bugs)
@@ -73,7 +73,7 @@ scale = FALSE
 na_thresh = 0.55
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'log'
+transform = 'none'
 
 #be sure to visit section 3.1, where you can add time interval factors and interaction effects
 #to the covariate matrix
@@ -417,17 +417,19 @@ factorizer <- function(sections, focal_months){
 
   #create factor of even intervals across time series
   #argument 'sections' is the number of time intervals to divide the time series into
-  section_length <- ncol(covs_z) / sections
+    if(sections!='none'){
+        section_length <- ncol(covs_z) / sections
 
-  if(!(is.integer(section_length))){
-    values_to_add <- ncol(dat_z) - sections*floor(section_length)
-    message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
-                  'section(s) will be one observation longer'))
-    vals <- rep(floor(section_length), sections)
-    for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
-  }
+        if(!(is.integer(section_length))){
+        values_to_add <- ncol(dat_z) - sections*floor(section_length)
+        message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
+                      'section(s) will be one observation longer'))
+        vals <- rep(floor(section_length), sections)
+        for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+        }
 
-  interval_fac <- factor(sort(rep(1:sections, times=vals)))
+        interval_fac <- factor(sort(rep(1:sections, times=vals)))
+    } else interval_fac <- rep(NA, ncol(dat_z))
 
   #create model matrix for desired interactions (for which months would you like to see
   #the interaction of covariate:interval:month?
@@ -446,12 +448,15 @@ factorizer <- function(sections, focal_months){
 #create model matrix for interval effect
 # interval_effect <- model.matrix( ~ facs[,1] -1)
 
-#create model matrix for covariate:interval:focal_month interactions
-# interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-
-#bind them to the covariates and seasonality components
-#calling this cov_and_seas to avoid breaking stuff, but it's really just dd
-# cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
+#create model matrix for covariate:(interval):focal_month interactions
+#bind them to the covariates and seasonality components (keeping the same name to preserve code)
+# if(sections != 'none'){
+#     interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
+#     cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
+# } else {
+#     interactions <- model.matrix( ~ t(covs_z):facs[,2] - 1)
+#     cov_and_seas <- rbind(cov_and_seas, t(interactions))
+# }
 
 # 5 - plot estimated state processes, loadings, and model fits (MARSS) ####
 
@@ -935,33 +940,37 @@ unregister <- function() {
 # unregister() #this resets everything related to parallelization
 
 #create vectors of parameter values to loop through
-R_strucs <- c('DE', 'DUE') #'UNC'
+R_strucs <- c('DUE')#, 'DE') #'UNC'
 # R_strucs <- c('EVCV')
 #ISSUE: during parallelization, each new thread runs its own separate TMB script, but this original thread (the
 #one from which you start the parallelizing loop) also has to run a TMB script, and I don't know how to make it run
 #different ones depending on which R_strucs is assigned to it. So, EVCV should be run in its own separate
 #parallel loop.
-ntrends <- 1:3
-seasonality <- list(fixed_factors=ccgen('fixed_individual'), #this is calling functions defined above
-                    fourier=ccgen('fourier'))#, no_seas=NULL)
+ntrends <- 3:4
+seasonality <- list(fixed_factors=ccgen('fixed_individual'))#, #this is calling functions defined above
+#fourier=ccgen('fourier'))#, no_seas=NULL)
 #subset particular covariates from the full covariate matrix (use rbind to turn vectors into row vectors)
 covs_z2 <- covs_z #for name preservation elsewhere
-covariates <- list(pc=rbind(covs_z2[2,]), sn=rbind(covs_z2[3,]),
-                   # at=rbind(covs_z2[1,]),
-                   pcsn=covs_z2[2:3,])
-                   # atpc=covs_z2[1:2,], atpcsn=covs_z2[1:3,],
+covariates <- list(pc=rbind(covs_z2[2,]),#, sn=rbind(covs_z2[3,]),
+                   at=rbind(covs_z2[1,]),
+                   # pcsn=covs_z2[2:3,])
+                   atpc=covs_z2[1:2,])#, atpcsn=covs_z2[1:3,],
                    # atsn=covs_z2[c(1,3),])
-#for the next two, I'm only interested in these values, but you could add loops form them
+#for the next two, I'm only interested in these values, but you could add loops for them
 #just like the other loops below
-sections <- 5
-focal_months <- c(5,6,11,12)
-covSeas_only = FALSE #switch this to TRUE if you're only using covs and seasonal effects
+
+#number of intervals to divide the time series into, for examining change over time
+sections <- 'none' #can be 'none'
+#the months to focus on for by-month effect size (1 is jan...)
+focal_months <- c(5,6,7,8)
+#switch this to TRUE if you're only using covs and seasonal effects
+covSeas_only = FALSE
 
 # troubleshooting
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
 #stock parameters for troubleshooting
-RRR='DE'; mmm=1; cov=1; sss=1
+# RRR='DE'; mmm=1; cov=1; sss=1
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
 #sourcing the appropriate TMB script based on the chosen error structure
@@ -984,17 +993,22 @@ model_out <-
 
     # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
 
-    #create covariate + seasonality + interaction + interval matrix
-    covs_z <- covariates[[cov]] #for name consistency
-    if(!covSeas_only){
-      facs <- factorizer(sections, focal_months)
-      interval_effect <- model.matrix( ~ facs[,1] -1)
-      interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-      cov_and_seas <- rbind(seasonality[[sss]], covs_z,
-                            t(interval_effect), t(interactions))
-    } else {
-      cov_and_seas <- rbind(seasonality[[sss]],covs_z)
-    }
+    #create covariate + seasonality + interaction + (interval/section) matrix
+      if(!covSeas_only){
+        #create model matrix for covariate:(interval):focal_month interactions
+        #bind them to the covariates and seasonality components (keeping the same name to preserve code)
+        facs <- factorizer(sections, focal_months)
+        if(sections != 'none'){
+          interval_effect <- model.matrix( ~ facs[,1] -1)
+          interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
+          cov_and_seas <- rbind(seasonality[[sss]], covs_z, t(interval_effect), t(interactions))
+        } else {
+          interactions <- model.matrix( ~ t(covs_z):facs[,2] - 1)
+          cov_and_seas <- rbind(seasonality[[sss]], covs_z, t(interactions))
+        }
+      } else {
+        cov_and_seas <- rbind(seasonality[[sss]],covs_z)
+      }
 
     #fit model with TMB
     if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
@@ -1063,7 +1077,7 @@ model_out <-
                ndatapts=length(unlist(which(!is.na(dat_z)))),
                n_p_ratio=length(unlist(which(!is.na(dat_z)))) / length(dfa$Optimization$par),
                NLL=dfa$Optimization$value, AIC=dfa$AIC,
-               min_R2=R2[[1]], meidian_R2=R2[[2]], max_R2=R2[[3]],
+               min_R2=R2[[1]], median_R2=R2[[2]], max_R2=R2[[3]],
                counts_func=unname(dfa$Optimization$counts[1]),
                counts_gradient=unname(dfa$Optimization$counts[2]),
                convergence=dfa$Optimization$convergence,
