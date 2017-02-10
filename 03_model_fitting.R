@@ -1000,14 +1000,14 @@ model_out <-
         facs <- factorizer(sections, focal_months)
         if(sections != 'none'){
           interval_effect <- model.matrix( ~ facs[,1] -1)
-          interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-          cov_and_seas <- rbind(seasonality[[sss]], covs_z, t(interval_effect), t(interactions))
+          interactions <- model.matrix( ~ t(covariates[[cov]]):facs[,1]:facs[,2] - 1)
+          cov_and_seas <- rbind(seasonality[[sss]], covariates[[cov]], t(interval_effect), t(interactions))
         } else {
-          interactions <- model.matrix( ~ t(covs_z):facs[,2] - 1)
-          cov_and_seas <- rbind(seasonality[[sss]], covs_z, t(interactions))
+          interactions <- model.matrix( ~ t(covariates[[cov]]):facs[,2] - 1)
+          cov_and_seas <- rbind(seasonality[[sss]], covariates[[cov]], t(interactions))
         }
       } else {
-        cov_and_seas <- rbind(seasonality[[sss]],covs_z)
+        cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
       }
 
     #fit model with TMB

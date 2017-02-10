@@ -27,7 +27,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 
 #load all objects generated during the creation and postprocessing of the best model
 #best temp as of 2/8/17
-load('temp_due_4m_at_noSections_may-aug.rda')
+load('temp_due_4m_at_noSections_may-aug.rda')  ###error here. Dmat too large
 #best discharge as of 2/3/17
 # load('discharge_due_3m_pcsn.rda')
 #new one for the sake of comparing discharge and water temp via air temp (2/8/17)

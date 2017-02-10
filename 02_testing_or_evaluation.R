@@ -550,7 +550,7 @@ save.image('../manuscript/figures/temp_due_4m_at_noSections_may-aug.rda')
 #load best temp model and all associated mumbo jumbo
 # dfa <- readRDS('../round_8_interactions_discharge/model_objects_temp_EVCV/TEMP_DUE_3m_fixed_factors_at_1978-2015.rds')
 dfa <- readRDS('../round_8_interactions_discharge/temp_may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_8_interactions_discharge/temp_noSections_may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_10_noSections_allMonths/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge/DISCHARGE_DUE_3m_fixed_factors_pcsn_1978-2015.rds')
 dfa <- readRDS('../round_8_interactions_discharge/model_objects_discharge2/DISCHARGE_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_6_TeTuSu_UNSCALED/model_objects_sussol/SUSSOL_DUE_2m_fixed_factors_pc_1978-2015.rds')
