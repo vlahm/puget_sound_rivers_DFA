@@ -2,12 +2,24 @@
 #Mike Vlah (vlahm13@gmail.com)
 #created: 8/10/2016
 
-#NOTEs - should have at least 4 datapoints (observations x streams) for each parameter in model.
-#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice.
+#NOTES:
+
+#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
+
+#in this script, all you need to do is choose your options in section 1, and then set a few more
+#things in section 6.1
+
+#to quickly access any of the function definitions you come across,
+#put the cursor on the function name and hit F2
+
+#you should have at least 4 datapoints (observations x streams) for each parameter in model.
+#you can see the datapoints:params ratio in the parallel loop output.
+
 #if R crashes when you try to use runDFA,
 #use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
-#no data or 1 data point. these timepoints must either be removed or imputed.
-#to quickly access any of the function definitions, put the cursor on the function name and hit F2
+#no data or 1 data point. these timepoints must either be removed or imputed (see section 1.2).
+
+#you will probably have to restart Rstudio between runs, due to wonkiness associated with parallelization.
 
 rm(list=ls()); cat('\014') #clear env and console
 
@@ -44,18 +56,21 @@ if (is.null(dev.list()) == TRUE){
   }
 }
 
-# 1 - CHOICES ####
+# 1 - OPTIONS ####
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'TEMP'
+y_choice = 'DISCHARGE'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
-# maxtemp maxtemp_anom hdd hdd_anom, snowmelt (snowmelt only available 1978-2015)
-#also, Ihaven't actually used snowmelt in a model yet, so there could be bugs)
-#specify all of the covs that will be used later in the fitting loop
+# maxtemp maxtemp_anom hdd hdd_anom, snowmelt
+#(snowmelt only available 1978-2015. also I haven't actually used snowmelt
+#in a model yet, so there could be bugs)
+#specify all of the covs here that will be used later in the fitting loop
 cov_choices = c('meantemp', 'precip', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
-region = '3_4'#code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
+#regions 3 and 4 were discovered to be very similar early on, so most of this script will only work if
+#you choose '3_4' here and 'average_regions=TRUE'.
+region = '3_4' #code not set up to include snowmelt unless region='3_4' and average_regions=TRUE
 #average regions 3 and 4? (if FALSE, sites from each region will be assigned their own climate covariates)
 average_regions = TRUE #only used if region = '3_4'
 #which years to include?
@@ -73,10 +88,7 @@ scale = FALSE
 na_thresh = 0.55
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'none'
-
-#be sure to visit section 3.1, where you can add time interval factors and interaction effects
-#to the covariate matrix
+transform = 'log'
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -212,11 +224,13 @@ if(region=='3_4' & average_regions==FALSE){
   snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
   covs <- merge(covs, snowmelt, by='date', all=TRUE)
 
-  #subset by year and covariate choices
-  covs <- as.matrix(covs[substr(covs$date,1,4) >= startyr &
-                           substr(covs$date,1,4) <= endyr,
-                         colnames(covs) %in%
-                           covdict[names(covdict) %in% cov_choices]])
+  #subset by year and covariate choices; keep order specified in cov_choices
+  temp_covs <- covs[substr(covs$date,1,4) >= startyr & substr(covs$date,1,4) <= endyr,]
+  covs <- matrix(NA, nrow=nrow(temp_covs), ncol=length(cov_choices))
+  for(i in 1:length(cov_choices)){
+    covs[,i] <- as.matrix(temp_covs[,colnames(temp_covs) == covdict[names(covdict) == cov_choices[i]]])
+  }
+  colnames(covs) <- cov_choices
 }
 
 # 1.2 - perform minimal interpolation for zero-data months (these will cause TMB to crash) ####
@@ -413,50 +427,84 @@ cov_and_seas <- rbind(cc,covs_z)
 # 3.1 - add time interval effects and covariate:focal_month:interval interactions to dd ####
 
 #look inside function for details
-factorizer <- function(sections, focal_months){
+designer <- function(design, sections, focal_months){
+  interval_fac = month_fac = season_fac = NULL
 
-  #create factor of even intervals across time series
-  #argument 'sections' is the number of time intervals to divide the time series into
-    if(sections!='none'){
-        section_length <- ncol(covs_z) / sections
+  #this function creates an appropriate covariate matrix (d) for multiple possible model
+  #designs. The 'sections' and 'focal months' arguments will be ignored if not applicable.
+  #design options are:
 
-        if(!(is.integer(section_length))){
-        values_to_add <- ncol(dat_z) - sections*floor(section_length)
-        message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
-                      'section(s) will be one observation longer'))
-        vals <- rep(floor(section_length), sections)
-        for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
-        }
+  #'just_effect', which produces a d matrix containing only the covariates, with no seasonal
+  #effects. (note that fixed factor effects are the only approach that can be applied via this
+  #function. seasonality could also be modeled as a sine wave (univariate vs. 12-variate), which
+  #would allow the estimation of covariate effect sizes AND covariate effect sizes by month,
+  #but with less accurate accounting for seasonal effects that are not of interest. Email me
+  #if you're interested in this approach.
 
-        interval_fac <- factor(sort(rep(1:sections, times=vals)))
-    } else interval_fac <- rep(NA, ncol(dat_z))
+  if(design=='just_effect'){
+    out <- cov_and_seas[-(1:12),, drop=F]
+  }
 
-  #create model matrix for desired interactions (for which months would you like to see
-  #the interaction of covariate:interval:month?
-  #(i.e. change in covariate per month during each time interval)
-  #I'm interested in hydrograph change in november-december and may-june, so I'm specifying their
-  #corresponding numbers as the "focal_months"
-  #WARNING: this function assumes your time series begins in January
-  month_fac <- rep(0, 12)
-  month_fac[focal_months] <- month.abb[focal_months]
-  month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
+  #'effect_and_seasonality_without_interaction', which will account for seasonal regularities
+  #and then estimate average covariate effect size(s) (i.e. not per month, and not across time)
 
-  return(data.frame(series_interval=interval_fac, focal_months=month_fac))
+  if(design=='effect_and_seasonality_without_interaction'){
+    out <- cov_and_seas
+  }
+
+  #'effect_byMonth', which will account for seasonal regularities and then estimate the effect
+  #of the FIRST covariate listed in cov_choices (section 1) for specified months
+  #(supplied via "focal months" argument; can be a subset
+  #like c(5,6,7,8) or all months: 1:12). Any other covariates will be included as individual rows and will
+  #serve to soak up additional variation. Average, non-time-or-month-specific effect sizes can be examined for
+  #these. This design will NOT estimate the average effect size for the first covariate listed.
+
+  if(design=='effect_byMonth' | design=='effect_byMonth_acrossTime'){
+    month_fac <- rep(0, 12)
+    month_fac[focal_months] <- month.abb[focal_months]
+    month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
+  }
+
+  if(design=='effect_byMonth'){
+    interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
+    # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
+    out <- rbind(cov_and_seas[-13,], t(interactions))
+  }
+
+  #finally, there's 'effect_byMonth_acrossTime', which will capture change in a covariate
+  #per month during specified time intervals (to do this for multiple covariates will
+  #almost certainly be too expensive). the intervals are supplied via the 'sections'
+  #argument. The number of sections you specify will determine how many even (as even as
+  #possible given the length of your series) intervals the dataset will be chopped into.
+  #for each interval, you'll get the effect size of the covariate for each focal month.
+  #WARNING: this setup assumes your time series begins in January (it will also be safe
+  #to ensure that it ends in december, though this may not be a requirement. untested.).
+  #as with 'effect_byMonth', only the first covariate listed in cov_choices will be structured
+  #for by-month-across-time examination.
+
+  if(design=='effect_byMonth_acrossTime'){
+    section_length <- ncol(covs_z) / sections
+
+    if(!(is.integer(section_length))){
+      values_to_add <- ncol(dat_z) - sections*floor(section_length)
+      message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
+                    'section(s) will be one observation longer'))
+      vals <- rep(floor(section_length), sections)
+      for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+    }
+
+    interval_fac <- factor(sort(rep(1:sections, times=vals)))
+
+    interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac:interval_fac - 1)
+    out <- rbind(cov_and_seas[-13,], t(interactions))
+
+  }
+
+  return(out)
 }
-# facs <- factorizer(5, c(11,12,5,6))
 
-#create model matrix for interval effect
-# interval_effect <- model.matrix( ~ facs[,1] -1)
-
-#create model matrix for covariate:(interval):focal_month interactions
-#bind them to the covariates and seasonality components (keeping the same name to preserve code)
-# if(sections != 'none'){
-#     interactions <- model.matrix( ~ t(covs_z):facs[,1]:facs[,2] - 1)
-#     cov_and_seas <- rbind(cov_and_seas, t(interval_effect), t(interactions))
-# } else {
-#     interactions <- model.matrix( ~ t(covs_z):facs[,2] - 1)
-#     cov_and_seas <- rbind(cov_and_seas, t(interactions))
-# }
+#regardless of design, I'm keeping the name "cov_and_seas" just so I don't break stuff
+# cov_and_seas <- designer(design=design, sections=sections, focal_months=focal_months)
 
 # 5 - plot estimated state processes, loadings, and model fits (MARSS) ####
 
@@ -939,47 +987,73 @@ unregister <- function() {
 }
 # unregister() #this resets everything related to parallelization
 
-#create vectors of parameter values to loop through
-R_strucs <- c('DUE')#, 'DE') #'UNC'
-# R_strucs <- c('EVCV')
+#create vectors of parameter values to loop through:
+
+#choose observation error structures to include.
 #ISSUE: during parallelization, each new thread runs its own separate TMB script, but this original thread (the
 #one from which you start the parallelizing loop) also has to run a TMB script, and I don't know how to make it run
 #different ones depending on which R_strucs is assigned to it. So, EVCV should be run in its own separate
 #parallel loop.
+R_strucs <- c('DUE')#, 'DE') #'UNC'
+# R_strucs <- c('EVCV')
+
+#number of common trends
 ntrends <- 3:4
-seasonality <- list(fixed_factors=ccgen('fixed_individual'))#, #this is calling functions defined above
+
+#should seasonality be modeled as fixed factors for each month ('fixed_individual'), as
+#a Fourier process ('fourier'), or not at all (NULL)?
+#CAUTION: if you choose a design of 'effect_byMonth_acrossTime' or 'effect_byMonth'below, you can
+#only use 'fixed_individual' here.
+seasonality <- list(fixed_factors=ccgen('fixed_individual'))
 #fourier=ccgen('fourier'))#, no_seas=NULL)
-#subset particular covariates from the full covariate matrix (use rbind to turn vectors into row vectors)
+
+#subset particular covariates from the full covariate matrix, depending on what you included
+#in "OPTIONS" (section 1) above. Can be NULL.
+#if you're looking at effects by month, or by month over time (see 'design' option below),
+#then whichever covariate is listed first for each list element will be the one that can be examined by month/
+#over time. any others will still be included, and their average effect sizes (not by month, not over time) can
+#still be determined.
 covs_z2 <- covs_z #for name preservation elsewhere
-covariates <- list(pc=rbind(covs_z2[2,]),#, sn=rbind(covs_z2[3,]),
-                   at=rbind(covs_z2[1,]),
+covariates <- list(pc=covs_z2[2,, drop=FALSE],#, sn=rbind(covs_z2[3,]),
+                   at=covs_z2[1,, drop=FALSE],
                    # pcsn=covs_z2[2:3,])
                    atpc=covs_z2[1:2,])#, atpcsn=covs_z2[1:3,],
                    # atsn=covs_z2[c(1,3),])
-#for the next two, I'm only interested in these values, but you could add loops for them
-#just like the other loops below
 
-#number of intervals to divide the time series into, for examining change over time
-sections <- 'none' #can be 'none'
+#the 3 options below will not vary among the models in the loop. only change these between runs.
+
+#choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
+#'effect_byMonth', and 'effect_byMonth_acrossTime'.
+#(see "designer" function in section 3.1 for details)
+design = 'effect_byMonth'
+#sections = number of intervals to divide the time series into, if examining change over time
+#(see "designer" function in section 3.1 for details)
+sections <- 5 #an integer. will be ignored if not applicable
 #the months to focus on for by-month effect size (1 is jan...)
-focal_months <- c(5,6,7,8)
-#switch this to TRUE if you're only using covs and seasonal effects
-covSeas_only = FALSE
+#if looking at effect_byMonth_acrossTime, including all months will be too expensive
+#(see "designer" function in section 3.1 for details)
+focal_months <- 1:12 #a vector of integers between 1 and 12. will be ignored if not applicable.
 
-# troubleshooting
+# troubleshooting:
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)
 # RRR = 'UNC' #uncomment to fix error structure (must also comment **R below)
-#stock parameters for troubleshooting
-# RRR='DE'; mmm=1; cov=1; sss=1
+# RRR='DE'; mmm=1; cov=3; sss=1 #convenience variables for stepping through loop
 # rm(RRR, mmm, cov, sss)
 # rm(cov_and_seas, dfa, all_cov, seas)
-#sourcing the appropriate TMB script based on the chosen error structure
+
+#start timing
+ptm <- proc.time()
+
+#source the appropriate TMB script based on the chosen error structure
 if('EVCV' %in% R_strucs) source('../00_tmb_uncor_Rmat_EVCV.R') else source('../00_tmb_uncor_Rmat_DE_DUE_UNC.R')
 
 #this is the model fitting loop. it opens new R processes for each processor core
-#and allocates model runs efficiently to each. the outputs are stored in stream_nuts_DFA/model_objects
-#and stream_nuts_DFA/model_outputs. The variable "model_out" is a summary data frame of diagnostic stuff
-#that will be dealt with next
+#and allocates model runs efficiently to each. the outputs are stored in
+#stream_nuts_DFA/model_objects_<lower(y_choice)> and
+#stream_nuts_DFA/model_outputs_<lower(y_choice)>. for example, if you're looking at DISCHARGE,
+#you'll need to create directories called model_objects_discharge and model_outputs_discharge.
+#The variable "model_out" is a summary data frame of diagnostic stuff, which will be stored with
+#model objects.
 model_out <-
     foreach(RRR=R_strucs, .combine=rbind) %:% # **R
     foreach(mmm=ntrends, .combine=rbind) %:%
@@ -991,27 +1065,14 @@ model_out <-
     if('EVCV' %in% R_strucs) source('../00_tmb_uncor_Rmat_EVCV.R') else
       source('../00_tmb_uncor_Rmat_DE_DUE_UNC.R')
 
-    # print(paste(RRR,mmm,names(seasonality)[sss],names(covariates)[cov]))
-
-    #create covariate + seasonality + interaction + (interval/section) matrix
-      if(!covSeas_only){
-        #create model matrix for covariate:(interval):focal_month interactions
-        #bind them to the covariates and seasonality components (keeping the same name to preserve code)
-        facs <- factorizer(sections, focal_months)
-        if(sections != 'none'){
-          interval_effect <- model.matrix( ~ facs[,1] -1)
-          interactions <- model.matrix( ~ t(covariates[[cov]]):facs[,1]:facs[,2] - 1)
-          cov_and_seas <- rbind(seasonality[[sss]], covariates[[cov]], t(interval_effect), t(interactions))
-        } else {
-          interactions <- model.matrix( ~ t(covariates[[cov]]):facs[,2] - 1)
-          cov_and_seas <- rbind(seasonality[[sss]], covariates[[cov]], t(interactions))
-        }
-      } else {
-        cov_and_seas <- rbind(seasonality[[sss]],covariates[[cov]])
-      }
+    #create covariate matrix (d) - see function definition in section 3.1 for details
+    covs_z <- covariates[[cov]]
+    cov_and_seas <- rbind(seasonality[[sss]], covs_z)
+    #keeping name "cov_and_seas" here for compatibility elsewhere
+    cov_and_seas <- designer(design=design, sections=sections, focal_months=focal_months)
 
     #fit model with TMB
-    if (is.null(seasonality[[sss]]) == TRUE & is.null(covariates[[cov]]) == TRUE){
+    if (is.null(seasonality[[sss]]) == TRUE & is.null(covs_z) == TRUE){
       dfa <- runDFA(obs=dat_z, NumStates=mmm, ErrStruc=RRR,
                     EstCovar=FALSE)
     } else {
@@ -1097,3 +1158,12 @@ write.csv(model_out, file=paste0("../model_objects_", tolower(y_choice), "/",
                                  startyr, '-', endyr, '_', y_choice, '.csv'))
 
 stopCluster(cl) #free parallelized cores for other uses
+
+runtime <- proc.time() - ptm
+
+if(exists('model_out')){
+    writeLines(paste0('Loop ran to completion.\nElapsed time: ',
+                     round(unname(runtime[3])/60, 2),
+                     ' minutes.\nRestart Rstudio before using the loop again.'))
+} else writeLines(paste("Check out the 'troubleshooting' chunk just above the loop.\n",
+                        "You'll probably have to restart Rstudio before trying again."))
