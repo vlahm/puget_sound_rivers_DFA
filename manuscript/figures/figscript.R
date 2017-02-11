@@ -39,11 +39,11 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('temp_due_4m_at_byMo_allMos.rda')
 # load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
 # load('temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
-load('temp_due_4m_at_byMo_acrossTime_MASO.rda')
+# load('temp_due_4m_at_byMo_acrossTime_MASO.rda')
 # load('discharge_due_4m_atpc_byMo_allMos.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
-# load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
+load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -543,7 +543,8 @@ dev.off()
 library(viridis)
 
 # pdf('08a_discharge_effSize_byMonth_acrossTime_may-aug.pdf', width=14, height=9)
-pdf('08b_discharge_effSize_byMonth_acrossTime_nov-feb.pdf', width=14, height=9)
+# pdf('08b_discharge_effSize_byMonth_acrossTime_nov-feb.pdf', width=14, height=9)
+pdf('08c_discharge_effSize_byMonth_acrossTime_MASO.pdf', width=14, height=9)
 
 # landcov = land$Ice06_11
 landcov = land$WsAreaOver1000*100
@@ -615,8 +616,9 @@ for(i in covOrder){ #rivers
     # }
 }
 
-legend(3, 2.7, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #nov-dec
 # legend(3, 3.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #may-aug
+# legend(3, 2.7, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #nov-dec
+legend(3, 6.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #MASO
        col=mopal, horiz=TRUE, xpd=NA, xjust=0.5)
 mtext(expression(paste(italic('ln')~bold(Delta)~bold('Q (cfs) / ')
                        ~bold(Delta)~bold('precip. (cm)'), sep='')),
