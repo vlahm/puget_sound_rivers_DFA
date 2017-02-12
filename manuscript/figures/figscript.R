@@ -714,12 +714,13 @@ mtext(expression(paste(bold(Delta)~bold('water')~bold(degree)~bold('C')
 par(defpar)
 dev.off()
 
-# 17 - air water discharge
+# 17 - air water discharge ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge.rds')
 
-pdf('12_air_water_discharge.pdf', width=8, height=6)
+png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
+# pdf('12_air_water_discharge.pdf', width=8, height=6)
 defpar <- par(mar=c(5,4,1,6))
 airtemps = watertemps = discharge = numeric()
 for(i in 1:12){
@@ -728,8 +729,7 @@ for(i in 1:12){
     discharge[i] <- mean(as.matrix(obs_ts[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
 }
 plot(1:12, airtemps, xaxt='n', xlab=expression(paste(~bold('Month'))),
-     ylab=expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
-     las=2)
+     ylab='')
 points(1:12, watertemps, pch=20)
 axis(1, at=1:12, labels=month.abb)
 legend('left', legend=c('Air', 'Water', 'Discharge'), pch=c(1,20,17), bty='n',
@@ -738,5 +738,7 @@ par(new=T)
 plot(1:12, discharge, type='b', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='')
 axis(4, las=1)
 mtext('Mean discharge (CFS)', 4, font=2, las=3, line=3)
+mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
+      line=2, side=2)
 par(defpar)
 dev.off()
