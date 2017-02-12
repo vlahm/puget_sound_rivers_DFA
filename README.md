@@ -80,7 +80,11 @@ As for trend 2, none of the watershed variables have significant slopes when reg
 
 ![This figure](manuscript/figures/03_eff_size_bymonth.png) 
 
-This figure shows the relationship between the percentage of watershed area covered in permanent ice (glaciation) and mean monthly water temperature over the entire 1978-2015 time series. You can see that watersheds with more glacial ice (and certainly more snowfall) are consistently colder than those with less. Asterisks denote significant slopes. You can also trace the seasonal change in temperature if scan through the plots in order. It fluctuates cyclically around the yearly mean temperature, represented by the blue line. More interestingly, this figure shows that the steepest slopes occur in July and August, when the cooling effect of ice is most pronounced. I'm currently adding interaction effects to the model that will allow me to see the seasonal change in *coupling*, rather than just raw temperature.
+This figure shows the relationship between the percentage of watershed area covered in permanent ice (glaciation) and mean monthly water temperature over the entire 1978-2015 time series. You can see that watersheds with more glacial ice (and certainly more snowfall) are consistently colder than those with less. Asterisks denote significant slopes at alpha=0.05. You can also trace the seasonal change in temperature if you scan through the plots in order. It fluctuates cyclically around the yearly mean temperature, represented by the blue line. More interestingly, this figure shows that the steepest slopes occur in July and August, when the cooling effect of ice is most pronounced.
+
+I'm currently adding interaction effects to the model that will allow me to see the seasonal change in *coupling*, rather than just raw temperature. I'll also be performing a separate DFA on monthly discharge from the same set of streams, so that I can account for its effect on the responsiveness of water temperature to changes in air temperature. Here in the Pacific Northwest, there are two yearly spikes in discharge (see below) corresponding to spring/summer snowmelt and fall rain, which should be more or less prevalent in a particular river depending on how strongly influenced it is by glaciers and snow.
+
+![air water discharge](manuscript/figures/12_air_water_discharge.png)
 
 ### Conclusions
 
