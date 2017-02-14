@@ -1,0 +1,38 @@
+Quadrants
+UR: ^ air, ^ Q, ^ water 
+	midland/upland river in winter - warm air makes warm rain which makes warm rivers; snow is not yet contributing to discharge
+	upland river in summer/fall - same reason; snow is now depleted
+	
+UL: ^ air, v Q, ^ water
+	lowland river in summer/fall/winter - warm air holds more moisture (so there's less rain), but still makes warm rivers
+	
+LR: ^ air, ^ Q, v water
+	midland/upland river in spring - snow/ice-melt buffering
+	upland river in late summer - ice-melt buffering
+	
+LL: ^ air, v Q, v water
+	upland river in late summer - increased moisture holding capacity (less rain) overpowers ice-melt contribution to discharge once that year's snow is gone
+
+x=0: air and Q are uncorrelated; y is always positive under this condition
+	lowland river in April - increased temperature means less rain in the lowlands, but more snowmelt
+	midland river in May/June - same reason, just shifted higher upslope
+	upland river in Jul/Aug/Sep - same, shifted higher
+	midland/upland river in fall - increased temperature means less rain in the lowlands, but melting of early snow in some years higher up
+	
+y=0: air and water are uncorrelated
+	any river in Dec/Feb (not Jan) - winter "wants" to achieve a state where warm air makes warm rain which makes warm rivers, 
+		but it takes a while to achieve this, and only really acheives it in Jan when water temp is at its minimum and the effect of warm lowland rain is large.
+		In dec/feb, this effect is only half achieved, because while there's warm lowland rain, there's also some upland rain that's colder than the rivers.
+	midland/upland river in spring - snowmelt buffering: rain warming balanced by snowmelt cooling whenever there's an increase in air temp, and vice-versa
+	upland river in fall - in some years, early snowfall will be melted by increases in temperature, creating a buffering effect that will dampen the positive
+		air-water correlation that would be seen in other years
+		
+origin: air has no effect on either Q or water
+	midland river in May/June - snowmelt contribution to discharge coincides with reduction in rainfall, which is still enough to counter snowmelt cooling
+	midland/upland river in fall - same thing, but with early snowmelt rather than late
+
+slope: the axis of possible states along which a river can exist with respect to the air->Q->water relationship
+	more positive = greater positive relationship between water and Q
+	more negative = inverse of that
+
+centroid: the average state of the ait->Q->water relationship across rivers
