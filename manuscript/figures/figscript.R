@@ -743,11 +743,17 @@ pal <- colorRampPalette(c('black', 'white'))
 # brks = as.numeric(cut(land$WsAreaOver1000*100, breaks=10))
 # brks = as.numeric(cut(land$ElevWs, breaks=10))
 brks = as.numeric(cut(land$Ice06_11, breaks=10))
-cols = pal(length(unique(brks)))
-cols = as.character(factor(brks, labels=cols))
+# cols = pal(length(unique(brks)))
+# cols = as.character(factor(brks, labels=cols))
+# layout(matrix(c(1,1,2,3,4,5), ncol=2, byrow=T), heights=c(.3,1,1,1,1))
+# defpar <- par(oma=c(5,3.5,0,4), mar=c(0,0,0,0))
 defpar <- par(mfcol=c(13,1), oma=c(5,3.5,0,4), mar=c(0,0,0,0))
-sites_hi = which(land$Ice06_11 >= 0.7)
-sites_lo = which(land$Ice06_11 < 0.7)
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray75'; cols[elev_hi] = 'white'
+# for(i in c(0,2,5,8,11)){
 for(i in 0:12){
     if(i == 0) {
         plot(1,1,axes=FALSE,,xlim=c(0,1),ylim=c(0,1),ann=FALSE,type='n')
@@ -763,17 +769,21 @@ for(i in 0:12){
              xlim=c(min(disch_moInts), max(disch_moInts)),
              ylim=c(min(temp_moInts[-c(6,17,18,20,22)]), max(temp_moInts[-c(6,17,18,20,22)])))
         polygon(x=c(0,0.4,0.4,0), y=c(0,0,1.3,1.3),
-                col=adjustcolor('darkred', alpha.f=0.2), border=FALSE)
+                col=adjustcolor('darkred', alpha.f=0.15), border=FALSE)
         polygon(x=c(0,-0.5,-0.5,0), y=c(0,0,-0.65,-0.65),
-                col=adjustcolor('navy', alpha.f=0.2), border=FALSE)
+                col=adjustcolor('navy', alpha.f=0.15), border=FALSE)
         abline(mod, col='gray30', lty=1, lwd=2)
         # abline(h=0, lty=3, col='gray50')
-        cent_hi = points(mean(disch_moInts[sites_hi,i]),
-                         mean(temp_moInts[-c(6,17,18,20,22),i][sites_hi]),
-                         pch=4, cex=4, lwd=3, col='steelblue3')
-        cent_lo = points(mean(disch_moInts[sites_lo,i]),
-                         mean(temp_moInts[-c(6,17,18,20,22),i][sites_lo]),
-                         pch=4, cex=4, lwd=3, col='orange2')
+        # points(mean(disch_moInts[elev_lo,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='black')
+        # points(mean(disch_moInts[elev_med,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='gray75')
+        # points(mean(disch_moInts[elev_hi,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_hi]),
+        #                  # pch=4, cex=4, lwd=3, col='steelblue3')
+        #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)], cex=1.5,
                pch=21, bg=cols, col='black')
                # pch=land$siteCode, col=cols,
@@ -781,14 +791,15 @@ for(i in 0:12){
         if(i==1){
             # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
             #           labels=c('-0.5', sprintf('%4s', c('0.0','0.5','1.0'))))
-            axis(2, las=2, line=.6)
+            axis(2, las=2, line=0)
+            lines(x=c(-.247,-.247), y=c(-.65,1.3))
         }
         # if(i %in% 7:12) mtext(month.abb[i], 4, line=1, las=2)
         if(i == 12) axis(1)
     }
 }
 # lines(x=c(0,0), y=c(-0.8, 23.04), xpd=NA, col='gray50', lty=3, lwd=1)
-lines(x=c(-1,1), y=c(-.65,-.65))
+lines(x=c(-.247,.308), y=c(-.62,-.62), xpd=NA)
 mtext(expression(paste(~italic('ln')~bold(Delta)~bold('Q (CFS) / ')
                        ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
       # ~bold(Delta)~bold('precip. (cm)'), sep='')),
@@ -813,7 +824,112 @@ text(0.03,23.65,'(Centroids)',xpd=NA)
 par(defpar)
 dev.off()
 
-# 18 - air water discharge (average) ####
+# 18 - DISCHARGE vs. TEMP (big four) ####
+
+#load discharge_due_4m_atpc_byMo_allMos.rda in the setup section, or else names
+#will be screwed up.
+
+disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_4m_at.rds')
+temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_4m_at.rds')
+# "A"  "B"  "C"  "E"  "F"  "G"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "S"  "T"  "U"
+# [20] "V"  "W"  "X"  "Z"  "ZA"
+# "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
+
+pdf('13_disch_vs_air_column.pdf', width=6, height=12)
+# pdf('11b_disch_vs_air_byWsArea.pdf', width=8, height=8)
+# pal <- colorRampPalette(c('white', 'black'))
+pal <- colorRampPalette(c('black', 'white'))
+# pal <- colorRampPalette(c('black', 'white'))
+# brks = as.numeric(cut(land$WsAreaSqKm, breaks=10))
+# brks = as.numeric(cut(land$WsAreaOver1000*100, breaks=10))
+# brks = as.numeric(cut(land$ElevWs, breaks=10))
+brks = as.numeric(cut(land$Ice06_11, breaks=10))
+# cols = pal(length(unique(brks)))
+# cols = as.character(factor(brks, labels=cols))
+layout(matrix(c(1,1,2,3,4,5), ncol=2, byrow=T), heights=c(.3,1,1,1,1))
+defpar <- par(oma=c(5,4,0,4), mar=c(0,1,1,0))
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray75'; cols[elev_hi] = 'white'
+for(i in c(0,2,5,8,11)){
+    if(i == 0) {
+        plot(1,1,axes=FALSE,,xlim=c(0,1),ylim=c(0,1),ann=FALSE,type='n')
+        # color.legend(xl=.4,xr=.6,yb=.5, yt=.7, legend=c('Rainfed', 'Snowfed'),
+        #          rect.col=colorRampPalette(c('black', 'white'))(6),
+        #          gradient='x', align='lt')
+    }
+    if(i != 0){
+        mod <- lm(temp_moInts[,i][-c(6,17,18,20,22)] ~ disch_moInts[,i])
+        sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+        plot(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],
+             yaxt='n', xaxt='n', bty='l', type='n', axes=FALSE,
+             xlim=c(-.15, max(disch_moInts)),
+             ylim=c(min(temp_moInts[-c(6,17,18,20,22)]), max(temp_moInts[-c(6,17,18,20,22)])))
+        polygon(x=c(0,0.4,0.4,0), y=c(0,0,1.3,1.3),
+                col=adjustcolor('darkred', alpha.f=0.2), border=FALSE)
+        polygon(x=c(0,-0.5,-0.5,0), y=c(0,0,-0.65,-0.65),
+                col=adjustcolor('navy', alpha.f=0.15), border=FALSE)
+        if(i == 5) abline(mod, col='gray30', lty=1, lwd=2)
+        # abline(h=0, lty=3, col='gray50')
+        # points(mean(disch_moInts[elev_lo,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='black')
+        # points(mean(disch_moInts[elev_med,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='gray75')
+        # points(mean(disch_moInts[elev_hi,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_hi]),
+        #                  # pch=4, cex=4, lwd=3, col='steelblue3')
+        #                  pch=24, cex=3, lwd=1, col='black', bg='white')
+        points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)], cex=1.5,
+               pch=21, bg=cols, col='black')
+               # pch=land$siteCode, col=cols,
+        text(-.05,1.1,paste0(month.abb[i], sig), cex=1.8)
+        if(i %in% c(2,8)){
+            # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
+            #           labels=c('-0.5', sprintf('%4s', c('0.0','0.5','1.0'))))
+            axis(2, las=2, line=0)
+            lines(x=c(-.167,-.167), y=c(-.62,1.3))
+        }
+        # if(i %in% 7:12) mtext(month.abb[i], 4, line=1, las=2)
+        if(i %in% c(8,11)){
+            axis(1)
+            lines(x=c(-.165,.308), y=c(-.62,-.62), xpd=NA)
+        }
+    }
+}
+# lines(x=c(0,0), y=c(-0.8, 23.04), xpd=NA, col='gray50', lty=3, lwd=1)
+mtext(expression(paste(~italic('ln')~bold(Delta)~bold('Q (CFS)'),sep='')),# / ')
+                       # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
+      # ~bold(Delta)~bold('precip. (cm)'), sep='')),
+      side=1, outer=TRUE, line=3)
+mtext(expression(paste(bold(Delta)~bold('water')~bold(degree)~bold('C'))),# / ')
+                       # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
+                       # ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
+      side=2, outer=TRUE, line=2)
+# legend(x=-.02, y=24.1, legend='', pch=4, pt.cex=4, pt.lwd=3,
+#        col=c('orange2','steelblue3'), xpd=NA, horiz=TRUE, bty='n')
+# legend(x=.06, y=24.1, legend='', pch=4, pt.cex=4, pt.lwd=3,
+#        col=c('steelblue3'), xpd=NA, horiz=TRUE, bty='n')
+# legend(x=-.5, y=24.8, legend='', xpd=NA,
+#        fill=adjustcolor('navy', alpha.f=0.2), bty='n', border=NA, cex=2)
+# text(-.135,24.05,'+air -Q -water',xpd=NA)
+# legend(x=.21, y=24.8, legend='', xpd=NA,
+#        fill=adjustcolor('darkred', alpha.f=0.2), bty='n', border=NA, cex=2)
+# text(.189,24.05,'+air +Q +water',xpd=NA)
+legend(x=-.7, y=3.9, legend=c('rain-fed','rain-and-snow','snow-fed','-Q -water','+Q +water'),
+       xpd=NA, fill=c('black','gray75','white',adjustcolor('navy', alpha.f=0.15),
+                      adjustcolor('darkred', alpha.f=0.2)),
+       border='black', cex=1.3, horiz=TRUE, bty='n')
+text(0.03,23.65,'(Centroids)',xpd=NA)
+# legend.gradient(pts=cbind(x=c(-.04,.04,.04,-.04), y=c(22,22,24,24)), cols=c('black','white'),
+#                 limits=c('Rainfed', 'Snowfed'), title='X = mean')
+par(defpar)
+dev.off()
+
+# 19 - air water discharge (average) ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge.rds')
@@ -842,7 +958,7 @@ mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
 par(defpar)
 dev.off()
 
-# 19 - air water discharge (over time) ####
+# 20 - air water discharge (over time) ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge.rds')
