@@ -24,10 +24,10 @@
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
-# setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
 # setwd('~/git/puget_sound_rivers_DFA/data')
 # setwd('Z:/stream_nuts_DFA/data/')
-setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
+# setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
 load('chemPhys_data/yys_bymonth.rda')
 DISCHARGE <- read.csv('discharge_data/discharge.csv', stringsAsFactors=FALSE, colClasses=c('date'='Date'))
 snowmelt <- read.csv('climate_data/snow_data/snowmelt.csv')
@@ -60,7 +60,7 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'DISCHARGE'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
@@ -88,7 +88,7 @@ scale = FALSE
 na_thresh = 0.55
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'log'
+transform = 'none'
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
