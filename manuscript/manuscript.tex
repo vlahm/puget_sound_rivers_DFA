@@ -2,15 +2,56 @@
 
 \usepackage{color}
 \usepackage{listings}
+\usepackage{bm}
 
 \begin{document}
 
+todo:
+
+include snowmelt in model run. see if it's worth including with precip and temp as a climate predictor
+
+introduce terminology:
+responses = water temp, Q
+climatic predictors = air temp, precip, drought
+landscape predictors = many
+
+\section*{Introduction}
+
+
 \section*{Methods}
+\subsection*{Study region}
+I'll probably mention anything relevant to this in the intro.
+
 \subsection*{Data collection}
-We have obtained monthly water temperature readings from 1978 through 2015 via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. In all, 24 monitoring sites within the Puget Sound region (Fig. \colorbox{red}{\lstinline{1}}) were used in analyses. These represent 19 rivers across 9 counties, and range from 4 to 775 m in elevation. For one site at each river, monthly discharge time series were available, either for the same location as one of the temperature monitoring sites, or for another location within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). At least one discharge monitoring site was available for every river represented in the temperature dataset.
+The two response variables used in our analyses were water temperature and discharge. We obtained monthly water temperature readings from 1978 through 2015 via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. In all, 24 monitoring sites within the Puget Sound region (Fig. \colorbox{red}{\lstinline{1}}) were included, representing 19 rivers across 9 counties, and ranging from 4 to 775 m in elevation. For one site at each river, monthly discharge time series were available, either for the same location as one of the temperature monitoring sites, or for another location within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). At least one discharge monitoring site was available for every river represented in the temperature dataset.
+
+Potential climatic predictors of water temperature and discharge included mean and max air temperature, precipitation, and hydrologic drought, averaged by month across the response variable time series. These data are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors.
+
+For post-hoc analyses of potential sub-watershed-scale drivers of response-predictor coupling, we amassed an additional set of landscape predictor data. These were collected individually for each of the watersheds that correspond to our 24 river sites, using the EPA's StreamCat (stream-catchment) data collection \colorbox{red}{\lstinline{cite}} and the National Hydrography Dataset (NHDPlusV2)\colorbox{red}{\lstinline{cite}}. Landscape predictor categories include lithology, land use, population and road density, and soil type, as well as other categories summarized in \colorbox{red}{\lstinline{Table A1}}.
+
+% A snowmelt time series was then added to this dataset, using monthly mean SNOTEL records from six sites the USDA's Natural Resources Conservation Service
+\subsection*{Time series analysis}
+Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), covariates (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer trends allows greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
+
+DFA takes the following form:
+
+\begin{equation}
+    \textbf{x}_t = \textbf{x}_{t-1} + \textbf{w}_t\textrm{, where } \textbf{w}_t \sim \textrm{MVN}(0,\textbf{R})
+\end{equation}
+\begin{equation}
+    \textbf{y}_t = \textbf{Zx}_t + \textbf{Dd}_t + \textbf{v}_t\textrm{, where } \textbf{v}_t \sim \textrm{MVN}(0,\textbf{Q})
+\end{equation}
+\begin{equation}
+    \textbf{x}_0 \sim \textrm{MVN}(\bm{\pi},\bm{\Lambda})
+\end{equation}
+
+At each time step \it{t}, the response variable \textbf{y} is a vector of
 
 
-Regional climate data were ... the Puget Sound Lowland and East Olympic/Cascade Foothills climate divisions
+
+\section*{Appendix A}
+Table A1:
+...at the scale of individual stream reaches (segments bounded by sources, confluences, or mouths) and their corresponding watersheds. Watersheds are calculated as land contributing flow to a reach, and have been determined for 2.6 million reaches within the conterminous United States.
 
 \end{document}
 
@@ -20,4 +61,6 @@ Regional climate data were ... the Puget Sound Lowland and East Olympic/Cascade 
 % https://waecy.maps.arcgis.com/apps/Viewer/index.html?appid=832e254169e640fba6e117780e137e7b #Q 15min
 % http://www.horizon-systems.com/NHDPlus/NHDPlusV2_17.php #nhdplus
 % ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/HydroRegions/ #streamca
-% http://www.ncdc.noaa.gov/cag/time-series/us/45/3/tavg/ytd/12/1895-2016?base_prd=true&firstbaseyear=1901&lastbaseyear=2000 #climate data
+% ncdc.noaa.gov/cag/time-series/us #climate data
+% https://www.nrcs.usda.gov/wps/portal/nrcs/detail/or/snow/?cid=nrcs142p2_046350 #snow
+% https://arxiv.org/pdf/1509.00660.pdf #TMB

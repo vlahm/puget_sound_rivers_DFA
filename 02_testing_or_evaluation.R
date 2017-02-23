@@ -536,7 +536,7 @@ cov_and_seas <- designer(design=design, sections=sections, focal_months=focal_mo
 #feel free to uncomment and experiment with this stuff just to verify that
 #the regions barely differ in climate
 
-# #visualize
+#visualize
 # par(mfrow=c(3,2))
 # for(i in 1:ncol(covs3)){
 #     plot(scale(covs3[,i]), scale(covs4[,i]), main=colnames(covs3)[i])
@@ -553,7 +553,7 @@ cov_and_seas <- designer(design=design, sections=sections, focal_months=focal_mo
 # #precip
 # dfa3 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs3_z[3,]))
 # dfa4 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs4_z[3,]))
-# process_plotter_TMB(dfa3, mm)
+# process_plotter_TMB(dfa3, mm) #this function is defined in section 5.1
 # process_plotter_TMB(dfa4, mm)
 # #hydrologic drought
 # dfa5 <- runDFA(obs=dat_z, NumStates=mm, ErrStruc='DE', EstCovar=TRUE, Covars=rbind(cc,covs3_z[4,]))

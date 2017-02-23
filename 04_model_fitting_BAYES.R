@@ -4,22 +4,11 @@
 
 #NOTES:
 
-#collapse folds with ALT+O (windows, linux) or CMD+OPT+O (Mac); might have to do it twice
-
-#in this script, all you need to do is choose your options in section 1, and then set a few more
-#things in section 6.1
-
-#to quickly access any of the function definitions you come across,
-#put the cursor on the function name and hit F2
-
-#you should have at least 4 datapoints (observations x streams) for each parameter in model.
-#you can see the datapoints:params ratio in the parallel loop output.
-
-#if R crashes when you try to use runDFA,
-#use apply(dat_z, 2, function(x) sum(is.na(x))/length(x)) to see if you have any timepoints with
-#no data or 1 data point. these timepoints must either be removed or imputed (see section 1.2).
-
-#you will probably have to restart Rstudio between runs, due to wonkiness associated with parallelization.
+#the notes from 03_model_fitting.R apply here as well. Here, there is an additional section at the
+#bottom that can be used to run DFA models in STAN. This allows for credible intervals on effect sizes.
+#i made little effort to explain what's going on in section 7, because I didn't end up using
+#those results.
+#note to self: model object for 4-trend, diagonal and unequal, byMonth_acrossTime is on udrive (saved structures)
 
 rm(list=ls()); cat('\014') #clear env and console
 
@@ -1180,9 +1169,9 @@ if(!require('statss')){
 library(statss)
 
 #Eric's dfa function, with parallelization option included
-fit_dfa2 = function (y = y, covar = NULL, covar_index = NULL, num_trends = 2, 
-          varIndx = NULL, zscore = TRUE, iter = 4000, chains = 1, 
-          control = list(adapt_delta = 0.99), cores=1) 
+fit_dfa2 = function (y = y, covar = NULL, covar_index = NULL, num_trends = 2,
+          varIndx = NULL, zscore = TRUE, iter = 4000, chains = 1,
+          control = list(adapt_delta = 0.99), cores=1)
 {
     stan_dir = find.package("statss")
     model = paste0(stan_dir, "/exec/dfa.stan")
@@ -1211,38 +1200,38 @@ fit_dfa2 = function (y = y, covar = NULL, covar_index = NULL, num_trends = 2,
     mat_indx = matrix(0, P, K)
     start = 1
     for (k in 1:K) {
-        if (k == 1) 
+        if (k == 1)
             mat_indx[, k] = (1:nZ)[start:(start + P - k)]
-        if (k > 1) 
-            mat_indx[-c(0:(k - 1)), k] = (1:nZ)[start:(start + 
+        if (k > 1)
+            mat_indx[-c(0:(k - 1)), k] = (1:nZ)[start:(start +
                                                            P - k)]
         start = start + (P - k + 1)
     }
-    row_indx = matrix((rep(1:P, K)), P, K)[which(mat_indx > 
+    row_indx = matrix((rep(1:P, K)), P, K)[which(mat_indx >
                                                      0)]
     col_indx = rep(1:K, times = P:(P - K + 1))
-    row_indx_z = matrix((rep(1:P, K)), P, K)[which(mat_indx == 
+    row_indx_z = matrix((rep(1:P, K)), P, K)[which(mat_indx ==
                                                        0)]
-    col_indx_z = matrix(sort(rep(1:K, P)), P, K)[which(mat_indx == 
+    col_indx_z = matrix(sort(rep(1:K, P)), P, K)[which(mat_indx ==
                                                            0)]
     row_indx_z = c(row_indx_z, 0, 0)
     col_indx_z = c(col_indx_z, 0, 0)
     nZero = length(row_indx_z)
-    if (is.null(varIndx)) 
+    if (is.null(varIndx))
         varIndx = rep(1, P)
     nVariances = length(unique(varIndx))
     row_indx_pos = matrix((rep(1:P, N)), P, N)[which(!is.na(y))]
     col_indx_pos = matrix(sort(rep(1:N, P)), P, N)[which(!is.na(y))]
     n_pos = length(row_indx_pos)
     y = y[which(!is.na(y))]
-    data_list = list(N, P, K, nZ, y, row_indx, col_indx, nZero, 
-                     row_indx_z, col_indx_z, nZero, row_indx_z, col_indx_z, 
-                     row_indx_pos, col_indx_pos, n_pos, d_covar, num_covar, 
+    data_list = list(N, P, K, nZ, y, row_indx, col_indx, nZero,
+                     row_indx_z, col_indx_z, nZero, row_indx_z, col_indx_z,
+                     row_indx_pos, col_indx_pos, n_pos, d_covar, num_covar,
                      covar_indexing, num_unique_covar)
     pars <- c("x", "Z", "sigma", "log_lik", "pred")
-    if (!is.null(covar)) 
+    if (!is.null(covar))
         pars = c(pars, "D")
-    mod = stan(data = data_list, pars = pars, file = model[[1]], 
+    mod = stan(data = data_list, pars = pars, file = model[[1]],
                chains = chains, iter = iter, control = control, cores=cores)
     return(mod)
 }
