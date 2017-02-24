@@ -3,6 +3,7 @@
 \usepackage{color}
 \usepackage{listings}
 \usepackage{bm}
+\usepackage{amsmath}
 
 \begin{document}
 
@@ -31,23 +32,42 @@ For post-hoc analyses of potential sub-watershed-scale drivers of response-predi
 
 % A snowmelt time series was then added to this dataset, using monthly mean SNOTEL records from six sites the USDA's Natural Resources Conservation Service
 \subsection*{Time series analysis}
-Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), covariates (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer trends allows greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
+Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), predictors (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer trends allows greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
 
 DFA takes the following form:
 
 \begin{equation}
-    \textbf{x}_t = \textbf{x}_{t-1} + \textbf{w}_t\textrm{, where } \textbf{w}_t \sim \textrm{MVN}(0,\textbf{R})
+    \textbf{x}_t = \textbf{x}_{t-1} + \textbf{w}_t\textrm{, where } \textbf{w}_t \sim \textrm{MVN}(0,\textbf{Q})
 \end{equation}
 \begin{equation}
-    \textbf{y}_t = \textbf{Zx}_t + \textbf{Dd}_t + \textbf{v}_t\textrm{, where } \textbf{v}_t \sim \textrm{MVN}(0,\textbf{Q})
+    \textbf{y}_t = \textbf{Zx}_t + \textbf{Dd}_t + \textbf{v}_t\textrm{, where } \textbf{v}_t \sim \textrm{MVN}(0,\textbf{R})
 \end{equation}
 \begin{equation}
-    \textbf{x}_0 \sim \textrm{MVN}(\bm{\pi},\bm{\Lambda})
+    \textbf{x}_0 \sim \textrm{MVN}(0,\bm{\Lambda})
 \end{equation}
 
-At each time step \it{t}, the response variable \textbf{y} is a vector of
+At each time step {\it t}, the $m \times 1$ vector of shared trends \textbf{x} is a function of \textbf{x} in the previous step, plus normal error \textbf{w} (Eq. 1). This is the definition of a random walk. The $n\times 1$ response vector \textbf{y} at time {\it t} is a function of the shared trends and their factor loadings (\textbf{Z}; $n\times m$), a $q\times 1$ vector of covariates \textbf{d} and their river-specific effects effects (\textbf{D}; $n\times q$), and a second normal error term \textbf{v} (Eq. 2). \textbf{R} and \textbf{Q} are variance-covariance matrices of order m, and \textbf{Q} is set to identity for model identifiability (\colorbox{red}{\lstinline{Harvey 1989}}). The initial state of the shared trend vector, $\bm{x}_0$, is multivariate-normally distributed with a mean of zero and a diagonal variance-covariance matrix with large variance (e.g. 5). Predictor data were standardized to facilitate comparison of effect sizes. Response data were centered on 0, but not scaled, to avoid error inflation \colorbox{red}{\lstinline{cite}}.
+
+Because we were interested in isolating the effects of climatic predictors on river temperature and discharge, we used fixed factors to absorb recurring seasonal variation not related to the predictors, with one factor level for each month. These factors were incorporated into the predictor matrix \textbf{d}. Thus, the coefficient of \textbf{D} relating, say, air temperature and water temperature, represents the effect size of the former on the latter. In other words, it is the change in water temperature for a unit change in air temperature over the course of the time series. We call this effect "coupling." We were also interested in coupling by month for specific predictors, which required that the focal predictor in a particular model be treated like the fixed factors of residual seasonal variation. Concretely,
+
+$$
+\begin{bmatrix} 
+    \theta_{a1} & \theta_{a2} & \theta_{a3} & \cdots & \theta_{aT} \\
+    \theta_{b1} & 0 & 0 & \cdots & 0 \\ 
+    0 & \theta_{b2} & 0 & \cdots & 0 \\
+    0 & 0 & \theta_{b3} & \cdots & 0 \\
+    \vdots & \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & 0 & \cdots & \theta_{bT} \\
+    1 & 0 & 0 & \cdots & 0 \\ 
+    0 & 1 & 0 & \cdots & 0 \\
+    0 & 0 & 1 & \cdots & 0 \\
+    \vdots & \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & 0 & \cdots & 1 \\
+\end{bmatrix}
+$$
 
 
+The shared trends represent environmental variation not captured by the climatic predictors. 
 
 \section*{Appendix A}
 Table A1:
@@ -64,3 +84,4 @@ Table A1:
 % ncdc.noaa.gov/cag/time-series/us #climate data
 % https://www.nrcs.usda.gov/wps/portal/nrcs/detail/or/snow/?cid=nrcs142p2_046350 #snow
 % https://arxiv.org/pdf/1509.00660.pdf #TMB
+% Harvey, A. C. 1989. Forecasting, structural time series models and the Kalman flter. Cambridge University Press, Cambridge, UK.
