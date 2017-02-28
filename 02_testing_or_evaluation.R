@@ -73,7 +73,7 @@ y_choice = 'DISCHARGE'
 #still be determined.
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
 #in a model yet, so there could be bugs)
-cov_choices = c('meantemp','precip')
+cov_choices = c('meantemp','precip','snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 #regions 3 and 4 were discovered to be very similar early on, so most of this script will only work if
 #you choose '3_4' here and 'average_regions=TRUE'.
@@ -88,13 +88,13 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 4
+ntrends = 5
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
 scale = FALSE
-na_thresh = 0.3 #exclude sites with >= this proportion of NA values.
+na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #be sure to visit section 3.1i, where you can add time interval factors and interaction effects
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
@@ -103,14 +103,14 @@ transform = 'log'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
 #'effect_byMonth', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
-design = 'effect_byMonth_acrossTime'
+design = 'effect_byMonth'
 #sections = number of intervals to divide the time series into, if examining change over time
 #(see "designer" function in section 3.1 for details)
 sections <- 5 #an integer. will be ignored if not applicable
 #the months to focus on for by-month effect size (1 is jan...)
 #if looking at effect_byMonth_acrossTime, including all months will be too expensive
 #(see "designer" function in section 3.1 for details)
-focal_months <- c(3,4,9,10) #a vector of integers between 1 and 12. will be ignored if not applicable.
+focal_months <- 1:12 #a vector of integers between 1 and 12. will be ignored if not applicable.
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -613,28 +613,32 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 
 # 4.1 - save model object or global environment image ####
 
-save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_allMos.rda')
-save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
-save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
-save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
+# save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_allMos.rda')
+# save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
+# save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
+# save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
+# 
+# save.image('../manuscript/figures/temp_due_4m_at_byMo_allMos.rda')
+# save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_may-aug.rda')
+# save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
+# save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_MASO.rda')
 
-save.image('../manuscript/figures/temp_due_4m_at_byMo_allMos.rda')
-save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_may-aug.rda')
-save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
-save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_MASO.rda')
+# save.image('../manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda')
 
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
-dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
+# dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
+# 
+# dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 
-dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
-dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
-dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
-dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
+# dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_discharge/DISCHARGE_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -748,8 +752,9 @@ dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/
 library(viridis)
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
-    # par(mai=c(0.1,0.6,0.1,0.1), omi=c(0.6,0.1,0,0.1), mfcol=c(2, 2))
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    if(ntrends<=4){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     xlbl <- int_dates
     y_ts <- int_dates
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -759,7 +764,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
         abline(h=0, col="gray")
         lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
         # mtext(paste("Process",i), side=3, line=-2)
-        mtext(paste("Process",i), side=3, line=0.5)
+        mtext(paste("Process",i), side=3, line=-2)
         xlbl = xlbl*c(rep(0,11),1)
         # if(i==2){
         # axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
@@ -774,7 +779,9 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
 # process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
-    par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    if(ntrends<=4){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
     ylbl <- names(obs_ts)
     # clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -793,7 +800,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
             if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=lab_size)}
             abline(h=0, lwd=1.5, col="gray")
         }
-        mtext(paste("Factor loadings on process",i),side=3,line=0.5)
+        mtext(paste("Factor loadings on process",i),side=3,line=-2)
         # if(i==2){
         # mtext('Site ID', side=1, line=2.5)
         # }
@@ -871,9 +878,11 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
-#add watershed area over 1000m column
+#add watershed area over 1000m and mean watershed slope
 WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
 land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+WsSlope <- read.csv('watershed_data/slope/slope.csv')
+land <- merge(land, WsSlope, by='siteCode', all.x=TRUE)
 
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -882,7 +891,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope')
 # landvars <- c('ElevWs','PctImp2006WsRp100',
 #               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
 #               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',

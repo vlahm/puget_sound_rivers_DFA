@@ -614,7 +614,9 @@ library(viridis)
 #these functions are used later within the loop
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
-  par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    if(ntrends<=4){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
   xlbl <- int_dates
   y_ts <- int_dates
   ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -623,14 +625,16 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
          ylim=ylm, xlab="", ylab="", xaxt="n")
     abline(h=0, col="gray")
     lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
-    mtext(paste("Process",i), side=3, line=0.5)
+    mtext(paste("Process",i), side=3, line=-2)
     axis(1, at=xlbl, labels=xlbl, cex.axis=0.8)
   }
 }
 # process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
-  par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    if(ntrends<=4){
+        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
   ylbl <- names(obs_ts)
   clr <- viridis(nn) #colors may not line up with series plots in section 2
   ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -645,7 +649,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
       if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=1.2, col=clr[j])}
       abline(h=0, lwd=1.5, col="gray")
     }
-    mtext(paste("Factor loadings on process",i),side=3,line=0.5)
+    mtext(paste("Factor loadings on process",i),side=3,line=-2)
   }
 }
 # loading_plotter_TMB(dfa, mm)
@@ -708,6 +712,8 @@ rownames(land) <- 1:nrow(land)
 #add watershed area over 1000m column
 WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
 land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+WsSlope <- read.csv('watershed_data/slope/slope.csv')
+land <- merge(land, WsSlope, by='siteCode', all.x=TRUE)
 
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -716,7 +722,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope')
 
 #get the indices of each of these variables in the main land dataframe
 landcols <- rep(NA, length(landvars))
@@ -997,7 +1003,7 @@ unregister <- function() {
 R_strucs <- c('DUE')#, 'DE') #'UNC'
 # R_strucs <- c('EVCV')
 
-#number of common trends
+#number of common trends to fit
 ntrends <- 3:4
 
 #should seasonality be modeled as fixed factors for each month ('fixed_individual'), as
@@ -1027,12 +1033,17 @@ covariates <- list(pc=covs_z2[2,, drop=FALSE],#, sn=rbind(covs_z2[3,]),
 #(see "designer" function in section 3.1 for details)
 design = 'effect_byMonth'
 #sections = number of intervals to divide the time series into, if examining change over time
-#(see "designer" function in section 3.1 for details)
-sections <- 5 #an integer. will be ignored if not applicable
-#the months to focus on for by-month effect size (1 is jan...)
+#(see "designer" function in section 3.1 for details).
+#value must be an integer. will be ignored unless design='effect_byMonth_acrossTime'.
+sections <- 5 
+#focal_months = the months to focus on for by-month effect size (1 is jan...).
 #if looking at effect_byMonth_acrossTime, including all months will be too expensive
-#(see "designer" function in section 3.1 for details)
-focal_months <- 1:12 #a vector of integers between 1 and 12. will be ignored if not applicable.
+#(see "designer" function in section 3.1 for details).
+#value should be a vector of integers between 1 and 12. will be ignored unless
+#design='effect_byMonth' or 'effect_byMonth_acrossTime'. If the former, you can probably
+#afford to include all months. Otherwise it might get too costly. You can track this by
+#examining the parameter to data ratio in the output table.
+focal_months <- 1:12 
 
 # troubleshooting:
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)

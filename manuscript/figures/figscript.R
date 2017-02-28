@@ -40,10 +40,11 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
 # load('temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
 # load('temp_due_4m_at_byMo_acrossTime_MASO.rda')
-load('discharge_due_4m_atpc_byMo_allMos.rda')
+# load('discharge_due_4m_atpc_byMo_allMos.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
+load('discharge_due_5m_atpcsn_byMo_allMos.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -390,45 +391,57 @@ axis(side=1, at=yy[,1][c(T,F)], labels=yy[,1][c(T,F)])
 legend(x='topleft', legend=c('Precip'), lwd=3, col=c('red'))
 par(defpar)
 
-# 9 - DISCHARGE effect size regression (untouched) ####
+# 9 - DISCHARGE effect size regression ####
 
+pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
+landvar=land$ElevWs/100
+labels=list(expression(paste(T[air])),'Precip','Snowmelt')
+# covr=1
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
-# pdf('01_effect_size_reg.pdf', width=7, height=6)
 # png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
-defpar <- par(mar=c(5,5,2,5))
-pal <- colorRampPalette(c('brown', 'white'))
-cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
-plot(land$WsAreaOver1000*100, rescaled_effect_size, type='n',
-     # plot(land$Ice06_11, rescaled_effect_size, type='n',
-     xlab='Watershed area over 1000m (%)', main='',
-     # xlab='Watershed % ice cover', main='',
-     ylab=expression(paste(Delta, ' water', degree, 'C ',
-                           Delta, ' air', degree, 'C'^-1)),
+defpar <- par(mfrow=c(1,3), oma=c(2,4,2,1), mar=c(4,2,2,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(covr in 1:3){
+plot(landvar, rescaled_effect_size[,covr], type='n',
+     # xlab='Watershed area over 1000m (%)', main='',
+     xlab='', main='', ylab='',
      cex.lab=1.3, cex.axis=1, font=2,
-     xaxt='n', xlim=c(0,80))
-mod <- lm(rescaled_effect_size ~ I(land$WsAreaOver1000*100))
-# mod <- lm(rescaled_effect_size ~ land$Ice06_11)
-abline(mod, col='gray', lty=2, lwd=3)
-points(land$WsAreaOver1000*100, rescaled_effect_size,
-       # points(land$Ice06_11, rescaled_effect_size,
+     xaxt='n',bty='o')
+mod <- lm(rescaled_effect_size[,covr] ~ I(landvar))
+sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+if(covr == 1) mtext(bquote(bold(T[air]) ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+if(covr %in% 2:3){
+    mtext(paste(labels[[covr]],sig), 3, cex=1.1, font=2, line=1.2)
+    abline(mod, col='gray', lty=2, lwd=3)
+}
+points(landvar, rescaled_effect_size[,covr],
        bg=cols, col='black',
-       pch=21, cex=1.5, lwd=2)
+       pch=21, cex=2, lwd=2)
 # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
 #              rect.col=colorRampPalette(c('brown', 'white'))(10),
 #              align='r', gradient='y')
 # text(3.39, 0.56, labels='Mean watershed')
 # text(3.52, 0.54, labels='elevation (m)')
-axis(1, at=seq(0,80,20))
+axis(1)
+}
+mtext('Mean watershed elevation (100 m)', side=1, outer=TRUE, cex=1.2)
+mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
 par(defpar)
-# dev.off()
+dev.off()
 
 # 10 - DISCHARGE loading regression (untouched) ####
 
 # png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
-pdf('02_loadings_reg.pdf', width=7, height=6)
+# pdf('02_loadings_reg.pdf', width=7, height=6)
 defpar <- par(mar=c(5,5,2,5))
 pal <- colorRampPalette(c('brown', 'white'))
 cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
@@ -445,7 +458,7 @@ color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
 text(3.39, 1.61, labels='Mean watershed')
 text(3.52, 1.53, labels='elevation (m)')
 par(defpar)
-dev.off()
+# dev.off()
 
 # 11 - DISCHARGE water temp by month (untouched) ####
 
@@ -1034,11 +1047,11 @@ for(i in c(0,2,4,6,8,11)){
     }
 }
 # lines(x=c(0,0), y=c(-0.8, 23.04), xpd=NA, col='gray50', lty=3, lwd=1)
-mtext(expression(paste(~bolditalic('ln')~bold(Delta)~bold('Q (CFS)'),sep='')),# / ')
+mtext(bquote(paste(bolditalic('ln')*bold(Delta)*bold('Q')~plain('(CFS)'))),# / ')
       # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
       # ~bold(Delta)~bold('precip. (cm)'), sep='')),
       side=1, outer=TRUE, line=3)
-mtext(expression(paste(bold(Delta)~bold('water')~bold(degree)~bold('C'))),# / ')
+mtext(bquote(paste(bold(Delta)*bold(T[water])~plain('(')*plain(degree)*plain('C)'))),# / ')
       # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
       # ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
       side=2, outer=TRUE, line=3)

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  24 FEB 2017 15:38
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  27 FEB 2017 12:46
 entering extended mode
 **./manuscript.tex
 (manuscript.tex
@@ -195,11 +195,11 @@ l-y-sis (DFA; [][][][][][]),
 Here is how much of TeX's memory you used:
  3180 strings out of 493329
  41935 string characters out of 3139067
- 117260 words of memory out of 3000000
+ 116260 words of memory out of 3000000
  6708 multiletter control sequences out of 15000+200000
  12529 words of font info for 44 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 27i,9n,32p,1559b,904s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 27i,9n,32p,1660b,904s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/c
 mbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pf
 b><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Pr
@@ -211,7 +211,7 @@ onts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type
 msfonts/cm/cmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/
 cm/cmsy7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10
 .pfb>
-Output written on manuscript.pdf (4 pages, 126255 bytes).
+Output written on manuscript.pdf (4 pages, 126254 bytes).
 PDF statistics:
  59 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

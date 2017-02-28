@@ -3,12 +3,15 @@
 \usepackage{color, listings, bm, amsmath, blkarray}
 
 \begin{document}
-todo:
-include snowmelt in model run. see if it's worth including with precip and temp as a climate predictor
-introduce terminology:
-responses = water temp, Q
-climatic predictors = air temp, precip, drought
-landscape predictors = many
+% todo:
+% include snowmelt in model run. see if it's worth including with precip and temp as a climate predictor
+% introduce terminology:
+% responses = water temp, Q
+% climatic predictors = air temp, precip, drought
+% landscape predictors = many
+%include hydrograph figures from kathy liederman and julian olden to show
+    %rain dom, rain and snow, snow dom
+%include the over-time plots in the supplemental information
 
 \section*{Introduction}
 
@@ -22,9 +25,9 @@ I'll probably mention anything relevant to this in the intro.
 
 The two response variables used in our analyses were water temperature and discharge. We obtained monthly water temperature readings from 1978 through 2015 via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. In all, 24 monitoring sites within the Puget Sound region (Fig. \colorbox{red}{\lstinline{1}}) were included, representing 19 rivers across 9 counties, and ranging from 4 to 775 m in elevation. For one site at each river, monthly discharge time series were available, either for the same location as one of the temperature monitoring sites, or for another location within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). At least one discharge monitoring site was available for every river represented in the temperature dataset.
 
-Potential climatic predictors of water temperature and discharge included mean and max air temperature, precipitation, and hydrologic drought, averaged by month across the response variable time series. These data are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors.
+Potential climatic predictors of water temperature and discharge included mean and max air temperature, total precipitation, snowmelt, and hydrologic drought, averaged by month across the response variable time series. All but snowmelt are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors. A snowmelt time series was then added to this dataset, using monthly mean records from six SNOTEL sites (Bumping Ridge, Elbow Lake, Mount Crag, Park Creek Ridge, Stevens Pass, White Pass) listed by the USDA's Natural Resources Conservation Service \colorbox{red}{\lstinline{cite}}. We calculated monthly snowmelt for each site as the absolute value of negative differences in cumulative snow water equivalent from each month to the next. The snowmelt time series was assigned zeros for any positive differences (accumulations). 
 
-% A snowmelt time series was then added to this dataset, using monthly mean SNOTEL records from six sites the USDA's Natural Resources Conservation Service
+%More information on all datasets can be found in \colorbox{red}{\lstinline{Appendix A}}. 
 
 \subsection*{Time series analysis}
 
@@ -71,7 +74,7 @@ Additional, non seasonal variation due to exogenous effects loads onto the share
 
 \subsection*{Landscape predictors and post-hoc regression}
 
-After model selection, climatic predictor effect sizes for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) library \colorbox{red}{\lstinline{cite}} and the National Hydrography Dataset (NHDPlusV2)\colorbox{red}{\lstinline{cite}}. Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), monthly runoff (mm), percent ice and snow (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). We also calculated area over 1000 m (km\textsuperscript{2}) and mean slope (\colorbox{red}{\lstinline{unit}}) by delineating watersheds from a digital elevation model in ArcMap \colorbox{red}{\lstinline{cite}}.
+After model selection, climatic predictor effect sizes for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) library \colorbox{red}{\lstinline{cite}} and the National Hydrography Dataset (NHDPlusV2)\colorbox{red}{\lstinline{cite}}. Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), monthly runoff (mm), percent ice and snow (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). We also calculated area over 1000 m (km\textsuperscript{2}) and mean slope (percent rise) by delineating watersheds from a digital elevation model in ArcMap \colorbox{red}{\lstinline{cite}}.
 
 
 
