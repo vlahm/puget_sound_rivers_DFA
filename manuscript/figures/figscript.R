@@ -395,8 +395,6 @@ par(defpar)
 
 pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
 landvar=land$ElevWs/100
-labels=list(expression(paste(T[air])),'Precip','Snowmelt')
-# covr=1
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
@@ -418,9 +416,13 @@ plot(landvar, rescaled_effect_size[,covr], type='n',
      xaxt='n',bty='o')
 mod <- lm(rescaled_effect_size[,covr] ~ I(landvar))
 sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
-if(covr == 1) mtext(bquote(bold(T[air]) ~.(sig)), 3, cex=1.1, font=2, line=1.2)
-if(covr %in% 2:3){
-    mtext(paste(labels[[covr]],sig), 3, cex=1.1, font=2, line=1.2)
+if(covr == 1) mtext(bquote(plain(theta) == bold(T[air]) ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+if(covr == 2){
+    mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+    abline(mod, col='gray', lty=2, lwd=3)
+}
+if(covr == 3){
+    mtext(bquote(plain(theta) == bold('Snowmelt') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
     abline(mod, col='gray', lty=2, lwd=3)
 }
 points(landvar, rescaled_effect_size[,covr],

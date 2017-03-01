@@ -776,7 +776,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
 }
 # pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-# process_plotter_TMB(dfa, mm)
+process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     if(ntrends<=4){
@@ -807,7 +807,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
 }
-# loading_plotter_TMB(dfa, mm)
+loading_plotter_TMB(dfa, mm)
 # dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
@@ -1062,7 +1062,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
     }
 }
 # load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
-# load_regress_plotter(mm, 'exploration', , 'ElevWs')
+load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model (abandoned, but there's some useful plotting stuff here) ####
 

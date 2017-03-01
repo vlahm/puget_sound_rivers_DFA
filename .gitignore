@@ -8,5 +8,6 @@ obsolete/
 *.dll
 *.so
 /round_[1-9]_*
+/round_1[0-1]*
 ~*
 */model_outputs*

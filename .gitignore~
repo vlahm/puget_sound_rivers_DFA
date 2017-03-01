@@ -1,0 +1,12 @@
+*.db
+*.Rhistory
+obsolete/
+/data/climate_data/by_year/raw
+/data/climate_data/by_month/raw
+*.cpp
+*.o
+*.dll
+*.so
+/round_[1-9]_*
+~*
+*/model_outputs*
