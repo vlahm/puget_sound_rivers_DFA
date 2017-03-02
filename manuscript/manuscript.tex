@@ -1,6 +1,9 @@
 \documentclass{article}
 
 \usepackage{color, listings, bm, amsmath, blkarray}
+% \usepackage[percent]{overpic}
+% \usepackage{tikz,graphicx}
+% \usepackage{graphicx}
 
 \begin{document}
 % todo:
@@ -76,9 +79,37 @@ Additional, non seasonal variation due to exogenous effects loads onto the share
 
 \subsection*{Landscape predictors and post-hoc regression}
 
-After model selection, climatic predictor effect sizes for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) library \colorbox{red}{\lstinline{cite}} and the National Hydrography Dataset (NHDPlusV2)\colorbox{red}{\lstinline{cite}}. Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), monthly runoff (mm), percent ice and snow (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). We also calculated area over 1000 m (km\textsuperscript{2}) and mean slope (percent rise) by delineating watersheds from a digital elevation model in ArcMap \colorbox{red}{\lstinline{cite}}.
+After model selection, climatic predictor effect sizes for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) data library \colorbox{red}{\lstinline{cite}} and the National Hydrography Dataset (NHDPlusV2)\colorbox{red}{\lstinline{cite}}. Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), bedrock depth (cm), Base Flow Index (BFI; \%), runoff (mm mo\textsuperscript{-1}), percent ice and snow (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). We also calculated area over 1000 m (km\textsuperscript{2}) and mean slope (percent rise) by delineating watersheds from a digital elevation model in ArcMap \colorbox{red}{\lstinline{cite}}.
 
+\section*{Results}
 
+% \begin{overpic}[grid,scale=0.5,unit=1mm]{figures/16_temp_all_reg.pdf}
+% \begin{overpic}[width=1\textwidth,grid,tics=10]{figures/16_temp_all_reg.pdf}
+% \put (1,55) {\small
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili\\
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili\\
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili\\
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili\\
+% chili chili chili chili chili chili chili chili chili chili chili chili chili chili
+% }
+% \end{overpic}
+
+% \begin{tikzpicture}
+% \node (img) {\includegraphics[width=1\textwidth]{figures/16_temp_all_reg.pdf}};
+% \node [below left,text width=4cm,align=left] at (img.north east){\small Lorem ipsum dolor sit amet consectetur and then a bunch more stuff that no one remembers.};
+% \end{tikzpicture}
+
+\begin{picture}(100,100)
+\put(.1,.1){\includegraphics{figures/16_temp_all_reg.pdf}}
+% \put(.01\textwidth,.3\textwidth){hello}
+\end{picture}
+
+% \begin{figure}
+%   \includegraphics[width=\linewidth]{figures/16_temp_all_reg.pdf}
+%   \caption{A boat.}
+%   \label{fig:boat1}
+% \end{figure}
 
 \end{document}
 

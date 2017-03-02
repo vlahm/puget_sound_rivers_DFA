@@ -72,6 +72,7 @@ climate division shapefile: ftp://ftp.ncdc.noaa.gov/pub/data/cirs/climdiv/
 CIG state of knowledge: https://cig.uw.edu/wp-content/uploads/sites/2/2014/11/ps-sok_sec02_climate_2015.pdf
 snow water equivalent: https://www.nrcs.usda.gov/wps/portal/nrcs/detail/or/snow/?cid=nrcs142p2_046350
 	>daily difference report>time period>monthly + end of period + custom + all months + jan 1, 1978 - dec 31, 2015 for sites=Trough, Park Creek Ridge, Yakima
+more details on streamcat data ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/Metadata/Runoff.html
 
 department of ecology ecy gis will have hax by state - this might work except that I need that piece of canada (or i could throw that point out of the set)
 NLCB?

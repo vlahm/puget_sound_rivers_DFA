@@ -64,7 +64,7 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'DISCHARGE'
+y_choice = 'TEMP'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt
 #if you're looking at effects by month, or by month over time (see 'design' option below),
@@ -99,7 +99,7 @@ na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
-transform = 'log'
+transform = 'none'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
 #'effect_byMonth', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
@@ -624,6 +624,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_MASO.rda')
 
 # save.image('../manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda')
+save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 
 # 4.2 - or load desired model object ####
 
@@ -639,6 +640,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 
 # dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_discharge/DISCHARGE_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
+dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -776,7 +778,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
 }
 # pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-process_plotter_TMB(dfa, mm)
+# process_plotter_TMB(dfa, mm)
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     if(ntrends<=4){
@@ -807,7 +809,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
 }
-loading_plotter_TMB(dfa, mm)
+# loading_plotter_TMB(dfa, mm)
 # dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
@@ -1062,7 +1064,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
     }
 }
 # load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
-load_regress_plotter(mm, 'exploration', , 'ElevWs')
+# load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model (abandoned, but there's some useful plotting stuff here) ####
 

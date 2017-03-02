@@ -45,6 +45,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -96,6 +97,156 @@ axis(side=1, at=yy[,1][c(T,F)], labels=yy[,1][c(T,F)])
 lines(yy[,1], covs, col='red', lwd=3)
 legend(x='bottomleft', legend=c('Air temp'), lwd=3, col=c('red'))
 par(defpar)
+
+# 1.1 - TEMP effect size regression (linked with loading regression) ####
+
+# system('taskkill /f /im AcroRd32.exe')
+pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
+layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
+defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
+landvar=land$ElevWs/100
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+
+#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+#% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+# defpar <- par(oma=c(2,4,2,1), mar=c(4,2,2,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(covr in 1:3){
+    res = rescaled_effect_size[,covr]
+    if(covr==3){res = res * 2.54}
+    plot(landvar, res, type='n', yaxt='n',
+         # xlab='Watershed area over 1000m (%)', main='',
+         xlab='', main='', ylab='', cex.lab=1.3, cex.axis=1, font=2, xaxt='n',bty='l')
+    mod <- lm(res ~ I(landvar))
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    if(covr == 1){
+        mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(T[air]^-1))~
+                         scriptstyle(plain('(')*plain(degree)*plain('C')~plain(degree)*plain(C^-1)*plain(')'))),
+              2, cex=.8, line=1.5)
+        abline(mod, col='steelblue', lty=2, lwd=3)
+        axis(2, at=c(-.01,0,.01), labels=c(-0.01,0,0.01), padj=.9, tck=-.02)
+    }
+    if(covr == 2){
+        mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(precip^-1))~
+                         scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))),
+              2, cex=.8, line=1.5)
+        axis(2, at=c(-.01,0,.01), labels=c(-0.01,0,0.01), padj=.9, tck=-.02)
+        mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
+    }
+    if(covr == 3){
+        mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(snowmelt^-1))~
+                         scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))), 2, cex=.8, line=1.5)
+        abline(mod, col='steelblue', lty=2, lwd=3)
+        axis(2, at=c(-0.1,0.1,0.3), padj=.9, tck=-.02)
+    }
+    print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.2, font=2, col='steelblue')
+    points(landvar, res,
+           bg=cols, col='black',
+           pch=21, cex=1.5, lwd=2)
+    # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+    #              rect.col=colorRampPalette(c('brown', 'white'))(10),
+    #              align='r', gradient='y')
+    # text(3.39, 0.56, labels='Mean watershed')
+    # text(3.52, 0.54, labels='elevation (m)')
+    axis(1, padj=-.9, tck=-.02)
+    # if(covr %in% c(1,3)){axis(2)}else{axis(2, )}
+}
+lines(x=c(-27,13.8), y=c(-.305,-.305), xpd=NA, lwd=2, col='gray70')
+# mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
+# par(defpar)
+# dev.off()
+
+# 1.2 - TEMP loading regression ####
+
+# png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+# pdf('02_loadings_reg.pdf', width=7, height=6)
+# defpar <- par(mar=c(5,5,2,5))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+# plot(land$Ice06_11, dfa$Estimates$Z[,1],
+#      xlab='Watershed % ice cover', ylab='Trend 1 loadings', type='n',
+#      main='', cex.lab=1.3, cex.axis=1, font=2)
+# abline(mod, col='gray', lty=2, lwd=3)
+# points(land$Ice06_11, dfa$Estimates$Z[,1], col='black', bg=cols,
+#        pch=21, cex=1.5, lwd=2)
+# mod <- lm(dfa$Estimates$Z[,1] ~ land$Ice06_11)
+# color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
+#              rect.col=colorRampPalette(c('brown', 'white'))(10),
+#              align='r', gradient='y')
+# text(3.39, 1.61, labels='Mean watershed')
+# text(3.52, 1.53, labels='elevation (m)')
+# par(defpar)
+# dev.off()
+plot(1,1,type='n',ann=FALSE,axes=FALSE)
+legend(x=1,y=1.505, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated'),
+       xpd=NA, pt.bg=c('black','gray75','white'), pch=21, xjust=0.5,
+       col='black', cex=1.3, horiz=FALSE, bty='o', box.col='gray70', box.lwd=2)
+
+# pdf('02b_discharge_loadings_reg.pdf', width=7, height=7)
+landvar = list(land$WtDepWs, land$RunoffWs, NULL, land$BFIWs, land$WsSlope)
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+
+#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+par(mar=c(3.5,3.5,0,0))
+# defpar <- par(mfrow=c(2,2), oma=c(0,0,0,0), mar=c(4,4,1,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(trnd in c(1,2,4,5)){
+    plot(landvar[[trnd]], dfa$Estimates$Z[,trnd], type='n', yaxt='n',
+         xlab='', main='', ylab='', cex.lab=1, font=2, xaxt='n',bty='l')
+    mod <- lm(dfa$Estimates$Z[,trnd] ~ landvar[[trnd]])
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    if(trnd == 1){
+        mtext(bquote(textstyle(bold('Mean water table depth '))*scriptstyle(plain('(cm)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+        mtext(bquote(bold('Shared trend loadings')~
+                         scriptstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
+              side=2, cex=.8, line=1.8, adj=15)
+    }
+    if(trnd == 2){
+        mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    if(trnd == 4){
+        mtext(bquote(bold('BFI ')*scriptstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    if(trnd == 5){
+        mtext(bquote(bold('Mean slope ')*scriptstyle(plain('(% rise)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    # if(trnd == 3){
+    #     mtext(bquote(bold('Mean slope (% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
+    #     # mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+    # }
+    abline(mod, col='springgreen4', lty=2, lwd=3)
+    points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
+           bg=cols, col='black',
+           pch=21, cex=1.5, lwd=2)
+    # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+    #              rect.col=colorRampPalette(c('brown', 'white'))(10),
+    #              align='r', gradient='y')
+    # text(3.39, 0.56, labels='Mean watershed')
+    # text(3.52, 0.54, labels='elevation (m)')
+    axis(1, padj=-.9, tck=-.02); axis(2, padj=.9, tck=-.02)
+}
+
+par(defpar)
+dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\16_temp_all_reg.pdf')
 
 # 2 - TEMP effect size regression ####
 
@@ -391,16 +542,19 @@ axis(side=1, at=yy[,1][c(T,F)], labels=yy[,1][c(T,F)])
 legend(x='topleft', legend=c('Precip'), lwd=3, col=c('red'))
 par(defpar)
 
-# 9 - DISCHARGE effect size regression ####
+# 9.1 - DISCHARGE effect size regression (linked with loading regression) ####
 
-pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
+# system('taskkill /f /im AcroRd32.exe')
+pdf('14_discharge_all_reg.pdf', width=7.5, height=7.5)
+layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
+defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 landvar=land$ElevWs/100
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
 # png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
-defpar <- par(mfrow=c(1,3), oma=c(2,4,2,1), mar=c(4,2,2,1))
+# defpar <- par(oma=c(2,4,2,1), mar=c(4,2,2,1))
 # pal <- colorRampPalette(c('brown', 'white'))
 # cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
 elev_hi = which(land$Ice06_11 >= 0.7)
@@ -409,58 +563,136 @@ elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 cols = rep('black', nrow(land))
 cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
 for(covr in 1:3){
-plot(landvar, rescaled_effect_size[,covr], type='n',
+res = rescaled_effect_size[,covr]
+if(covr==3){res = res * 2.54}
+plot(landvar, res, type='n', yaxt='n',
      # xlab='Watershed area over 1000m (%)', main='',
-     xlab='', main='', ylab='',
-     cex.lab=1.3, cex.axis=1, font=2,
-     xaxt='n',bty='o')
-mod <- lm(rescaled_effect_size[,covr] ~ I(landvar))
+     xlab='', main='', ylab='', cex.lab=1.3, cex.axis=1, font=2, xaxt='n',bty='l')
+mod <- lm(res ~ I(landvar))
 sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
-if(covr == 1) mtext(bquote(plain(theta) == bold(T[air]) ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+if(covr == 1){
+    mtext(bquote(textstyle(bold(Delta)*bold('Q ')*bold(Delta)*bold(T[air]^-1))~
+              scriptstyle(plain('(CFS')~plain(degree)*plain(C^-1)*plain(')'))),
+          2, cex=.8, line=1.5)
+    axis(2, at=c(.07,.09,.11), padj=.9, tck=-.02)
+}
 if(covr == 2){
-    mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
-    abline(mod, col='gray', lty=2, lwd=3)
+    mtext(bquote(textstyle(bold(Delta)*bold('Q ')*bold(Delta)*bold(precip^-1))~
+                     scriptstyle(plain('(CFS')~plain(cm^-1)*plain(')'))),
+          2, cex=.8, line=1.5)
+    abline(mod, col='steelblue', lty=2, lwd=3)
+    axis(2, at=c(-.005,0,.005,.01), labels=c(expression(plain(-5)*plain(e^-3)),
+        0,expression(plain(5)*plain(e^-3)),
+        expression(plain(1)*plain(e^-2))), padj=.8, tck=-.02)
+    mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
 }
 if(covr == 3){
-    mtext(bquote(plain(theta) == bold('Snowmelt') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
-    abline(mod, col='gray', lty=2, lwd=3)
+    mtext(bquote(textstyle(bold(Delta)*bold('Q ')*bold(Delta)*bold(snowmelt^-1))~
+              scriptstyle(plain('(CFS')~plain(cm^-1)*plain(')'))), 2, cex=.8, line=1.5)
+    abline(mod, col='steelblue', lty=2, lwd=3)
+    axis(2, at=c(.1,.3,.5,.7), padj=.9, tck=-.02)
 }
-points(landvar, rescaled_effect_size[,covr],
+print.letter(paste(letters[covr],sig), c(.1,.9), cex=1.2, font=2, col='steelblue')
+points(landvar, res,
        bg=cols, col='black',
-       pch=21, cex=2, lwd=2)
+       pch=21, cex=1.5, lwd=2)
 # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
 #              rect.col=colorRampPalette(c('brown', 'white'))(10),
 #              align='r', gradient='y')
 # text(3.39, 0.56, labels='Mean watershed')
 # text(3.52, 0.54, labels='elevation (m)')
-axis(1)
+axis(1, padj=-.9, tck=-.02)
+# if(covr %in% c(1,3)){axis(2)}else{axis(2, )}
 }
-mtext('Mean watershed elevation (100 m)', side=1, outer=TRUE, cex=1.2)
-mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
-par(defpar)
-dev.off()
+lines(x=c(-27,13.8), y=c(-.115,-.115), xpd=NA, lwd=2, col='gray70')
+# mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
+# par(defpar)
+# dev.off()
 
-# 10 - DISCHARGE loading regression (untouched) ####
+# 9.2 - DISCHARGE loading regression ####
 
 # png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 # pdf('02_loadings_reg.pdf', width=7, height=6)
-defpar <- par(mar=c(5,5,2,5))
-pal <- colorRampPalette(c('brown', 'white'))
-cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
-plot(land$Ice06_11, dfa$Estimates$Z[,1],
-     xlab='Watershed % ice cover', ylab='Trend 1 loadings', type='n',
-     main='', cex.lab=1.3, cex.axis=1, font=2)
-abline(mod, col='gray', lty=2, lwd=3)
-points(land$Ice06_11, dfa$Estimates$Z[,1], col='black', bg=cols,
-       pch=21, cex=1.5, lwd=2)
-mod <- lm(dfa$Estimates$Z[,1] ~ land$Ice06_11)
-color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
-             rect.col=colorRampPalette(c('brown', 'white'))(10),
-             align='r', gradient='y')
-text(3.39, 1.61, labels='Mean watershed')
-text(3.52, 1.53, labels='elevation (m)')
-par(defpar)
+# defpar <- par(mar=c(5,5,2,5))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+# plot(land$Ice06_11, dfa$Estimates$Z[,1],
+#      xlab='Watershed % ice cover', ylab='Trend 1 loadings', type='n',
+#      main='', cex.lab=1.3, cex.axis=1, font=2)
+# abline(mod, col='gray', lty=2, lwd=3)
+# points(land$Ice06_11, dfa$Estimates$Z[,1], col='black', bg=cols,
+#        pch=21, cex=1.5, lwd=2)
+# mod <- lm(dfa$Estimates$Z[,1] ~ land$Ice06_11)
+# color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
+#              rect.col=colorRampPalette(c('brown', 'white'))(10),
+#              align='r', gradient='y')
+# text(3.39, 1.61, labels='Mean watershed')
+# text(3.52, 1.53, labels='elevation (m)')
+# par(defpar)
 # dev.off()
+plot(1,1,type='n',ann=FALSE,axes=FALSE)
+legend(x=1,y=1.505, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated'),
+       xpd=NA, pt.bg=c('black','gray75','white'), pch=21, xjust=0.5,
+       col='black', cex=1.3, horiz=FALSE, bty='o', box.col='gray70', box.lwd=2)
+
+# pdf('02b_discharge_loadings_reg.pdf', width=7, height=7)
+landvar = list(NULL,land$WsSlope, land$RunoffWs, land$WsAreaSqKm, land$RckDepWs)
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+
+#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+par(mar=c(3.5,3.5,0,0))
+# defpar <- par(mfrow=c(2,2), oma=c(0,0,0,0), mar=c(4,4,1,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(trnd in 2:5){
+    plot(landvar[[trnd]], dfa$Estimates$Z[,trnd], type='n', yaxt='n',
+         xlab='', main='', ylab='', cex.lab=1, font=2, xaxt='n',bty='l')
+    mod <- lm(dfa$Estimates$Z[,trnd] ~ landvar[[trnd]])
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    if(trnd == 2){
+        mtext(bquote(textstyle(bold('Mean slope '))*scriptstyle(plain('(% rise)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+        mtext(bquote(bold('Shared trend loadings')~
+                         scriptstyle(plain('(')*plain(Delta)*plain('Q ')*plain(Delta)*plain('?'^-1)*plain(')'))),
+                     side=2, cex=.8, line=1.8, adj=-14)
+    }
+    if(trnd == 3){
+        mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    if(trnd == 4){
+        mtext(bquote(bold('Total area ')*scriptstyle(plain('(')*plain(km^2)*plain(')'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    if(trnd == 5){
+        mtext(bquote(bold('Mean bedrock depth ')*scriptstyle(plain('(cm)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+    }
+    # if(trnd == 3){
+    #     mtext(bquote(bold('Mean slope (% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
+    #     # mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+    # }
+    abline(mod, col='springgreen4', lty=2, lwd=3)
+    points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
+           bg=cols, col='black',
+           pch=21, cex=1.5, lwd=2)
+    # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+    #              rect.col=colorRampPalette(c('brown', 'white'))(10),
+    #              align='r', gradient='y')
+    # text(3.39, 0.56, labels='Mean watershed')
+    # text(3.52, 0.54, labels='elevation (m)')
+    axis(1, padj=-.9, tck=-.02); axis(2, padj=.9, tck=-.02)
+}
+
+par(defpar)
+dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\14_discharge_all_reg.pdf')
 
 # 11 - DISCHARGE water temp by month (untouched) ####
 
@@ -967,11 +1199,11 @@ dev.off()
 
 # 19 - DISCHARGE vs. TEMP (big five) ####
 
-#load discharge_due_4m_atpc_byMo_allMos.rda in the setup section, or else names
+#load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
 #will be screwed up.
 
-disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_4m_at.rds')
-temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_4m_at.rds')
+disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_5m_atpcsn.rds')
+temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
 # "A"  "B"  "C"  "E"  "F"  "G"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "S"  "T"  "U"
 # [20] "V"  "W"  "X"  "Z"  "ZA"
 # "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
@@ -1004,13 +1236,13 @@ for(i in c(0,2,4,6,8,11)){
     #          gradient='x', align='lt')
     }
     if(i != 0){
-        ymin=-.61
+        ymin=-.07
         ymax=max(temp_moInts[-c(6,17,18,20,22)])
         mod <- lm(temp_moInts[,i][-c(6,17,18,20,22)] ~ disch_moInts[,i])
         sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
         plot(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],
              yaxt='n', xaxt='n', bty='o', type='n', fg='gray60',
-             xlim=c(-.11, max(disch_moInts)),
+             xlim=c(-.15, max(disch_moInts)),
              ylim=c(ymin, ymax), yaxs='i')
         polygon(x=c(0,0.4,0.4,0), y=c(0,0,ymax,ymax),
                 col=adjustcolor('darkred', alpha.f=0.2), border=FALSE)
@@ -1031,12 +1263,12 @@ for(i in c(0,2,4,6,8,11)){
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)], cex=1.5,
                pch=21, bg=cols, col='black')
         # pch=land$siteCode, col=cols,
-        text(-.08,1.1,paste0(month.abb[i], sig), cex=1.2, font=2)
+        print.letter(paste0(month.abb[i], sig), c(.9,.9), cex=1.2, font=2)
         if(i %in% c(2,4,8)){
             # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
             #           labels=c('-0.5', sprintf('%4s', c('0.0','0.5','1.0'))))
             axis(2, las=2, line=0, col='gray60')
-            lines(x=c(-.167,-.167), y=c(-.62,1.3))
+            # lines(x=c(-.167,-.167), y=c(-.62,1.3))
         }
         # if(i %in% 7:12) mtext(month.abb[i], 4, line=1, las=2)
         if(i %in% c(8,11)){
@@ -1073,10 +1305,10 @@ mtext(bquote(paste(bold(Delta)*bold(T[water])~plain('(')*plain(degree)*plain('C)
 #        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.05,.4))
 # legend(x=-.28, y=3.7, legend=c('Snow-fed'), xpd=NA, pt.bg=c('white'), pch=21,
 #        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.1,.4))
-legend(x=-.54, y=5.1, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated'),
+legend(x=-.7, y=.67, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated'),
        xpd=NA, pt.bg=c('black','gray75','white'), pch=21,
        col='black', cex=1.3, horiz=FALSE, bty='n')
-legend(x=-.45, y=4.6, legend=c(expression(paste(plain('Q, T'[water]))),
+legend(x=-.58, y=.595, legend=c(expression(paste(plain('Q, T'[water]))),
                              expression(paste(frac(1,Q), ' ,  ', frac(1,T[water])))),
        xpd=NA, fill=c(adjustcolor('darkred', alpha.f=0.2),
                       adjustcolor('navy', alpha.f=0.15)),
@@ -1086,9 +1318,9 @@ legend(x=-.45, y=4.6, legend=c(expression(paste(plain('Q, T'[water]))),
 #        xpd=NA, fill=c(adjustcolor('darkred', alpha.f=0.2),
 #                       adjustcolor('navy', alpha.f=0.15)),
 #        border='black', cex=1.2, horiz=FALSE, bty='n', adj=c(0,.4))
-text(-.52, 4, expression(paste(plain('T'[air]))),
+text(-.66, .52, expression(paste(plain('T'[air]))),
      xpd=NA, cex=1.5)
-text(-.46, 3.97, expression(paste(plain('' %prop% ''))),
+text(-.59, .52, expression(paste(plain('' %prop% ''))),
      xpd=NA, cex=2.5)
 # text(0.01, 3.58, expression(paste(plain('' %up% 'T'[air]) %=>% '')),
 #      xpd=NA, cex=1.6)
@@ -1097,6 +1329,7 @@ text(-.46, 3.97, expression(paste(plain('' %prop% ''))),
 #                 limits=c('Rainfed', 'Snowfed'), title='X = mean')
 par(defpar)
 dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\15_disch_vs_air_focal5.pdf')
 
 # 20 - air water discharge (average) ####
 
@@ -1153,5 +1386,118 @@ axis(4, las=1)
 mtext('Mean discharge (CFS)', 4, font=2, las=3, line=3)
 mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
       line=2, side=2)
+par(defpar)
+dev.off()
+
+# x - discharge eff size and loading regressions separated ####
+# pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
+# layout(matrix(c(1:5,8,6,7,9),nrow=3,byrow=TRUE))
+# par(oma=c(
+landvar=land$ElevWs/100
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+
+#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+defpar <- par(oma=c(2,4,2,1), mar=c(4,2,2,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(covr in 1:3){
+    plot(landvar, rescaled_effect_size[,covr], type='n', yaxt='n',
+         # xlab='Watershed area over 1000m (%)', main='',
+         xlab='', main='', ylab='', cex.lab=1.3, cex.axis=1, font=2, xaxt='n',bty='o')
+    mod <- lm(rescaled_effect_size[,covr] ~ I(landvar))
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    if(covr == 1) mtext(bquote(plain(theta) == bold(T[air]) ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+    if(covr == 2){
+        mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+        abline(mod, col='steelblue', lty=2, lwd=3)
+    }
+    if(covr == 3){
+        mtext(bquote(plain(theta) == bold('Snowmelt') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+        abline(mod, col='steelblue', lty=2, lwd=3)
+    }
+    points(landvar, rescaled_effect_size[,covr],
+           bg=cols, col='black',
+           pch=21, cex=2, lwd=2)
+    # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+    #              rect.col=colorRampPalette(c('brown', 'white'))(10),
+    #              align='r', gradient='y')
+    # text(3.39, 0.56, labels='Mean watershed')
+    # text(3.52, 0.54, labels='elevation (m)')
+    axis(1); axis(2)
+}
+mtext('Mean watershed elevation (100 m)', side=1, outer=TRUE, cex=1.2)
+mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
+# par(defpar)
+# dev.off()
+
+# 10 - DISCHARGE loading regression 
+
+# png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+# pdf('02_loadings_reg.pdf', width=7, height=6)
+# defpar <- par(mar=c(5,5,2,5))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+# plot(land$Ice06_11, dfa$Estimates$Z[,1],
+#      xlab='Watershed % ice cover', ylab='Trend 1 loadings', type='n',
+#      main='', cex.lab=1.3, cex.axis=1, font=2)
+# abline(mod, col='gray', lty=2, lwd=3)
+# points(land$Ice06_11, dfa$Estimates$Z[,1], col='black', bg=cols,
+#        pch=21, cex=1.5, lwd=2)
+# mod <- lm(dfa$Estimates$Z[,1] ~ land$Ice06_11)
+# color.legend(xl=4,xr=4.4,yb=1.32, yt=1.82, legend=c('147', '1349'),
+#              rect.col=colorRampPalette(c('brown', 'white'))(10),
+#              align='r', gradient='y')
+# text(3.39, 1.61, labels='Mean watershed')
+# text(3.52, 1.53, labels='elevation (m)')
+# par(defpar)
+# dev.off()
+
+# pdf('02b_discharge_loadings_reg.pdf', width=7, height=7)
+landvar = list(NULL,land$WsSlope, land$RunoffWs, land$WsAreaSqKm, land$RckDepWs)
+land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+
+#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+#% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
+# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+defpar <- par(mfrow=c(2,2), oma=c(0,0,0,0), mar=c(4,4,1,1))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+for(trnd in 2:5){
+    plot(landvar[[trnd]], dfa$Estimates$Z[,trnd], type='n', yaxt='n',
+         xlab='', main='', ylab='', cex.lab=1, font=2, xaxt='n',bty='o')
+    mod <- lm(dfa$Estimates$Z[,trnd] ~ landvar[[trnd]])
+    sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    if(trnd == 2) mtext(bquote(bold('Mean slope ')*plain('(% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
+    if(trnd == 3) mtext(bquote(bold('Total runoff ')*plain('(mm ')*plain(mo^-1)*plain(')')~.(sig)), 1, cex=1, font=2, line=2.7)
+    if(trnd == 4) mtext(bquote(bold('Total area ')*plain('(')*plain(km^2)*plain(')')~.(sig)), 1, cex=1, font=2, line=2.7)
+    if(trnd == 5) mtext(bquote(bold('Mean bedrock depth ')*plain('(cm)')~.(sig)), 1, cex=1, font=2, line=2.7)
+    # if(trnd == 3){
+    #     mtext(bquote(bold('Mean slope (% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
+    #     # mtext(bquote(plain(theta) == bold('Precip') ~.(sig)), 3, cex=1.1, font=2, line=1.2)
+    # }
+    abline(mod, col='springgreen4', lty=2, lwd=3)
+    points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
+           bg=cols, col='black',
+           pch=21, cex=2, lwd=2)
+    # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+    #              rect.col=colorRampPalette(c('brown', 'white'))(10),
+    #              align='r', gradient='y')
+    # text(3.39, 0.56, labels='Mean watershed')
+    # text(3.52, 0.54, labels='elevation (m)')
+    axis(1); axis(2)
+}
+mtext('Shared trends', side=2, outer=TRUE, cex=1, line=1, font=2)
+
 par(defpar)
 dev.off()
