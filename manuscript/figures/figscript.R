@@ -15,6 +15,8 @@
 #the "effect size by month over time" plots are set up to work with 4 focal months.
 #if you specified a different number, you'll have to make changes.
 
+#discharge regression combo plot is scrapped. no relationship with snowmelt?
+#discharge only really relevant in the Q v temp plot.
 
 rm(list=ls()); cat('\014') #clear env and console
 
@@ -98,12 +100,47 @@ lines(yy[,1], covs, col='red', lwd=3)
 legend(x='bottomleft', legend=c('Air temp'), lwd=3, col=c('red'))
 par(defpar)
 
+# 2 - TEMP effect size regression (single, old) ####
+
+# land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
+# 
+# #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
+# #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
+# # pdf('01_effect_size_reg.pdf', width=7, height=6)
+# # png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
+# defpar <- par(mar=c(5,5,2,5))
+# pal <- colorRampPalette(c('brown', 'white'))
+# cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
+# plot(land$WsAreaOver1000*100, rescaled_effect_size, type='n',
+#      # plot(land$Ice06_11, rescaled_effect_size, type='n',
+#      xlab='Watershed area over 1000m (%)', main='',
+#      # xlab='Watershed % ice cover', main='',
+#      ylab=expression(paste(Delta, ' water', degree, 'C ',
+#                            Delta, ' air', degree, 'C'^-1)),
+#      cex.lab=1.3, cex.axis=1, font=2,
+#      xaxt='n', xlim=c(0,80))
+# mod <- lm(rescaled_effect_size ~ I(land$WsAreaOver1000*100))
+# # mod <- lm(rescaled_effect_size ~ land$Ice06_11)
+# abline(mod, col='gray', lty=2, lwd=3)
+# points(land$WsAreaOver1000*100, rescaled_effect_size,
+#        # points(land$Ice06_11, rescaled_effect_size,
+#        bg=cols, col='black',
+#        pch=21, cex=1.5, lwd=2)
+# color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
+#              rect.col=colorRampPalette(c('brown', 'white'))(10),
+#              align='r', gradient='y')
+# text(3.39, 0.56, labels='Mean watershed')
+# text(3.52, 0.54, labels='elevation (m)')
+# axis(1, at=seq(0,80,20))
+# par(defpar)
+# dev.off()
 # 1.1 - TEMP effect size regression (linked with loading regression) ####
 
 # system('taskkill /f /im AcroRd32.exe')
 pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
 layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
+# landvar=land$Ice06_11
 landvar=land$ElevWs/100
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
@@ -111,7 +148,10 @@ land_sub <- land[,landcols] #subset landscape variables by those used in the ana
 #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
 # png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 # defpar <- par(oma=c(2,4,2,1), mar=c(4,2,2,1))
-# pal <- colorRampPalette(c('brown', 'white'))
+# pal <- colorRampPalette(c('sienna2', 'dodgerblue4'))
+# brks = as.numeric(cut(land$Ice06_11, breaks=10))
+# cols = pal(length(unique(brks)))
+# cols = as.character(factor(brks, labels=cols))
 # cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
 elev_hi = which(land$Ice06_11 >= 0.7)
 elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
@@ -131,22 +171,24 @@ for(covr in 1:3){
                          scriptstyle(plain('(')*plain(degree)*plain('C')~plain(degree)*plain(C^-1)*plain(')'))),
               2, cex=.8, line=1.5)
         abline(mod, col='steelblue', lty=2, lwd=3)
-        axis(2, at=c(-.01,0,.01), labels=c(-0.01,0,0.01), padj=.9, tck=-.02)
+        axis(2, padj=.9, tck=-.02)
     }
     if(covr == 2){
         mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(precip^-1))~
                          scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))),
               2, cex=.8, line=1.5)
-        axis(2, at=c(-.01,0,.01), labels=c(-0.01,0,0.01), padj=.9, tck=-.02)
-        mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
+        axis(2, at=c(-.02,0,.02,.04), labels=c(-0.02,0.00,0.02,0.04), padj=.9, tck=-.02)
+        mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~scriptstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
+        # mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
+        abline(mod, col='steelblue', lty=2, lwd=3)
     }
     if(covr == 3){
         mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(snowmelt^-1))~
                          scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))), 2, cex=.8, line=1.5)
-        abline(mod, col='steelblue', lty=2, lwd=3)
-        axis(2, at=c(-0.1,0.1,0.3), padj=.9, tck=-.02)
+        # abline(mod, col='steelblue', lty=2, lwd=3)
+        axis(2, padj=.9, tck=-.02)
     }
-    print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.2, font=2, col='steelblue')
+    print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.5, font=2, col='steelblue')
     points(landvar, res,
            bg=cols, col='black',
            pch=21, cex=1.5, lwd=2)
@@ -158,7 +200,7 @@ for(covr in 1:3){
     axis(1, padj=-.9, tck=-.02)
     # if(covr %in% c(1,3)){axis(2)}else{axis(2, )}
 }
-lines(x=c(-27,13.8), y=c(-.305,-.305), xpd=NA, lwd=2, col='gray70')
+lines(x=c(-19.9,13.8), y=c(-.342,-.342), xpd=NA, lwd=2, col='gray70')
 # mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
 # par(defpar)
 # dev.off()
@@ -189,8 +231,13 @@ legend(x=1,y=1.505, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated'),
        xpd=NA, pt.bg=c('black','gray75','white'), pch=21, xjust=0.5,
        col='black', cex=1.3, horiz=FALSE, bty='o', box.col='gray70', box.lwd=2)
 
+pal <- colorRampPalette(c('sienna2', 'dodgerblue4'))
+brks = as.numeric(cut(land$Ice06_11, breaks=10))
+cols = pal(length(unique(brks)))
+cols = as.character(factor(brks, labels=cols))
+
 # pdf('02b_discharge_loadings_reg.pdf', width=7, height=7)
-landvar = list(land$WtDepWs, land$RunoffWs, NULL, land$BFIWs, land$WsSlope)
+landvar = list(land$WtDepWs, land$Ice06_11, NULL, land$BFIWs, land$WsSlope)
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
 #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
@@ -211,22 +258,23 @@ for(trnd in c(1,2,4,5)){
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
     if(trnd == 1){
         mtext(bquote(textstyle(bold('Mean water table depth '))*scriptstyle(plain('(cm)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
         mtext(bquote(bold('Shared trend loadings')~
                          scriptstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
               side=2, cex=.8, line=1.8, adj=15)
     }
     if(trnd == 2){
-        mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+        mtext(bquote(bold('Perennial ice/snow cover ')*scriptstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
+        # mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
     }
     if(trnd == 4){
         mtext(bquote(bold('BFI ')*scriptstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.2, font=2, col='springgreen4')
+        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
     }
     if(trnd == 5){
         mtext(bquote(bold('Mean slope ')*scriptstyle(plain('(% rise)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.2, font=2, col='springgreen4')
+        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.5, font=2, col='springgreen4')
     }
     # if(trnd == 3){
     #     mtext(bquote(bold('Mean slope (% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
@@ -247,41 +295,6 @@ for(trnd in c(1,2,4,5)){
 par(defpar)
 dev.off()
 shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\16_temp_all_reg.pdf')
-
-# 2 - TEMP effect size regression ####
-
-land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
-
-#% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
-#% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
-# pdf('01_effect_size_reg.pdf', width=7, height=6)
-# png('01_effect_size_reg.png', width=7, height=6, units='in', res=96, type='cairo')
-defpar <- par(mar=c(5,5,2,5))
-pal <- colorRampPalette(c('brown', 'white'))
-cols <- pal(10)[as.numeric(cut(land$ElevWs, breaks=10))]
-plot(land$WsAreaOver1000*100, rescaled_effect_size, type='n',
-     # plot(land$Ice06_11, rescaled_effect_size, type='n',
-     xlab='Watershed area over 1000m (%)', main='',
-     # xlab='Watershed % ice cover', main='',
-     ylab=expression(paste(Delta, ' water', degree, 'C ',
-                           Delta, ' air', degree, 'C'^-1)),
-     cex.lab=1.3, cex.axis=1, font=2,
-     xaxt='n', xlim=c(0,80))
-mod <- lm(rescaled_effect_size ~ I(land$WsAreaOver1000*100))
-# mod <- lm(rescaled_effect_size ~ land$Ice06_11)
-abline(mod, col='gray', lty=2, lwd=3)
-points(land$WsAreaOver1000*100, rescaled_effect_size,
-       # points(land$Ice06_11, rescaled_effect_size,
-       bg=cols, col='black',
-       pch=21, cex=1.5, lwd=2)
-# color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
-#              rect.col=colorRampPalette(c('brown', 'white'))(10),
-#              align='r', gradient='y')
-# text(3.39, 0.56, labels='Mean watershed')
-# text(3.52, 0.54, labels='elevation (m)')
-axis(1, at=seq(0,80,20))
-par(defpar)
-# dev.off()
 
 # 3 - TEMP loading regression ####
 
@@ -1202,6 +1215,7 @@ dev.off()
 #load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
 #will be screwed up.
 
+#these are generated in the effect size v month plots
 disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_5m_atpcsn.rds')
 temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
 # "A"  "B"  "C"  "E"  "F"  "G"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "S"  "T"  "U"

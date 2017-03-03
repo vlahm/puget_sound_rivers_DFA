@@ -83,6 +83,7 @@ ntrends = 1
 obs_err_var_struc = 'diagonal and equal'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
+#Scaling is still recommended by the community at large, and I didn't see a big difference.
 scale = FALSE
 #exclude sites with >= this proportion of NA values.
 na_thresh = 0.55
@@ -755,33 +756,54 @@ best_landvars <- function(response, top){
 #this converts the scaled effect sizes back to their original scales, based on the original
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
-#data, our only option is to log transform and report the effect sizes as such. see section
+#data, our only option is to log transform and report the effect sizes as such see section
 #1.3 for more.
+#I tried to make this function account for all the different covariate designs (except ..._acrossTime), but
+#there are tons of different contingencies to take into account, so I may have missed something.
+#if your effect size regressions don't look like what you expected, start here (again, I'm happy
+#to help). If you use design='effect_byMonth', this will
+#assume you have seasonality method='fixed...'. it might also work with fourier. but you'll need
+#seasonality to be included.
 eff_rescaler <- function(all_cov, seas, scaled=scale){
-  #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
-  if(nrow(all_cov) > 2){
-    # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
-    z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
-  } else {
-    z_effect_size <- dfa$Estimates$D
-  }
-
-  nstream <- nrow(z_effect_size)
-  ncov <- ncol(z_effect_size)
-
-  #convert effects back to original scale (units response/units covar)
-  #x/sd(response) = 1/sd(covar); x is the effect size scale factor
-  rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
-  for(i in 1:nstream){
-    sd_response <- trans$sds[i]
-    for(j in 1:ncov){
-      sd_covar <- sd(covs[,j], na.rm=TRUE)
-      if(!scaled) sd_response = 1
-      rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
+    #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
+    if(design == 'effect_byMonth'){
+        z_eff_1 <- NULL
+        if(length(cov_choices) > 1){
+            z_eff_1 <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+length(cov_choices)-1)])
+        }
+        z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,(nrow(seas)+length(cov_choices)):
+                                                          (nrow(seas)+length(cov_choices)-1+length(focal_months))]))
+        z_effect_size <- cbind(z_eff_2, z_eff_1)
+    } else {
+        if(design == 'effect_byMonth_acrossTime'){
+            stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
+                                   "if design='effect_byMonth_acrossTime'.")))
+        } else {
+            if(nrow(all_cov) > 2){
+                # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+                z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+            } else {
+                z_effect_size <- dfa$Estimates$D
+            }
+        }
     }
-  }
-
-  return(rescaled_effect_size)
+    
+    nstream <- nrow(z_effect_size)
+    ncov <- ncol(z_effect_size)
+    
+    #convert effects back to original scale (units response/units covar)
+    #x/sd(response) = 1/sd(covar); x is the effect size scale factor
+    rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
+    for(i in 1:nstream){
+        sd_response <- trans$sds[i]
+        for(j in 1:ncov){
+            sd_covar <- sd(covs[,j], na.rm=TRUE)
+            if(!scaled) sd_response = 1
+            rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
+        }
+    }
+    
+    return(rescaled_effect_size)
 }
 # rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 
@@ -795,37 +817,57 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
 #also note that if you used a log transform above, the y-axis here should be
 #'log(change_resp)/change_cov'
 eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
-  #mode='exploration' is for use within the model fitting loop
-  #automatically selects the best correlated landscape vars
-  #mode='indiv' is for plotting against individual landscape vars once a model has been selected.
-  #if using 'indiv', must select a var name
-  #col_scale determines which variable to color the points by
-  #green is high, black is low
-
-  pal <- colorRampPalette(c('black', 'green'))
-
-  if(mode == 'exploration'){
-    land_ind <- eff_best[[1]]
-    top <- nrow(land_ind)
-    par(mfrow=c(top/2, 2))
-    for(j in 1:ncol(eff_best[[1]])){
-      for(i in 1:top){
-        cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
-        plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
-             xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
-             main=paste('covar =', cov_choices[j]),
-             col=cols, pch=colnames(trans$trans))
-      }
+    #mode='exploration' is for use within the model fitting loop
+    #automatically selects the best correlated landscape vars
+    #mode='indiv' is for plotting against individual landscape vars once a model has been selected.
+    #if using 'indiv', must select a var name
+    #col_scale determines which variable to color the points by
+    #green is high, black is low
+    
+    pal <- colorRampPalette(c('black', 'green'))
+    ncovs = ncol(rescaled_effect_size)
+    
+    if(mode == 'exploration'){
+        land_ind <- eff_best[[1]]
+        top <- nrow(land_ind)
+        par(mfrow=c(top/2, 2))
+        for(j in 1:ncol(eff_best[[1]])){
+            for(i in 1:top){
+                cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+                mod <- lm(rescaled_effect_size[,j] ~ land[,land_ind[i,j]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
+                plot(land[,land_ind[i,j]], rescaled_effect_size[,j],
+                     xlab=colnames(land)[land_ind[i,j]], ylab='D resp / D cov',
+                     main=paste('covar =', cov_choices[j], '- slope p = ', p),
+                     col=cols, pch=colnames(trans$trans))
+                abline(mod)
+            }
+        }
+    } else {
+        if(mode == 'indiv'){
+            par(mfrow=c(ncovs,1))
+            cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
+            if(ncovs == 1){
+                mod <- lm(rescaled_effect_size ~ land[,landcols[landvars==var]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
+                plot(land[,landcols[landvars==var]], rescaled_effect_size,
+                     xlab=var, ylab='D resp / D cov',
+                     main=paste('covar =', cov_choices, '; slope p = ', p),
+                     col=cols, pch=colnames(trans$trans))
+                abline(mod)
+            } else {
+                for(i in 1:ncovs){
+                    mod <- lm(rescaled_effect_size[,i] ~ land[,landcols[landvars==var]])
+                    p <- round(summary(mod)$coefficients[2,4], 2)
+                    plot(land[,landcols[landvars==var]], rescaled_effect_size[,i],
+                         xlab=var, ylab='D resp / D cov',
+                         main=paste('covar =', cov_choices[i], '; slope p = ', p),
+                         col=cols, pch=colnames(trans$trans))
+                    abline(mod)
+                }
+            }
+        }
     }
-  } else {
-    if(mode == 'indiv'){
-      cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
-      plot(land[,landcols[landvars==var]], rescaled_effect_size,
-           xlab=var, ylab='D resp / D cov',
-           main=paste('covar =', cov_choices),
-           col=cols, pch=colnames(trans$trans))
-    }
-  }
 }
 # eff_regress_plotter('indiv', 'WtDepWs')
 

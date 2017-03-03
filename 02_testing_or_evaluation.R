@@ -73,7 +73,7 @@ y_choice = 'TEMP'
 #still be determined.
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
 #in a model yet, so there could be bugs)
-cov_choices = c('meantemp','precip','snowmelt')
+cov_choices = c('meantemp')#, 'precip', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 #regions 3 and 4 were discovered to be very similar early on, so most of this script will only work if
 #you choose '3_4' here and 'average_regions=TRUE'.
@@ -88,14 +88,15 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 5
+ntrends = 4
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
+#Scaling is still recommended by the community at large, and I didn't see a big difference.
 scale = FALSE
-na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
-#be sure to visit section 3.1i, where you can add time interval factors and interaction effects
+na_thresh = 0.3 #exclude sites with >= this proportion of NA values.
+#be sure to visit section 3.1, where you can add time interval factors and interaction effects
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
 #run function transformables() to see whether your response needs to be transformed.
@@ -103,14 +104,14 @@ transform = 'none'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
 #'effect_byMonth', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
-design = 'effect_byMonth'
+design = 'effect_byMonth_acrossTime'
 #sections = number of intervals to divide the time series into, if examining change over time
 #(see "designer" function in section 3.1 for details)
 sections <- 5 #an integer. will be ignored if not applicable
 #the months to focus on for by-month effect size (1 is jan...)
 #if looking at effect_byMonth_acrossTime, including all months will be too expensive
 #(see "designer" function in section 3.1 for details)
-focal_months <- 1:12 #a vector of integers between 1 and 12. will be ignored if not applicable.
+focal_months <- 5:8 #a vector of integers between 1 and 12. will be ignored if not applicable.
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -598,7 +599,7 @@ if(obs_err_var_struc %in% c('DE', 'DUE', 'UNC')){
 
 #run model with TMB
 dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
-              EstCovar=TRUE, Covars=cov_and_seas)
+              EstCovar=TRUE, Covars=cov_and_seas) 
 
 # saveRDS(dfa, '../saved_structures/best_sussol_UNC2mFIXEDatpc19782015.rds')
 
@@ -624,7 +625,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_MASO.rda')
 
 # save.image('../manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda')
-save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
+# save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 
 # 4.2 - or load desired model object ####
 
@@ -632,7 +633,7 @@ save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 # 
-# dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
@@ -640,7 +641,7 @@ save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 
 # dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_discharge/DISCHARGE_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
-dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
+# dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -932,15 +933,36 @@ best_landvars <- function(response, top){
 #this converts the scaled effect sizes back to their original scales, based on the original
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
-#data, our only option is to log transform and report the effect sizes as such. see section
+#data, our only option is to log transform and report the effect sizes as such see section
 #1.3 for more.
+#I tried to make this function account for all the different covariate designs (except ..._acrossTime), but
+#there are tons of different contingencies to take into account, so I may have missed something.
+#if your effect size regressions don't look like what you expected, start here (again, I'm happy
+#to help). If you use design='effect_byMonth', this will
+#assume you have seasonality method='fixed...'. it might also work with fourier. but you'll need
+#seasonality to be included.
 eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
-    if(nrow(all_cov) > 2){
-        # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
-        z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+    if(design == 'effect_byMonth'){
+        z_eff_1 <- NULL
+        if(length(cov_choices) > 1){
+            z_eff_1 <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+length(cov_choices)-1)])
+        }
+        z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,(nrow(seas)+length(cov_choices)):
+                              (nrow(seas)+length(cov_choices)-1+length(focal_months))]))
+        z_effect_size <- cbind(z_eff_2, z_eff_1)
     } else {
-        z_effect_size <- dfa$Estimates$D
+        if(design == 'effect_byMonth_acrossTime'){
+            stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
+                            "if design='effect_byMonth_acrossTime'.")))
+        } else {
+            if(nrow(all_cov) > 2){
+                # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+                z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+            } else {
+                z_effect_size <- dfa$Estimates$D
+            }
+        }
     }
 
     nstream <- nrow(z_effect_size)
@@ -980,6 +1002,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #green is high, black is low
 
     pal <- colorRampPalette(c('black', 'green'))
+    ncovs = ncol(rescaled_effect_size)
 
     if(mode == 'exploration'){
         land_ind <- eff_best[[1]]
@@ -999,19 +1022,31 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     } else {
         if(mode == 'indiv'){
-            par(mfrow=c(1,1))
+            par(mfrow=c(ncovs,1))
             cols <- pal(10)[as.numeric(cut(land[,landcols[landvars==col_scale]], breaks=10))]
-            mod <- lm(rescaled_effect_size ~ land[,landcols[landvars==var]])
-            p <- round(summary(mod)$coefficients[2,4], 2)
-            plot(land[,landcols[landvars==var]], rescaled_effect_size,
-                 xlab=var, ylab='D resp / D cov',
-                 main=paste('covar =', cov_choices, '- slope p = ', p),
-                 col=cols, pch=colnames(trans$trans))
-            abline(mod)
+            if(ncovs == 1){
+                mod <- lm(rescaled_effect_size ~ land[,landcols[landvars==var]])
+                p <- round(summary(mod)$coefficients[2,4], 2)
+                plot(land[,landcols[landvars==var]], rescaled_effect_size,
+                     xlab=var, ylab='D resp / D cov',
+                     main=paste('covar =', cov_choices, '; slope p = ', p),
+                     col=cols, pch=colnames(trans$trans))
+                abline(mod)
+            } else {
+                for(i in 1:ncovs){
+                    mod <- lm(rescaled_effect_size[,i] ~ land[,landcols[landvars==var]])
+                    p <- round(summary(mod)$coefficients[2,4], 2)
+                    plot(land[,landcols[landvars==var]], rescaled_effect_size[,i],
+                         xlab=var, ylab='D resp / D cov',
+                         main=paste('covar =', cov_choices[i], '; slope p = ', p),
+                         col=cols, pch=colnames(trans$trans))
+                    abline(mod)
+                }
+            }
         }
     }
 }
-# eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
+eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
 # eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
@@ -1064,7 +1099,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
     }
 }
 # load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
-# load_regress_plotter(mm, 'exploration', , 'ElevWs')
+load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model (abandoned, but there's some useful plotting stuff here) ####
 
