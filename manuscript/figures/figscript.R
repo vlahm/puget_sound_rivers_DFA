@@ -15,9 +15,6 @@
 #the "effect size by month over time" plots are set up to work with 4 focal months.
 #if you specified a different number, you'll have to make changes.
 
-#discharge regression combo plot is scrapped. no relationship with snowmelt?
-#discharge only really relevant in the Q v temp plot.
-
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup (choose temp/discharge here) ####
