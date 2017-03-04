@@ -929,7 +929,8 @@ dev.off()
 # saveRDS(moInts, '../../saved_structures/moInts_temp_due_4m_at.rds')
 
 #save stuff for air water discharge plot
-saveRDS(list(covs, obs_ts), '../../saved_structures/air_water_discharge.rds') # from temp_due_4m_at_byMo_allMos.rda
+# saveRDS(list(covs, obs_ts), '../../saved_structures/air_water_discharge.rds') # from temp_due_4m_at_byMo_allMos.rda
+saveRDS(list(covs[,1,drop=FALSE], obs_ts), '../../saved_structures/air_water_discharge2.rds') # from temp_due_5m_atpcsn_byMo_allMos.rda
 
 
 # 16 - DISCHARGE vs. TEMP ####
@@ -1344,39 +1345,71 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\15_disch_vs_a
 
 # 20 - air water discharge (average) ####
 
-#load temp_due_4m_at_byMo_allMos.rda for this one
-awd <- readRDS('../../saved_structures/air_water_discharge.rds')
+#load discharge_due_5m_atpcsn_byMo_allMos.rda for this one
+awd <- readRDS('../../saved_structures/air_water_discharge2.rds')
 
-png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
-# pdf('12_air_water_discharge.pdf', width=8, height=6)
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+# cols = rep('black', nrow(land))
+# cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+
+# png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
+pdf('12_air_water_discharge.pdf', width=7, height=6)
 defpar <- par(mar=c(5,4,1,6))
-airtemps = watertemps = discharge = numeric()
+airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = numeric()
 for(i in 1:12){
     airtemps[i] <- mean(awd[[1]][seq(from=i, by=12, to=nrow(awd[[1]]))])
-    watertemps[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
+    watertemps_rain[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_lo]), na.rm=TRUE)
+    watertemps_rs[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_med]), na.rm=TRUE)
+    watertemps_snow[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_hi]), na.rm=TRUE)
     discharge[i] <- mean(as.matrix(obs_ts[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
 }
-plot(1:12, airtemps, xaxt='n', xlab=expression(paste(~bold('Month'))),
-     ylab='')
-points(1:12, watertemps, pch=20)
-axis(1, at=1:12, labels=month.abb)
-legend('left', legend=c('Air', 'Water', 'Discharge'), pch=c(1,20,17), bty='n',
-       col=c('black','black','gray60'))
+plot(1:12, discharge, type='n', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='',
+     yaxs='i', ylim=c(0,4480), bty='o')
+disch_col = adjustcolor('darkslategray4', alpha.f=0.35)
+axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis=adjustcolor('darkslategray4', alpha.f=1),
+     col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
+# axis(4, tcl=0, col='white', labels='')
+polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),discharge,mean(c(discharge[1],discharge[12])),0), col=disch_col, border=NA)
+lines(x=c(12.44,12.44),y=c(0,4018), 
+                         col='white', xpd=NA, lwd=1)
+lines(x=c(12.44,12.44),y=c(0,4018), 
+                         col=adjustcolor('darkslategray4', alpha.f=.35), xpd=NA, lwd=1)
+mtext('Mean discharge (CFS)', 4, font=2, las=3, line=2.5, col=adjustcolor('darkslategray4', alpha.f=1))
+mtext(expression(paste(~bold('Mean temperature')~bold('(')*bold(degree)*bold('C)'))),
+      line=1.4, side=2)
 par(new=T)
-plot(1:12, discharge, type='b', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='')
-axis(4, las=1)
-mtext('Mean discharge (CFS)', 4, font=2, las=3, line=3)
-mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
-      line=2, side=2)
+plot(1:12, airtemps, xaxt='n', xlab='', bty='c',
+     ylab='', yaxs='i', type='n', ylim=c(3,17.6), yaxt='n')
+mtext(expression(paste(~bold('Month'))), 1, line=1.5)
+axis(2, las=2, at=c(10,12,14,16), cex.axis=.8, hadj=.3, tck=-.01)
+axis(2, las=2, at=c(4,6,8), cex.axis=.8, hadj=-.5, tck=-.01)
+for(i in 1:12) lines(x=c(i,i),y=c(0,min(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i])), lty='19')
+for(i in c(1:6,11,12)){
+    lines(x=c(i,i),y=c(max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i]),
+                       min(discharge[i])), lty='29', col='white')
+}
+lines(c(.58,1:12,12.4), c(mean(c(airtemps[1],airtemps[12])),airtemps,mean(c(airtemps[1],airtemps[12]))),
+      lwd=3, col='chocolate2', lty='33')
+points(1:12, watertemps_rain, col='black', bg='black', pch=21)
+points(1:12, watertemps_rs, bg='gray75', col='black', pch=22)
+points(1:12, watertemps_snow, bg='white', col='black', pch=24)
+axis(1, at=1:12, labels=month.abb, cex.axis=.8, padj=-1.5, tck=-.01)
+legend(x=1.6, y=17.4, legend=c('Rain-dominated', 'Rain-and-snow', 'Snow-dominated'),
+       pch=c(21,22,24), col='black', bty='n', pt.bg=c('black','gray75','white'), cex=.8)
+legend(2.2,15.9,legend='Air', lty='33', lwd=2, col='chocolate2', bty='n', seg.len=2.5, x.intersp=.8, cex=.8)
+
 par(defpar)
 dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12_air_water_discharge.pdf')
 
 # 21 - air water discharge (over time) ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge.rds')
 
-png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
+# png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
 # pdf('12_air_water_discharge.pdf', width=8, height=6)
 defpar <- par(mar=c(5,4,1,6))
 airtemps = watertemps = discharge = numeric()
@@ -1398,7 +1431,7 @@ mtext('Mean discharge (CFS)', 4, font=2, las=3, line=3)
 mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
       line=2, side=2)
 par(defpar)
-dev.off()
+# dev.off()
 
 # x - discharge eff size and loading regressions separated ####
 # pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)

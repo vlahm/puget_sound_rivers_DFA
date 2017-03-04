@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  2 MAR 2017 10:14
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  3 MAR 2017 18:18
 entering extended mode
 **./manuscript.tex
 (manuscript.tex
@@ -524,7 +524,7 @@ G,.JBIG2,.JB2,.eps]
 \c@lstlisting=\count136
 
 ABD: EveryShipout initializing macros
-Overfull \hbox (50.0557pt too wide) in paragraph at lines 38--39
+Overfull \hbox (50.0557pt too wide) in paragraph at lines 47--48
 \OT1/cmr/m/n/10 Response time se-ries were mod-eled us-ing dy-namic fac-tor ana
 l-y-sis (DFA; [][][][][][]),
  []
@@ -532,36 +532,59 @@ l-y-sis (DFA; [][][][][][]),
 [1
 
 {C:/ProgramData/MiKTeX/2.9/pdftex/config/pdftex.map}] [2] [3]
-<figures/16_temp_all_reg.pdf, id=25, 542.025pt x 542.025pt>
+<figures/12_air_water_discharge.pdf, id=25, 505.89pt x 433.62pt>
+File: figures/12_air_water_discharge.pdf Graphic file (type pdf)
+
+<use figures/12_air_water_discharge.pdf>
+Package pdftex.def Info: figures/12_air_water_discharge.pdf used on input line 
+138.
+(pdftex.def)             Requested size: 505.88875pt x 433.61894pt.
+
+<figures/16_temp_all_reg.pdf, id=26, 542.025pt x 542.025pt>
 File: figures/16_temp_all_reg.pdf Graphic file (type pdf)
 
 <use figures/16_temp_all_reg.pdf>
-Package pdftex.def Info: figures/16_temp_all_reg.pdf used on input line 134.
+Package pdftex.def Info: figures/16_temp_all_reg.pdf used on input line 148.
 (pdftex.def)             Requested size: 345.0pt x 345.00911pt.
- [4 <./figures/16_temp_all_reg.pdf>]
-(manuscript.aux) ) 
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 150--151
+[][] 
+ []
+
+[4 <./figures/12_air_water_discharge.pdf>]
+<figures/15_disch_vs_air_focal5.pdf, id=43, 361.35pt x 461.725pt>
+File: figures/15_disch_vs_air_focal5.pdf Graphic file (type pdf)
+
+<use figures/15_disch_vs_air_focal5.pdf>
+Package pdftex.def Info: figures/15_disch_vs_air_focal5.pdf used on input line 
+155.
+(pdftex.def)             Requested size: 361.34912pt x 461.72388pt.
+ [5 <./figures/16_temp_all_reg.pdf>]
+[6 <./figures/15_disch_vs_air_focal5.pdf>] (manuscript.aux) ) 
 Here is how much of TeX's memory you used:
- 13533 strings out of 493329
- 260812 string characters out of 3139067
+ 13543 strings out of 493329
+ 261174 string characters out of 3139067
  312221 words of memory out of 3000000
- 16810 multiletter control sequences out of 15000+200000
+ 16818 multiletter control sequences out of 15000+200000
  12529 words of font info for 44 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,9n,54p,1707b,904s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/c
-mbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pf
-b><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Pr
-ogram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Fi
-les/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Program Files/MiKTe
-X 2.9/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Program Files/MiKTeX 2.9/f
-onts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type
-1/public/amsfonts/cm/cmr7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/a
-msfonts/cm/cmr8.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm
-/cmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.p
-fb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on manuscript.pdf (4 pages, 144685 bytes).
+ 55i,9n,54p,1717b,904s stack positions out of 5000i,500n,10000p,200000b,50000s
+<C:/Program Files/
+MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Program Files/MiKTeX 2
+.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files/MiKTeX 2.9/fonts
+/type1/public/amsfonts/cm/cmbx8.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/pu
+blic/amsfonts/cm/cmex10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/ams
+fonts/cm/cmmi10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm
+/cmmi7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmib10.
+pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/P
+rogram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Program Fil
+es/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files/MiKTeX 
+2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files/MiKTeX 2.9/font
+s/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/p
+ublic/amsfonts/cm/cmti10.pfb>
+Output written on manuscript.pdf (6 pages, 170273 bytes).
 PDF statistics:
- 75 PDF objects out of 1000 (max. 8388607)
+ 113 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 18 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 28 words of extra memory for PDF output out of 10000 (max. 10000000)
 
