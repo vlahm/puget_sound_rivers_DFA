@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -100,7 +100,7 @@ par(defpar)
 # 2 - TEMP effect size regression (single, old) ####
 
 # land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
-# 
+#
 # #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 # #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
 # # pdf('01_effect_size_reg.pdf', width=7, height=6)
@@ -175,8 +175,8 @@ for(covr in 1:3){
                          scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))),
               2, cex=.8, line=1.5)
         axis(2, at=c(-.02,0,.02,.04), labels=c(-0.02,0.00,0.02,0.04), padj=.9, tck=-.02)
-        mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~scriptstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
-        # mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
+        # mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~scriptstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
+        mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
         abline(mod, col='steelblue', lty=2, lwd=3)
     }
     if(covr == 3){
@@ -1372,9 +1372,9 @@ axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis=adjustcolor('darkslategr
      col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
 # axis(4, tcl=0, col='white', labels='')
 polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),discharge,mean(c(discharge[1],discharge[12])),0), col=disch_col, border=NA)
-lines(x=c(12.44,12.44),y=c(0,4018), 
+lines(x=c(12.44,12.44),y=c(0,4018),
                          col='white', xpd=NA, lwd=1)
-lines(x=c(12.44,12.44),y=c(0,4018), 
+lines(x=c(12.44,12.44),y=c(0,4018),
                          col=adjustcolor('darkslategray4', alpha.f=.35), xpd=NA, lwd=1)
 mtext('Mean discharge (CFS)', 4, font=2, las=3, line=2.5, col=adjustcolor('darkslategray4', alpha.f=1))
 mtext(expression(paste(~bold('Mean temperature')~bold('(')*bold(degree)*bold('C)'))),
@@ -1480,7 +1480,7 @@ mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.
 # par(defpar)
 # dev.off()
 
-# 10 - DISCHARGE loading regression 
+# 10 - DISCHARGE loading regression
 
 # png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 # pdf('02_loadings_reg.pdf', width=7, height=6)
