@@ -134,7 +134,7 @@ par(defpar)
 # 1.1 - TEMP effect size regression (linked with loading regression) ####
 
 # system('taskkill /f /im AcroRd32.exe')
-pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
+# pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
 layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 # landvar=land$WsAreaOver1000/land$WsAreaSqKm #??
@@ -187,7 +187,7 @@ for(covr in 1:3){
         axis(2, padj=.9, tck=-.02)
     }
     print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.8, font=2, col='steelblue')
-    points(landvar, res, 
+    points(landvar, res,
            bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
            # pch=21,
            pch=land$siteCode,
@@ -304,6 +304,9 @@ for(trnd in c(1,2,4,5)){
 par(defpar)
 # dev.off()
 # shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\16_temp_all_reg.pdf')
+
+#for results (loadings)
+summary(mod)
 
 # 3 - TEMP loading regression ####
 
@@ -1384,9 +1387,9 @@ axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis=adjustcolor('darkslategr
      col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
 # axis(4, tcl=0, col='white', labels='')
 polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),discharge,mean(c(discharge[1],discharge[12])),0), col=disch_col, border=NA)
-lines(x=c(12.44,12.44),y=c(0,4018), 
+lines(x=c(12.44,12.44),y=c(0,4018),
                          col='white', xpd=NA, lwd=1)
-lines(x=c(12.44,12.44),y=c(0,4018), 
+lines(x=c(12.44,12.44),y=c(0,4018),
                          col=adjustcolor('darkslategray4', alpha.f=.35), xpd=NA, lwd=1)
 mtext('Mean discharge (CFS)', 4, font=2, las=3, line=2.5, col=adjustcolor('darkslategray4', alpha.f=1))
 mtext(expression(paste(~bold('Mean temperature')~bold('(')*bold(degree)*bold('C)'))),
@@ -1499,7 +1502,7 @@ mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.
 # par(defpar)
 # dev.off()
 
-# 10 - DISCHARGE loading regression 
+# 10 - DISCHARGE loading regression
 
 # png('02_loadings_reg.png', width=7, height=6, units='in', res=96, type='cairo')
 # pdf('02_loadings_reg.pdf', width=7, height=6)

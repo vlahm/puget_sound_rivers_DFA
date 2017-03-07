@@ -7,6 +7,7 @@
 % \usepackage{epsfig}
 % \usepackage{subfig}
 % \captionsetup{belowskip=12pt}
+% \hfuzz=5.002pt  %suppress overfull warnings
 
 \begin{document}
 % todo:
@@ -23,14 +24,15 @@
     %make axis lines and plot borders cleaner (right now axis segments are darker)
     %instead of elevation on x, use ice and color by elev (orange to blue) X no story
     %for loadings, color by ice and make it darkgreen , midgreen, white X not without the above
-    % add % ice as one of the hidden trends 
+    % add % ice as one of the hidden trends
 %discharge regression combo plot is scrapped. no relationship with snowmelt?
 %discharge only really relevant in the Q v temp plot.
 %increase unit text size in fig 2
 %change area over 1000m to % area over 1000m and replot
 %change "dominated" to "dominant"
-%change "fall" to "autumn"    
+%change "fall" to "autumn"
 %dont size points in figure 2. include size in legend in fig 3
+%adjust letter position in corners of fig 2 (anchoring)
 
 \section*{Introduction}
 
@@ -40,17 +42,21 @@
 
 I'll probably mention anything relevant to this in the intro.
 
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/map/map.png}}
+\textbf{Figure 1} Site locations (red points) in relation to the region across which climate data were aggregated (colored topography).
+\end{center}
+
 \subsection*{Water and climate data}
 
 The two response variables used in our analyses were water temperature and discharge. We obtained monthly water temperature readings from 1978 through 2015 via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. In all, 24 monitoring sites within the Puget Sound region (Fig. \colorbox{red}{\lstinline{1}}) were included, representing 19 rivers across 9 counties, and ranging from 4 to 775 m in elevation. For one site at each river, monthly discharge time series were available, either for the same location as one of the temperature monitoring sites, or for another location within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). At least one discharge monitoring site was available for every river represented in the temperature dataset.
 
-Potential climatic predictors of water temperature and discharge included mean and max air temperature (\degree C), total precipitation (cm), snowmelt (cm), and hydrological drought (Palmer Hydrological Drought Index), averaged by month across the response variable time series. All but snowmelt are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors. A snowmelt time series was then added to this dataset, using monthly mean records from six SNOTEL sites (Bumping Ridge, Elbow Lake, Mount Crag, Park Creek Ridge, Stevens Pass, White Pass) listed by the USDA's Natural Resources Conservation Service \colorbox{red}{\lstinline{cite}}. We calculated monthly snowmelt for each site as the absolute value of negative differences in cumulative snow water equivalent from each month to the next. The snowmelt time series was assigned zeros for any positive differences (accumulations). 
+Potential climatic predictors of water temperature and discharge included mean and max air temperature (\degree C), total precipitation (cm), snowmelt (cm), and hydrological drought (Palmer Hydrological Drought Index), averaged by month across the response variable time series. All but snowmelt are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors. A snowmelt time series was then added to this dataset, using monthly mean records from six SNOTEL sites (Bumping Ridge, Elbow Lake, Mount Crag, Park Creek Ridge, Stevens Pass, White Pass) listed by the USDA's Natural Resources Conservation Service \colorbox{red}{\lstinline{cite}}. We calculated monthly snowmelt for each site as the absolute value of negative differences in cumulative snow water equivalent from each month to the next. The snowmelt time series was assigned zeros for any positive differences (accumulations).
 
-%More information on all datasets can be found in \colorbox{red}{\lstinline{Appendix A}}. 
+%More information on all datasets can be found in \colorbox{red}{\lstinline{Appendix A}}.
 
 \subsection*{Time series analysis}
-
-Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), predictors (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer of them allows for greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
+% Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), predictors (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer of them allows for greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
 
 DFA takes the following form:
 
@@ -102,7 +108,7 @@ For post-hoc analyses, monitoring sites were separated into three classes based 
 \textbf{Table 1} Watershed classification scheme
 \end{center}
 \begin{center}
-\begin{tabular}{ |c|c|c|c| } 
+\begin{tabular}{ |c|c|c|c| }
  \hline
  Classification & Abb. & Glaciation (\%) & Mean elev. (m) \\
  \hline
@@ -118,9 +124,9 @@ After model selection, climatic predictor effect sizes for each river were back-
 
 \section*{Results}
 
-Mean monthly temperature trends for the three river classes, aggregated across all 38 years of data, deviated by a minimum of 1.0\degree C in December, and a maximum of 3.9\degree C in July (Fig. 1). SD rivers remained approximately two degrees colder than their RS counterparts through mid-late summer, and 3-4 degrees colder than RD throughout spring and summer. RD rivers were consistently warmest throughout the year. In January, RS reached a minimum of 4.4\degree C, and did not significantly differ from SD \colorbox{red}{\lstinline{stats throughout this section}}. RD, meanwhile, only attained a minimum of 5.6\degree C. RS reached a peak summer temperature of 16.9\degree C in July, while RS and SD followed in August with peak temperatures of 15.5 and 13.5\degree C, respectively.
+Mean monthly temperature trends for the three river classes, aggregated across all 38 years of data, deviated by a minimum of 1.0\degree C in December, and a maximum of 3.9\degree C in July (Fig. 2). SD rivers remained approximately two degrees colder than their RS counterparts through mid-late summer, and 3-4 degrees colder than RD throughout spring and summer. RD rivers were consistently warmest throughout the year. In January, RS reached a minimum of 4.4\degree C, and did not significantly differ from SD \colorbox{red}{\lstinline{stats throughout this section}}. RD, meanwhile, only attained a minimum of 5.6\degree C. RS reached a peak summer temperature of 16.9\degree C in July, while RS and SD followed in August with peak temperatures of 15.5 and 13.5\degree C, respectively.
 
-Meanwhile, the amplitude of T\textsubscript{air} oscillation exceeded that of any river class, dipping below T\textsubscript{water} in autumn to a minimum of 3.2\degree C in December, and rising above RS and SD in March to an August maximum of 17.4\degree C. T\textsubscript{air} did not overtake RD T\textsubscript{water} until August, by which time the latter had begun to decline.
+% Meanwhile, the amplitude of T\textsubscript{air} oscillation exceeded that of any river class, dipping below T\textsubscript{water} in autumn to a minimum of 3.2\degree C in December, and rising above RS and SD in March to an August maximum of 17.4\degree C. T\textsubscript{air} did not overtake RD T\textsubscript{water} until August, by which time the latter had begun to decline.
 
 % \begin{figure}[h!]
 \begin{center}
@@ -130,24 +136,26 @@ Meanwhile, the amplitude of T\textsubscript{air} oscillation exceeded that of an
 % \label{fig:air_water_disch}
 \end{center}
 % \end{figure}
-\textbf{Figure 1} Monthly mean T\textsubscript{water} by river class, and T\textsubscript{air} and Q across classes, from 1978 to 2015. All depicted series represent discrete data. \colorbox{red}{\lstinline{see appendix for standard deviations?}} \\[\baselineskip]
+
+% \textbf{Figure 2} Monthly mean T\textsubscript{water} by river class, and T\textsubscript{air} and Q across classes, from 1978 to 2015. All depicted series represent discrete data. \colorbox{red}{\lstinline{see appendix for standard deviations?}} \setlength{\parskip}{6pt}%\\[\baselineskip]
+
 % The combined hydrograph of all rivers reveals two primary peaks, one beginning in late spring and the other extending from late fall to early winter, with a prominent trough in late summer. Spring peak discharge coincides noticeably with a separation in water temperature between SD and RS, while the summer trough coincides with separation of RD and T\textsubscript{air}. November marks both the autumn peak in discharge and the point at which T\textsubscript{air} falls below T\textsubscript{water}.
 
-DFA results, aggregated across months and years for each site, revealed a trend toward reduced $T_{air}\rightarrow T_{water}$ coupling with greater watershed elevation ($p=0.04, R^2=0.18$; Fig. 2a). On average, a 1\degree C change in T\textsubscript{air} corresponded to a $0.53\pm 0.03$\degree C change in T\textsubscript{water} at RD, a $0.51\pm 0.08$\degree C change at RS, and a a $0.45\pm 0.17$\degree C change at SD sites. A similar trend was observed with respect to $Precip\rightarrow T_{water}$ coupling ($p=0.03, R^2=0.21$; Fig. 2b), where a monthly change in total precipitation of 1 cm corresponded to a $0.02\pm 0.009$\degree C change in T\textsubscript{water} for RD, $-0.003\pm 0.009$\degree C for RS, and $0.004\pm 0.02$\degree C for SD. There was no evidence of coupling between snowmelt and T\textsubscript{water} (Fig. 2c). It is of note that the strongest examples of $T_{air}\rightarrow T_{water}$ and $Precip\rightarrow T_{water}$ coupling were observed in the Duckabush River, while the weakest examples are from the Elwha River. Both rivers drain glaciers of the Olympic Mountain Range, and both are SD, though the Elwha's watershed is larger.
+% DFA results, aggregated across months and years for each site, revealed a trend toward reduced $T_{air}\rightarrow T_{water}$ coupling with greater watershed elevation ($p=0.04, R^2=0.18$; Fig. 3a). On average, a 1\degree C change in T\textsubscript{air} corresponded to a $0.53\pm 0.03$\degree C change in T\textsubscript{water} at RD, a $0.51\pm 0.08$\degree C change at RS, and a a $0.45\pm 0.17$\degree C change at SD sites. A similar trend was observed with respect to $Precip\rightarrow T_{water}$ coupling ($p=0.03, R^2=0.21$; Fig. 3b), where a monthly change in total precipitation of 1 cm corresponded to a $0.02\pm 0.009$\degree C change in T\textsubscript{water} for RD, $-0.003\pm 0.009$\degree C for RS, and $0.004\pm 0.02$\degree C for SD. There was no evidence of coupling between snowmelt and T\textsubscript{water} (Fig. 3c). It is of note that the strongest examples of $T_{air}\rightarrow T_{water}$ and $Precip\rightarrow T_{water}$ coupling were observed in the Duckabush River, while the weakest examples are from the Elwha River. Both rivers drain glaciers of the Olympic Mountain Range, and both are SD, though the Elwha's watershed is larger.
 
 \begin{tikzpicture}
     \draw (0, 0) node[inner sep=0] {\includegraphics[width=\textwidth]{figures/16_temp_all_reg.pdf}};
-    \draw (-4.1, -1.5) node[text width=9.5em] {\normalsize \textbf{Figure 2} Relationships between watershed elevation and climatic effects on T\textsubscript{water} \textbf{(a-c)}, and other watershed predictors and factor loadings on shared trends \textbf{(d-g)}. Regression lines indicate slopes significant at $\alpha=0.05$.};
+    % \draw (-4.1, -1.5) node[text width=9.5em] {\normalsize \textbf{Figure 3} Relationships between watershed elevation and climatic effects on T\textsubscript{water} \textbf{(a-c)}, and other watershed predictors and factor loadings on shared trends \textbf{(d-g)}. Regression lines indicate slopes significant at $\alpha=0.05$.};
 \end{tikzpicture}
 
-
+The most parsimonious temperature DFA model selected via AIC included five shared trends. Of these, four correlated significantly with at least one known watershed predictor. Figure 3 depicts the strongest correlated variables with each trend (insets d-e). These are, in arbitrary order of relevance, mean water table depth ($p<0.001, R^2=0.60$; Fig. 3d), \% glaciation ($p<0.01, R^2=0.30$; Fig. 3e), BFI ($p=0.01, R^2=0.25$; Fig. 3f), and mean slope ($p<0.01, R^2=0.29$; Fig. 3g). The fifth shared trend was not correlated with any variables in the watershed predictor dataset.
 
 \begin{center}
 \resizebox{\textwidth}{!}{\includegraphics{figures/15_disch_vs_air_focal5.pdf}}
-\textbf{Figure 1} chili chili
+\textbf{Figure 4} Relationship between $T_{air}\rightarrow T_{water}$ and $T_{air}\rightarrow Q$. Both axes are expressed per 1\degree C change in $T_{air}$. The red quadrant designates proportionality between all three variables, the blue inverse proportionality between each response and $T_{air}$.
 \end{center}
 
-Body text
+
 
 \section*{Discussion}
 The relationship between river classification and factor loadings is less clear
