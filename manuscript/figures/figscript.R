@@ -100,7 +100,7 @@ par(defpar)
 # 2 - TEMP effect size regression (single, old) ####
 
 # land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
-# 
+#
 # #% of watershed area classified as ice/snow land cover (NLCD 2011 class 12)
 # #% of watershed area classified as ice/snow land cover (NLCD 2006 class 12)
 # # pdf('01_effect_size_reg.pdf', width=7, height=6)
@@ -134,7 +134,7 @@ par(defpar)
 # 1.1 - TEMP effect size regression (linked with loading regression) ####
 
 # system('taskkill /f /im AcroRd32.exe')
-# pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
+pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
 layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 # landvar=land$WsAreaOver1000/land$WsAreaSqKm #??
