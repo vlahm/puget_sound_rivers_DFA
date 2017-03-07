@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -134,10 +134,10 @@ par(defpar)
 # 1.1 - TEMP effect size regression (linked with loading regression) ####
 
 # system('taskkill /f /im AcroRd32.exe')
-pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
+# pdf('16_temp_all_reg.pdf', width=7.5, height=7.5)
 layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(oma=c(0,0,1,1), mar=c(4,3.5,0,0))
-# landvar=land$Ice06_11
+# landvar=land$WsAreaOver1000/land$WsAreaSqKm #??
 landvar=land$ElevWs/100
 land_sub <- land[,landcols] #subset landscape variables by those used in the analysis
 
@@ -161,8 +161,9 @@ for(covr in 1:3){
     plot(landvar, res, type='n', yaxt='n',
          # xlab='Watershed area over 1000m (%)', main='',
          xlab='', main='', ylab='', cex.lab=1.3, cex.axis=1, font=2, xaxt='n',bty='l')
-    mod <- lm(res ~ I(landvar))
+    mod <- lm(res ~ landvar)
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    sig = NULL #turning off sig plotting
     if(covr == 1){
         mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(T[air]^-1))~
                          scriptstyle(plain('(')*plain(degree)*plain('C')~plain(degree)*plain(C^-1)*plain(')'))),
@@ -172,23 +173,25 @@ for(covr in 1:3){
     }
     if(covr == 2){
         mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(precip^-1))~
-                         scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))),
+                         textstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))),
               2, cex=.8, line=1.5)
         axis(2, at=c(-.02,0,.02,.04), labels=c(-0.02,0.00,0.02,0.04), padj=.9, tck=-.02)
-        mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~scriptstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
-        # mtext(bquote(textstyle(bold('Mean watershed elevation'))~scriptstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
+        # mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~textstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
+        mtext(bquote(textstyle(bold('Mean watershed elevation'))~textstyle(plain('(100 m)'))), side=1, cex=.8, line=1.7)
         abline(mod, col='steelblue', lty=2, lwd=3)
     }
     if(covr == 3){
         mtext(bquote(textstyle(bold(Delta)*bold(T[water])~bold(Delta)*bold(snowmelt^-1))~
-                         scriptstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))), 2, cex=.8, line=1.5)
+                         textstyle(plain('(')*plain(degree)*plain('C')~plain(cm^-1)*plain(')'))), 2, cex=.8, line=1.5)
         # abline(mod, col='steelblue', lty=2, lwd=3)
         axis(2, padj=.9, tck=-.02)
     }
-    print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.5, font=2, col='steelblue')
-    points(landvar, res,
-           bg=cols, col='black',
-           pch=21, cex=1.5, lwd=2)
+    print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.8, font=2, col='steelblue')
+    points(landvar, res, 
+           bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
+           # pch=21,
+           pch=land$siteCode,
+           lwd=1)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
     #              rect.col=colorRampPalette(c('brown', 'white'))(10),
     #              align='r', gradient='y')
@@ -201,6 +204,12 @@ lines(x=c(-19.9,13.8), y=c(-.342,-.342), xpd=NA, lwd=2, col='gray70')
 # mtext(expression(paste(Delta,'Q ', Delta, theta^-1)), side=2, outer=TRUE, cex=1.3, line=1)
 # par(defpar)
 # dev.off()
+
+#for results (gotta create res above):
+summary(mod)
+mean(res[elev_lo]); sd(res[elev_lo])
+mean(res[elev_med]); sd(res[elev_med])
+mean(res[elev_hi]); sd(res[elev_hi])
 
 # 1.2 - TEMP loading regression ####
 
@@ -253,25 +262,26 @@ for(trnd in c(1,2,4,5)){
          xlab='', main='', ylab='', cex.lab=1, font=2, xaxt='n',bty='l')
     mod <- lm(dfa$Estimates$Z[,trnd] ~ landvar[[trnd]])
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+    sig <- NULL #turning off sig plotting
     if(trnd == 1){
-        mtext(bquote(textstyle(bold('Mean water table depth '))*scriptstyle(plain('(cm)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
+        mtext(bquote(textstyle(bold('Mean water table depth '))*textstyle(plain('(cm)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste('d',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
         mtext(bquote(bold('Shared trend loadings')~
-                         scriptstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
-              side=2, cex=.8, line=1.8, adj=15)
+                         textstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
+              side=2, cex=.8, line=1.8, adj=4)
     }
     if(trnd == 2){
-        mtext(bquote(bold('Perennial ice/snow cover ')*scriptstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
+        mtext(bquote(bold('Perennial ice/snow cover ')*textstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
         # mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
+        print.letter(paste('e',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
     }
     if(trnd == 4){
-        mtext(bquote(bold('BFI ')*scriptstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.9,.9), cex=1.5, font=2, col='springgreen4')
+        mtext(bquote(bold('BFI ')*textstyle(plain('(%)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste('f',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
     }
     if(trnd == 5){
-        mtext(bquote(bold('Mean slope ')*scriptstyle(plain('(% rise)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste(letters[trnd+2],sig),c(.1,.9), cex=1.5, font=2, col='springgreen4')
+        mtext(bquote(bold('Mean slope ')*textstyle(plain('(% rise)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste('g',sig),c(.1,.9), cex=1.8, font=2, col='springgreen4')
     }
     # if(trnd == 3){
     #     mtext(bquote(bold('Mean slope (% rise)')~.(sig)), 1, cex=1, font=2, line=2.7)
@@ -279,8 +289,10 @@ for(trnd in c(1,2,4,5)){
     # }
     abline(mod, col='springgreen4', lty=2, lwd=3)
     points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
-           bg=cols, col='black',
-           pch=21, cex=1.5, lwd=2)
+           bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
+           # pch=21,
+           pch=land$siteCode,
+           lwd=1)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
     #              rect.col=colorRampPalette(c('brown', 'white'))(10),
     #              align='r', gradient='y')
@@ -290,8 +302,8 @@ for(trnd in c(1,2,4,5)){
 }
 
 par(defpar)
-dev.off()
-shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\16_temp_all_reg.pdf')
+# dev.off()
+# shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\16_temp_all_reg.pdf')
 
 # 3 - TEMP loading regression ####
 
@@ -930,13 +942,12 @@ dev.off()
 
 #save stuff for air water discharge plot
 # saveRDS(list(covs, obs_ts), '../../saved_structures/air_water_discharge.rds') # from temp_due_4m_at_byMo_allMos.rda
-saveRDS(list(covs[,1,drop=FALSE], obs_ts), '../../saved_structures/air_water_discharge2.rds') # from temp_due_5m_atpcsn_byMo_allMos.rda
-
+# saveRDS(list(covs[,1,drop=FALSE], obs_ts), '../../saved_structures/air_water_discharge2.rds') # from temp_due_5m_atpcsn_byMo_allMos.rda
+# saveRDS(obs_ts, '../../saved_structures/just_discharge.rds') #from discharge, for awd plot
 
 # 16 - DISCHARGE vs. TEMP ####
 
-#load discharge_due_4m_atpc_byMo_allMos.rda in the setup section, or else names
-#will be screwed up.
+#load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section.
 
 disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_4m_at.rds')
 temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_4m_at.rds')
@@ -1212,7 +1223,7 @@ dev.off()
 
 #load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
 #will be screwed up.
-
+library(plotrix)
 #these are generated in the effect size v month plots
 disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_5m_atpcsn.rds')
 temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
@@ -1221,7 +1232,6 @@ temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
 # "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
 
 pdf('15_disch_vs_air_focal5.pdf', width=5, height=6.4)
-# pdf('11b_disch_vs_air_byWsArea.pdf', width=8, height=8)
 # pal <- colorRampPalette(c('white', 'black'))
 pal <- colorRampPalette(c('black', 'white'))
 # pal <- colorRampPalette(c('black', 'white'))
@@ -1272,9 +1282,10 @@ for(i in c(0,2,4,6,8,11)){
         #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_hi]),
         #                  # pch=4, cex=4, lwd=3, col='steelblue3')
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
-        points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)], cex=1.5,
-               pch=21, bg=cols, col='black')
-        # pch=land$siteCode, col=cols,
+        points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
+               pch=21, bg=cols, col='black',
+               # pch=land$siteCode, col=cols,
+               cex=rescale(land$WsAreaSqKm,c(1.2,3.2)))
         print.letter(paste0(month.abb[i], sig), c(.9,.9), cex=1.2, font=2)
         if(i %in% c(2,4,8)){
             # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
@@ -1345,8 +1356,9 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\15_disch_vs_a
 
 # 20 - air water discharge (average) ####
 
-#load discharge_due_5m_atpcsn_byMo_allMos.rda for this one
+#load temp_due_5m_atpcsn_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge2.rds')
+dis <- readRDS('../../saved_structures/just_discharge.rds')
 
 elev_hi = which(land$Ice06_11 >= 0.7)
 elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
@@ -1363,7 +1375,7 @@ for(i in 1:12){
     watertemps_rain[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_lo]), na.rm=TRUE)
     watertemps_rs[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_med]), na.rm=TRUE)
     watertemps_snow[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_hi]), na.rm=TRUE)
-    discharge[i] <- mean(as.matrix(obs_ts[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
+    discharge[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
 }
 plot(1:12, discharge, type='n', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='',
      yaxs='i', ylim=c(0,4480), bty='o')
@@ -1379,22 +1391,23 @@ lines(x=c(12.44,12.44),y=c(0,4018),
 mtext('Mean discharge (CFS)', 4, font=2, las=3, line=2.5, col=adjustcolor('darkslategray4', alpha.f=1))
 mtext(expression(paste(~bold('Mean temperature')~bold('(')*bold(degree)*bold('C)'))),
       line=1.4, side=2)
+for(i in 1:12) lines(x=c(i,i),y=c(0,discharge[i]), , col='white', lty='29')
 par(new=T)
 plot(1:12, airtemps, xaxt='n', xlab='', bty='c',
      ylab='', yaxs='i', type='n', ylim=c(3,17.6), yaxt='n')
 mtext(expression(paste(~bold('Month'))), 1, line=1.5)
 axis(2, las=2, at=c(10,12,14,16), cex.axis=.8, hadj=.3, tck=-.01)
 axis(2, las=2, at=c(4,6,8), cex.axis=.8, hadj=-.5, tck=-.01)
-for(i in 1:12) lines(x=c(i,i),y=c(0,min(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i])), lty='19')
-for(i in c(1:6,11,12)){
-    lines(x=c(i,i),y=c(max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i]),
-                       min(discharge[i])), lty='29', col='white')
-}
+# for(i in 1:12) lines(x=c(i,i),y=c(0,max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i])), lty='19')
+# for(i in c(1:6,11,12)){
+#     lines(x=c(i,i),y=c(max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i]),
+#                        min(discharge[i])), lty='29', col='white')
+# }
 lines(c(.58,1:12,12.4), c(mean(c(airtemps[1],airtemps[12])),airtemps,mean(c(airtemps[1],airtemps[12]))),
       lwd=3, col='chocolate2', lty='33')
-points(1:12, watertemps_rain, col='black', bg='black', pch=21)
-points(1:12, watertemps_rs, bg='gray75', col='black', pch=22)
-points(1:12, watertemps_snow, bg='white', col='black', pch=24)
+points(1:12, watertemps_rain, col='black', bg='black', pch=21, cex=1.3)
+points(1:12, watertemps_rs, bg='gray75', col='black', pch=22, cex=1.3)
+points(1:12, watertemps_snow, bg='white', col='black', pch=24, cex=1.3, lwd=1)
 axis(1, at=1:12, labels=month.abb, cex.axis=.8, padj=-1.5, tck=-.01)
 legend(x=1.6, y=17.4, legend=c('Rain-dominated', 'Rain-and-snow', 'Snow-dominated'),
        pch=c(21,22,24), col='black', bty='n', pt.bg=c('black','gray75','white'), cex=.8)
@@ -1403,6 +1416,12 @@ legend(2.2,15.9,legend='Air', lty='33', lwd=2, col='chocolate2', bty='n', seg.le
 par(defpar)
 dev.off()
 shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12_air_water_discharge.pdf')
+
+#for results section:
+# chili = data.frame(watertemps_rain,watertemps_rs,watertemps_snow)
+# chili2 = apply(chili,1,range)
+# chili3 = diff(chili2)
+min(chili3); max(chili3)
 
 # 21 - air water discharge (over time) ####
 
