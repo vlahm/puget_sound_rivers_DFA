@@ -1265,6 +1265,7 @@ for(i in c(0,2,4,6,8,11)){
         ymax=max(temp_moInts[-c(6,17,18,20,22)])
         mod <- lm(temp_moInts[,i][-c(6,17,18,20,22)] ~ disch_moInts[,i])
         sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+        sig = NULL #suppressing sig plotting
         plot(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],
              yaxt='n', xaxt='n', bty='o', type='n', fg='gray60',
              xlim=c(-.15, max(disch_moInts)),
@@ -1287,8 +1288,9 @@ for(i in c(0,2,4,6,8,11)){
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
                pch=21, bg=cols, col='black',
-               # pch=land$siteCode, col=cols,
-               cex=rescale(land$WsAreaSqKm,c(1.2,3.2)))
+               # pch=land$siteCode, col=cols)
+               cex=1.3)
+               # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_
         print.letter(paste0(month.abb[i], sig), c(.9,.9), cex=1.2, font=2)
         if(i %in% c(2,4,8)){
             # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
