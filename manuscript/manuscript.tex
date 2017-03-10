@@ -37,10 +37,25 @@
 %include the average effect size of tair on twater in 3a
 % can i say how much elevation would inflence temperature independent of snowmelt?
 %examine change over time in just the elwha
+%%%%why am i removing additional seasonal variation (fixed factor)???
+%probably get snowmelt out of the picture? it may be misleading and a source of criticism
+%explain why some SD rivers might have a larger effect than RD (related to slope, groundwater?)
 
 \section*{Introduction}
 
-The ecological status of a stream or river, the life it supports, and the goods and services it provides, depend on its physical properties, 
+The ecological condition of a stream or river, the life it supports, and the goods and services it provides, are influenced by the timing and magnitude of seasonal changes in water temperature. Temperature is a chief consideration in the management of fisheries, as it affects species distribution (Boisneau et al. 2008), life history (Elliott 1994), and migration timing (Boscarino et al. 2007). In the Puget Sound watershed of the American Pacific Northwest, [many species depend on temperature, and recreational and commercial fisheries depend on rivers maintaining temperautre within certain ranges]. Physically, temperature determines vapor pressure, surface tension, density (Stevens et al. 1975), gas solubility, reaction rates (Brezonik 1972) and more.  These properties also affect the efficacy of electrical power generation (Foerster & Lillestam 2010), and drinking water production (Ramaker et al. 2005).
+
+These in turn are governed by climate at regional scales, and by physical attributes of the landscape at watershed or sub-watershed scales.
+
+
+River networks, being fractal in structure, are naturally governed by environmental processes at multiple scales.  Water temperature is controlled at regional scales by climatic drivers, including air temperature and precipitation. At watershed or sub-watershed scales, physical attributes of the landscape, including geomorphology and geology, further structure temperature regimes, either directly or through interaction with climate drivers.
+
+water temperature by air temperature, sediment influx by precipitation (Garner et al. 2013)—and at local scales by geographic, geologic, and anthropogenic effects.  Taken together, this hierarchical system is difficult to manage, as the physical characteristics of any one river may be largely the product of climatic drivers, while those of another may result primarily from within-watershed conditions. We argue that these characteristics, in particular water temperature and transported load, should be managed with specific attention to the relative influence of regional- and local-scale conditions for any given stream. The first aim of this chapter is to identify streams in the Puget Sound region whose temperature (°C), suspended solids (mg/L), and turbidity (NTU) are primarily predicted by regional temporal trends in air temperature and precipitation, and those that depart from regional patterns.  The second aim is to identify watershed features (land-use, geology, mean elevation, etc., specifics below) that correlate with such departures.
+
+
+We hypothesize that:
+1.  Air temperature will correlate strongly with water temperature for most streams (Ward 1985; Garner et al. 2013).  Deviations from this relationship will be strongest in those streams with glacially influenced hydrology (Lisi et al. 2015).
+2.  Patterns in suspended load and turbidity, being highly dependent on soil type, lithology, and human activity, will be largely determined by within-watershed variables. Of these, we expect proportional agricultural cover to be most predictive (Waters 1995).
 
 \section*{Methods}
 
@@ -107,7 +122,7 @@ Additional, non seasonal variation due to exogenous effects loads onto the share
 
 \subsection*{Landscape predictors and post-hoc regression}
 
-For post-hoc analyses, monitoring sites were separated into three classes based on relative areal coverage of perennial ice and/snow (hereafter ``\% glaciation'') and mean elevation across their watersheds. The three classes are loosely based on the classification scheme and language of the Climate Impacts Group at the University of Washington \colorbox{red}{\lstinline{cite}}, and are here delineated according to Table 1.
+For post-hoc analyses, monitoring sites were separated into three classes based on relative areal coverage of perennial ice and/snow (hereinafter ``\% glaciation'') and mean elevation across their watersheds. The three classes are loosely based on the classification scheme and language of the Climate Impacts Group at the University of Washington \colorbox{red}{\lstinline{cite}}, and are here delineated according to Table 1.
 
 % \begin{table}
 \begin{center}
@@ -170,38 +185,25 @@ In mid-winter (exemplified by February), all river classes primarily occupy the 
 
 The effects of climate on T\textsubscript{water}, determined by dynamic factor analysis, suggest that nearly all rivers included in our dataset were influenced strongly by air temperature, precipitation, and/or snowmelt across 38 years of monthly data (Fig. 3). At most monitoring sites, T\textsubscript{water} closely tracked changes in T\textsubscript{air}, on average responding to increases and decreases with proportional movements of up to 66\% magnitude. However, some rivers only weakly track T\textsubscript{air}, and several patterns in the intensity of this coupling correlate strongly with watershed features relating to ice, groundwater, and slope. Glaciation and yearly snow burden are prominent among these, and for reasons of ecological and hydrological implication, the primary focus of the following discussion.
 
-Without any analysis, a "buffering" effect (hereafter contrasted with "coupling") of ice on river temperature can be seen in the yearly patterns of \textsubscript{water} relative to T\textsubscript{air} (Fig. 2). The aggregate hydrograph peaks due to snowmelt from April to June, at the same time that the trajectories of RS and SD (snow-influenced rivers) start to drop off relative to RD. After snowmelt begins to subside, RS and SD recover with a noticeable jump. For rivers that receive glacial runoff (SD), this effect appears to remain, buffering them from summer temperature rise where RS rivers instead take on the character of RD (Fig. 4). In an extreme case, the Elwha River was actually cooler in August during those years in which air temperature was higher, likely due to increased runoff from Carrie and Eel glaciers. The buffering effect of ice on river temperature is therefore two-fold, acting first on all snowmelt-influenced rivers through a cold-water pulse in spring, and then on a subset of those rivers throughout summer and fall, by way of glacial runoff. For RD rivers, which receive little to no input from ice, summer temperature is entirely dictated by that of the surrounding air, and whatever rain falls through it. Though higher-elevation watersheds will always produce colder water, independent of the influence of ice, it can be expected that RS and SD rivers will grow more similar to RD as regional temperatures warm and glaciers decline. That is to say, formerly reliably cold-water streams and associated habitats may see increases in both summer and winter average temperatures, as well as higher variability from year to year. The Elwha in particular may slip from its current state of high resistance to seasonal climatic changes. We tested for changes in mean and variance of $T\textsubscript{air}\rightarrow T\textsubscript{water}$ and $T\textsubscript{air}\rightarrow Q$ coupling between 1978 and 2015, but did not detect any widespread patterns \colorbox{red}{\lstinline{appendix B}}.
+Without any analysis, a "buffering" effect (hereinafter contrasted with "coupling") of ice on river temperature can be seen in the yearly patterns of \textsubscript{water} relative to T\textsubscript{air} (Fig. 2). The aggregate hydrograph peaks due to snowmelt from April to June, at the same time that the trajectories of RS and SD (snow-influenced rivers) start to drop off relative to RD. After snowmelt begins to subside, RS and SD recover with a noticeable jump. For rivers that receive glacial runoff (SD), this effect appears to remain, buffering them from summer temperature rise where RS rivers instead take on the character of RD (Fig. 4). In an extreme case, the Elwha River was actually cooler in August during those years in which air temperature was higher, likely due to increased runoff from Carrie and Eel glaciers. The buffering effect of ice on river temperature is therefore two-fold, acting first on all snowmelt-influenced rivers through a cold-water pulse in spring, and then on a subset of those rivers throughout summer and fall, by way of glacial runoff. For RD rivers, which receive little to no input from ice, summer temperature is entirely dictated by that of the surrounding air, and whatever rain falls through it. Though higher-elevation watersheds will always produce colder water, independent of the influence of ice, it can be expected that RS and SD rivers will grow more similar to RD as regional temperatures warm and glaciers decline. That is to say, formerly reliably cold-water streams and associated habitats may see increases in both summer and winter average temperatures, as well as higher variability from year to year. The Elwha in particular may slip from its current state of high resistance to seasonal climatic changes. We tested for changes in mean and variance of $T\textsubscript{air}\rightarrow T\textsubscript{water}$ and $T\textsubscript{air}\rightarrow Q$ coupling between 1978 and 2015, but did not detect any widespread patterns \colorbox{red}{\lstinline{appendix B}}.
 
-In addition to the three climate predictors, five shared trends were fit by the most parsimonious DFA model. These represent additional drivers responsible for structuring water temperature across some or all of the 24 sites included in the analysis. Each monitoring sites' factor loading on a particular shared trend indicates the degree to which the trend accounted for variance in T\textsubscript{water} at that site. While the precise identities of these drivers cannot be attained with certainty, they can be inferred through correlation with predictor variables. In this way, we determined the most likely landscape drivers of T\textsubscript{water} to be perennial ice and snow cover, mean watershed slope, and groundwater influx. Slope's likely mechanism of influence is increased turbulence and mixing of water and air in steep, headwater streams, which allows convective warming and cooling to occur more rapidly \colorbox{red}{\lstinline{cite}}.
+In addition to the three climate predictors, five shared trends were fit by the most parsimonious DFA model. These represent additional drivers responsible for structuring water temperature across some or all of the 24 sites included in the analysis. Each monitoring sites' factor loading on a particular shared trend indicates the degree to which the trend accounted for variance in T\textsubscript{water} at that site. While the precise identities of these drivers cannot be obtained with certainty, they can be inferred through correlation with predictor variables. In this way, we determined the most likely landscape drivers of T\textsubscript{water} to be perennial ice and snow cover, mean watershed slope, and groundwater influx. In the case of slope, the likely mechanism of influence is increased turbulence and mixing of water and air in steep, headwater streams, which allows convective warming and cooling to occur more rapidly \colorbox{red}{\lstinline{(cite}}; Fig. 3g). As for groundwater, greater influx (represented by baseflow index, or BFI; fig. 3f) corresponds to greater {\it de}-coupling of climatic effects and river temperature, as groundwater should be insulated relative to surface water. For the same reason, greater depth of groundwater should be associated with better insulation and thus further decoupling (Fig. 3d). The buffering effect of perennial ice and snow on SD rivers has already been discussed, but the uniquely high factor loadings of RS rivers in relation to the associated trend are worth noting (Fig. 3e). This trend may account for variation in RS due to traits shared by RD and SD, or to a "rain-on-snow" effect that may yield additional cold water in early spring. The fifth trend did not correlate strongly with any of the landscape predictors in our dataset. It may therefore represent additional, unknown drivers like marine or microclimatic effects, or it may simply account for random noise.
 
+The relationship between climate and river temperature is further influenced by the interaction of discharge, and the fates of rivers in the Puget Sound watershed can be best understood by examining these factors in combination (Fig. 4). Whether rain-, both-, or snow-dominated, all rivers took on RD characteristics in winter, when the effects of ice lay latent. As a result, warmer Februaries on average yielded warmer rivers and higher flow (less precipitation bound in ice). The critical differences between river classes played out in spring and summer, and it's during these months that future purturbations due to changing climate may be felt most acutely. For example, warmer Aprils on average produced colder water at 9 out of 15 RS and SD sites. Though we determined discharge, groundwater, and slope to be likely components of this relationship, only melting ice could be credited with actually reversing it. Projected reductions in snowpack for the Pacific Northwest can therefore be expected to fundamentally alter the responses of currently snow-influenced rivers to yearly variation in spring temperature. In the longer term, changes can be expected for rivers that now receive the temperature-buffering effect of glacial runoff. Glaciers continue to decline across North America, with the disappearance of all glacial ice in \colorbox{red}{\lstinline{(extent}} projected for the year \colorbox{red}{\lstinline{(year}}.
+
+\section*{Conclusion}
+
+Temperature regimes across the rivers of the Puget Sound watershed are structured by a combination of climatic drivers at the regional scale, and geophysical drivers at watershed scales. In the absence of snow and ice, river temperature is closely coupled to that of the surrounding air, while contributions of snowmelt and glacial runoff can dampen or even reverse this coupling in spring and summer. In some cases, icemelt-influenced rivers exhibit stronger positive responses to climate patterns than their rain-driven counterparts. Our results suggest elevational variations in groundwater influx, total discharge, and watershed slope account for these patterns. However, while these factors may influence the degree of coupling between climatic drivers and water temperature, only snow and ice can reverse it. Since 1978, such reversals have been widespread, particularly during spring melt. Though we did not detect changes in this effect across historical observations, future reductions in snowpack and glacial mass are projected. Consequently, many rivers that now undergo the mildest seasonal temperature changes may be impacted most strongly.
+
+The effects of melting snow and ice characterize
+
+degree to which any given river's temperature responds to climatic fluctuations can be described
 
 %experiment with vim marks
 
-
-% single out elwha as mostly unaffected by climate
-% explain that the effect has not changed over time (nor the variance)
-
-% fig1: buffering effect is visible as damping followed by jump in RS SD
-    SD RS colder throughout the year, less influenced by changes in air.
-    % spring snowmelt (hydrograph peak) is the most significant item
-    RD actually remains warmer than air throughout the spring, and matches it through July.
-% fig2: snow/glac streams are buffered, overall, from temp changes due to air and precip.
-    snow isn't signif because of the arrangement of points along the x axis. however, there's a negative
-        snowmelt->Twater for the glac streams and a positive one for the RS streams
-    Why might each of the landscape predictors be such?
-        water table depth: ground water farther from surface, less responsive ground water (to whatever it is)
-        BFI: also ground water influx
-        ice snow: separation of RD RS?: this could be the rain-on-snow effect
-        slope: faster and more turbulent water, greater mixing; also correlated with snow/glac
-    what could the other factor be (trend 3)? random error, or a geological or morphological or microclimatic feature not captured by our watershed predictors 
-fog3: step through
-
-
-The relationship between river classification and factor loadings is less clear
-
 \section*{Appendix A}
 
-DFA plots here
+DFA plots here blargenshnargen
 
 \section*{Appendix B}
 
