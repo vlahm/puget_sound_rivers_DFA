@@ -73,7 +73,7 @@ y_choice = 'TEMP'
 #still be determined.
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
 #in a model yet, so there could be bugs)
-cov_choices = c('meantemp')#, 'precip', 'snowmelt')
+cov_choices = c('meantemp', 'precip', 'snowmelt')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 #regions 3 and 4 were discovered to be very similar early on, so most of this script will only work if
 #you choose '3_4' here and 'average_regions=TRUE'.
@@ -88,14 +88,14 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 4
+ntrends = 5
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
 #the D matrix to be small, thus artificially diminishing the impact of the covariates.
 #Scaling is still recommended by the community at large, and I didn't see a big difference.
-scale = FALSE
-na_thresh = 0.3 #exclude sites with >= this proportion of NA values.
+scale = TRUE
+na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #be sure to visit section 3.1, where you can add time interval factors and interaction effects
 #to the covariate matrix
 #transformations are 'log' and 'none' from here. can also explore 'power' and 'boxcox' in section 3.1
@@ -104,14 +104,14 @@ transform = 'none'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
 #'effect_byMonth', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
-design = 'effect_byMonth_acrossTime'
+design = 'effect_byMonth'
 #sections = number of intervals to divide the time series into, if examining change over time
 #(see "designer" function in section 3.1 for details)
 sections <- 5 #an integer. will be ignored if not applicable
 #the months to focus on for by-month effect size (1 is jan...)
 #if looking at effect_byMonth_acrossTime, including all months will be too expensive
 #(see "designer" function in section 3.1 for details)
-focal_months <- 5:8 #a vector of integers between 1 and 12. will be ignored if not applicable.
+focal_months <- 1:12 #a vector of integers between 1 and 12. will be ignored if not applicable.
 
 # 1.1 - subset data according to choices, remove problematic columns ####
 library(stringr)
@@ -633,7 +633,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 # 
-dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
+# dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
@@ -641,7 +641,7 @@ dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 
 # dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_discharge/DISCHARGE_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
-# dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
+dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -756,8 +756,8 @@ library(viridis)
 
 process_plotter_TMB <- function(dfa_obj, ntrends){
     if(ntrends<=4){
-        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
-    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+        par(mai=c(0.5,0.5,0.5,0.1), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
     xlbl <- int_dates
     y_ts <- int_dates
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -766,6 +766,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
              ylim=ylm, xlab='', xaxt="n", ylab='')
         abline(h=0, col="gray")
         lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
+        axis(2)
         # mtext(paste("Process",i), side=3, line=-2)
         mtext(paste("Process",i), side=3, line=-2)
         xlbl = xlbl*c(rep(0,11),1)
@@ -777,14 +778,15 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')),
     # side=2, line=-1.5, outer=TRUE)
 }
-# pdf('../manuscript/figures/04_processes_and_loadings.pdf', width=7, height=4)
+# pdf('../manuscript/figures/diagnostic_plots/01_trends.pdf', width=7, height=5)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
 # process_plotter_TMB(dfa, mm)
+# dev.off()
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
     if(ntrends<=4){
-        par(mai=c(0.5,0.5,0.5,0.1), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
-    } else par(mai=c(0,0,0,0), omi=c(0,0,0,0), mfrow=c(ntrends, 1))
+        par(mai=c(0.5,0.5,0.5,0.1), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
+    } else par(mai=c(0,0,0,0), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
     ylbl <- names(obs_ts)
     # clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -794,7 +796,8 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     for(i in 1:ntrends) {
         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
              lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5),
-             col='black', bty='L')
+             col='black', bty='L', yaxt='n')
+        axis(2, las=2)
         # mtext(paste("Process",i), side=3, line=-2)
         for(j in 1:nn) {
             # if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=1.2, col=clr[j])}
@@ -803,13 +806,14 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
             if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=lab_size)}
             abline(h=0, lwd=1.5, col="gray")
         }
-        mtext(paste("Factor loadings on process",i),side=3,line=-2)
+        mtext(paste("Factor loadings on process",i),side=3,line=-2, col='gray30')
         # if(i==2){
         # mtext('Site ID', side=1, line=2.5)
         # }
         # mtext("Factor loadings", side=2, line=-21.7, outer=TRUE)
     }
 }
+# pdf('../manuscript/figures/diagnostic_plots/02_loadings.pdf', width=7, height=4)
 # loading_plotter_TMB(dfa, mm)
 # dev.off()
 
@@ -825,17 +829,20 @@ fits_plotter_TMB <- function(dfa_obj){
     # par(mfrow=c(2,1), mar=c(.5,.5,.5,.5), oma=c(3,3,0,0))
     for(i in 1:ncol(obs_ts)){
         # for(i in 3){
-        plot(dfa_obj$Fits[i,], type='l', lwd=2,
+        plot(dfa_obj$Fits[i,], type='n',
              ylim=c(min(dat_z[i,], na.rm=TRUE), max(dat_z[i,], na.rm=TRUE)),
              # col='gray40', xaxt='n', ylim=c(-10,10))
-             ylab=rownames(dat_z)[i], xlab='month_index', col='gray40')
-        lines(hiddenTrendOnly_fit[i,], col='black', lwd=2)
+             ylab=rownames(dat_z)[i], xlab='month_index')
         points(dat_z[i,], col='blue', pch=20, cex=1)
+        lines(dfa_obj$Fits[i,], lwd=1, col='gray40')
+        lines(hiddenTrendOnly_fit[i,], col='black', lwd=1)
     }
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')), 2, 2)
     # mtext('Month Index', 1, 2, T)
 }
+# pdf('../manuscript/figures/diagnostic_plots/03_fits.pdf', width=7, height=7, onefile=TRUE)
 # fits_plotter_TMB(dfa) #black is model fit, green is hidden-trend-only fit, blue is data
+# dev.off()
 
 residuals_plotter <- function(dfa_obj){
     par(mfrow=c(5,2), mai=c(0.6,0.7,0.1,0.1), omi=c(0,0,0,0))
@@ -843,11 +850,12 @@ residuals_plotter <- function(dfa_obj){
     for(i in 1:ncol(obs_ts)){
         plot(dat_z[i,] - dfa$Fits[i,],
              # ylab='', pch=20, col='blue')
-             xlab='Month Index', ylab=rownames(dat_z)[i], pch=20)
-        abline(h=0, col='black', lwd=3, lty=2)
+             xlab='Month Index', ylab=rownames(dat_z)[i], pch=20, col='gray40')
+        abline(h=0, lwd=2, lty=2, col='black')
     }
     # mtext('Residual Error', 2, 2)
 }
+# pdf('../manuscript/figures/diagnostic_plots/04_residuals.pdf', width=7, height=7, onefile=TRUE)
 # residuals_plotter(dfa)
 # dev.off()
 
@@ -860,7 +868,9 @@ ACF_plotter <- function(dfa_obj){
             ylab=rownames(dat_z)[i], pch=20)
     }
 }
+# pdf('../manuscript/figures/diagnostic_plots/05_acf.pdf', width=7, height=7, onefile=TRUE)
 # ACF_plotter()
+# dev.off()
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))

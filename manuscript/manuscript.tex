@@ -1,15 +1,20 @@
-\documentclass{article}
+\documentclass[notitlepage]{article}
 
 \usepackage{color, listings, bm, amsmath, blkarray, gensymb}
 % \usepackage[percent]{overpic}
-\usepackage{tikz}
+\usepackage{tikz, lineno, apalike}
+\linenumbers
 % \usepackage{graphicx}
 % \usepackage{epsfig}
 % \usepackage{subfig}
 % \captionsetup{belowskip=12pt}
 % \hfuzz=5.002pt  %suppress overfull warnings
 
+\author{Michael Vlah}
+\title{Determining multi-scale controls on river temperature: a time series approach}
+
 \begin{document}
+\pagenumbering{gobble}
 % todo:
 % include snowmelt in model run. see if it's worth including with precip and temp as a climate predictor
 % introduce terminology:
@@ -40,44 +45,62 @@
 %%%%why am i removing additional seasonal variation (fixed factor)???
 %probably get snowmelt out of the picture? it may be misleading and a source of criticism
 %explain why some SD rivers might have a larger effect than RD (related to slope, groundwater?)
+%get snowmelt out of there. it's a watershed trait. not a regional one
+%add discharge locations to the map?
+
+\maketitle
+\vspace{10pc}
+\noindent
+\textbf{Summary:}
+
+\noindent
+5 data sources; watershed delineation; 2 DFAs: m=1:15, 7 covariate combinations, 4 err. struc., 2 seasonality models; TMB; parallel computing; Bayesian change/time
+\clearpage
+\pagenumbering{arabic}
+
+\section*{Abstract}
+Temperature is among the most important determinants of riverine biodiversity and health. It is therefore a primary freshwater management concern, particularly where cold-water fish are of high ecological, recreational, and commercial value. However, river temperature in the Puget Sound watershed of the Northwestern U.S.A. is affected by a great diversity of drivers at multiple spatial and temporal scales, and little is known of their interactions. We used dynamic factor analysis, a multivariate time-series technique, to examine relationships among these drivers, synthesizing long-term climate and fine-scale landcover data. We found that primarily rain-fed rivers experience large seasonal temperature fluctuations, which closely track atmospheric temperature, while snow-fed rivers tend to be weakly, and in some cases inversely, coupled with such fluctuations. Among watersheds, groundwater influx, land slope, and discharge further augment or dampen these relationships. Our results suggest the temperature of high-elevation rivers, absent the influence of ice, should be highly variable, and that glacially fed streams stand to see the largest changes in temperature regime under proposed climate scenarios.
+\clearpage
 
 \section*{Introduction}
 
-The ecological condition of a stream or river, the life it supports, and the goods and services it provides, are influenced by the timing and magnitude of seasonal changes in water temperature. Temperature is a chief consideration in the management of fisheries, as it affects species distribution (Boisneau et al. 2008), life history (Elliott 1994), and migration timing (Boscarino et al. 2007). In the Puget Sound watershed of the American Pacific Northwest, [many species depend on temperature, and recreational and commercial fisheries depend on rivers maintaining temperautre within certain ranges]. Physically, temperature determines vapor pressure, surface tension, density (Stevens et al. 1975), gas solubility, reaction rates (Brezonik 1972) and more.  These properties also affect the efficacy of electrical power generation (Foerster & Lillestam 2010), and drinking water production (Ramaker et al. 2005).
+The ecological condition of a stream or river, the life it supports, and the goods and services it provides, are influenced by the timing and magnitude of seasonal changes in water temperature. Temperature is a chief consideration in the management of fisheries, as it affects species distribution \cite{Boisneau2008}, growth and reproduction \cite{mccullough1999review}, and migration timing \cite{boscarino2007effects}. In particular, In the Puget Sound watershed of the American Pacific Northwest, several salmonid species spawn, migrate, and emerge only within the bounds of a few degrees Celsius, and thrive under even greater temperature constraints \cite{carter2005effects}. As a result, the success of commercial and recreational fisheries that depend on the region's riverine habitat rests on many precarious factors. 
 
-These in turn are governed by climate at regional scales, and by physical attributes of the landscape at watershed or sub-watershed scales.
+River networks, being fractal in structure, are naturally governed by environmental processes at multiple scales. Seasonal variation in water temperature in rivers of the Pacific Northwest is a function of the surrounding air, as well as precipitation and snowmelt \cite{eldridge1967water}. These drivers may in turn be mediated or supplemented by several aspects of watershed morphology at smaller scales, including slope, elevation, and geology \cite{poole2001ecological,lisi2013association}. Taken together, this hierarchical system complicates fishery management, as the temperature regime of one river may be the direct product of climate, while that of another may depend more on within-watershed conditions. 
 
+Adding to this picture, flow regimes across rivers of the Puget Sound watershed vary with latitude and elevation \cite{reidy2012hydrogeomorphic,mauger2015CIG}, and can be classified broadly into three categories by flow source and hydrograph shape. Rain-dominated (RD) rivers receive little or no input from snowmelt, and thus peak in discharge during the rainy season, usually between October and February. Snow-dominated (SD) rivers instead see peak flow during spring snowmelt, often in April, May, or June. Between these extremes lies a third class of rain-and-snow-driven (RS) rivers, which have appreciable peaks at both times.
 
-River networks, being fractal in structure, are naturally governed by environmental processes at multiple scales.  Water temperature is controlled at regional scales by climatic drivers, including air temperature and precipitation. At watershed or sub-watershed scales, physical attributes of the landscape, including geomorphology and geology, further structure temperature regimes, either directly or through interaction with climate drivers.
+Effective management plans must therefore integrate a diversity of factors across space and time in order to determine which rivers and watersheds are likely to see consequential changes under projected climate and land use scenarios. However, the understanding required to do so is limited by knowledge of relationships among temperature drivers at scale. 
 
-water temperature by air temperature, sediment influx by precipitation (Garner et al. 2013)—and at local scales by geographic, geologic, and anthropogenic effects.  Taken together, this hierarchical system is difficult to manage, as the physical characteristics of any one river may be largely the product of climatic drivers, while those of another may result primarily from within-watershed conditions. We argue that these characteristics, in particular water temperature and transported load, should be managed with specific attention to the relative influence of regional- and local-scale conditions for any given stream. The first aim of this chapter is to identify streams in the Puget Sound region whose temperature (°C), suspended solids (mg/L), and turbidity (NTU) are primarily predicted by regional temporal trends in air temperature and precipitation, and those that depart from regional patterns.  The second aim is to identify watershed features (land-use, geology, mean elevation, etc., specifics below) that correlate with such departures.
+% The physical properties of water also change with temperature, which measurably affects the efficacy of electrical power generation (Foerster & Lillestam 2010), and drinking water production (Ramaker et al. 2005).
+% Physically, temperature determines vapor pressure, surface tension, density (Stevens et al. 1975), gas solubility, reaction rates (Brezonik 1972) and more.  
 
+We sought to identify streams in the Puget Sound region whose temperatures fluctuate closely with regional trends in air temperature, precipitation, and snowmelt, and those that depart from regional patterns. Our second aim was to identify watershed features that correlate with such departures, and thus provide a nuanced basis for predicting impacts of water temperature on aquatic biodiversity and fishery health. We hypothesized that water temperature would track air temperature most closely in RD rivers (Ward 1985; Garner et al. 2013). We expected deviations from this relationship to correlate best with cold-water influx from snow and ice melt (Lisi et al. 2015) and with factors affecting heat capacity of water, including discharge (volume over time) and watershed slope (which relates to turbulence, surface area, and mixing).
 
-We hypothesize that:
-1.  Air temperature will correlate strongly with water temperature for most streams (Ward 1985; Garner et al. 2013).  Deviations from this relationship will be strongest in those streams with glacially influenced hydrology (Lisi et al. 2015).
-2.  Patterns in suspended load and turbidity, being highly dependent on soil type, lithology, and human activity, will be largely determined by within-watershed variables. Of these, we expect proportional agricultural cover to be most predictive (Waters 1995).
+%carter 2005 http://www.swrcb.ca.gov/northcoast/water_issues/programs/tmdls/shasta_river/060707/28appendixaetheeffectsoftemperatureonsteelheadtroutcohosalmonandchinooksalmonbiologyandfunction.pdf:
+    %usepa 1999 
 
 \section*{Methods}
 
-\subsection*{Study region}
+% \subsection*{Study region and climate data}
 
-I'll probably mention anything relevant to this in the intro.
-
-\begin{center}
-\resizebox{\textwidth}{!}{\includegraphics{figures/map/map.png}}
-\textbf{Figure 1} Site locations (red points) in relation to the region across which climate data were aggregated (colored topography).
-\end{center}
+% Monthly time series of mean and max air temperature (\degree C), total precipitation (cm), snowmelt (cm), and hydrological drought (Palmer Hydrological Drought Index) were acquired for the time-span of 1978 to 2015.
 
 \subsection*{Water and climate data}
 
-The two response variables used in our analyses were water temperature and discharge. We obtained monthly water temperature readings from 1978 through 2015 via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. In all, 24 monitoring sites within the Puget Sound region (Fig. \colorbox{red}{\lstinline{1}}) were included, representing 19 rivers across 9 counties, and ranging from 4 to 775 m in elevation. For one site at each river, monthly discharge time series were available, either for the same location as one of the temperature monitoring sites, or for another location within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). At least one discharge monitoring site was available for every river represented in the temperature dataset.
+We investigated climate and landscape controls on water temperature and discharge, as separate response variables, from 1978 to 2015. Monthly time series of water temperature were obtained for 24 river sites via the Washington Department of Ecology's River and Stream Water Quality Monitoring program \colorbox{red}{\lstinline{cite}}. These sites represent 19 nonnested watersheds across 9 counties, and range from 4 to 775 m in elevation. For at least one site at each river, monthly discharge time series were also available, either from the same location as one of the temperature monitoring sites, or from within 30 km on the same major reach. Discharge data were aggregated by monthly mean from the USGS Washington Water Science Center (collected daily 1978-2007) and the USGS National Water Information System (collected at 15-minute intervals 2008-2015). 
 
-Potential climatic predictors of water temperature and discharge included mean and max air temperature (\degree C), total precipitation (cm), snowmelt (cm), and hydrological drought (Palmer Hydrological Drought Index), averaged by month across the response variable time series. All but snowmelt are available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four regional, climatic predictors. A snowmelt time series was then added to this dataset, using monthly mean records from six SNOTEL sites (Bumping Ridge, Elbow Lake, Mount Crag, Park Creek Ridge, Stevens Pass, White Pass) listed by the USDA's Natural Resources Conservation Service \colorbox{red}{\lstinline{cite}}. We calculated monthly snowmelt for each site as the absolute value of negative differences in cumulative snow water equivalent from each month to the next. The snowmelt time series was assigned zeros for any positive differences (accumulations).
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/map/map.png}}
+\textbf{Figure 1} Site locations (red points) in relation to combined Washington State Climate Divisions 3 and 4 (colored topography), the region across which climate data were aggregated.
+\end{center}
+
+Potential climatic predictors of water temperature and discharge included mean and max air temperature (\degree C), total precipitation (cm), snowmelt (cm), and hydrological drought (Palmer Hydrological Drought Index), averaged by month across the response variable time series. All but snowmelt were available through the U.S. Climate Divisional Dataset, developed by the National Centers for Environmental Information (NCEI)\colorbox{red}{\lstinline{cite}}. We acquired climatic predictor data grouped by Washington State climate division, and all but two of our sites fell within divisions 3 (Puget Sound Lowland) and 4 (East Olympic/Cascade Foothills; see Fig. 1). We therefore aggregated these data by monthly mean across the two regions (after verifying their post-standardization similarity), resulting in a single dataset of four climatic predictor variables. A snowmelt time series was then added to this dataset, using monthly mean records from six SNOTEL sites (Bumping Ridge, Elbow Lake, Mount Crag, Park Creek Ridge, Stevens Pass, White Pass) listed by the USDA's Natural Resources Conservation Service \colorbox{red}{\lstinline{cite}}. We calculated monthly snowmelt for each site as the absolute value of negative differences in cumulative snow water equivalent from each month to the next. The snowmelt time series was assigned zeros for any positive differences (accumulations).
 
 %More information on all datasets can be found in \colorbox{red}{\lstinline{Appendix A}}.
 
 \subsection*{Time series analysis}
-Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), predictors (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as 1-5 shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer of them allows for greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
+Response time series were modeled using dynamic factor analysis (DFA; \colorbox{red}{\lstinline{Zuur et al. 2003}}), a multivariate technique that can be thought of as an analog to principal component analysis in the time domain. In DFA, response time series are fit with a linear combination of shared, random-walk trends (usually many fewer than the total number of response series), predictors (which can have unique effects on each response series), and random error. We chose DFA over a traditional multivariate state space approach for two reasons. First, it provides advantages in computational efficiency, as a small number of shared trends often adequately capture variation across dozens of responses, and at much lower parameter cost. Second, in terms of identifying what drives the shared trends, having fewer of them allows for greater inferential parsimony. Being a multivariate technique, DFA also provides an advantage over univariate alternatives in that covariance structure among responses can be specified and compared. All models were fit using maximum likelihood estimation by automatic differentiation, with Template Model Builder software \colorbox{red}{\lstinline{Kristensen et al. 2015}}, which we called using package TMB in R \colorbox{red}{\lstinline{R Core team 2016...}}.
 
 DFA takes the following form:
 
@@ -194,20 +217,67 @@ The relationship between climate and river temperature is further influenced by 
 \section*{Conclusion}
 
 Temperature regimes across the rivers of the Puget Sound watershed are structured by a combination of climatic drivers at the regional scale, and geophysical drivers at watershed scales. In the absence of snow and ice, river temperature is closely coupled to that of the surrounding air, while contributions of snowmelt and glacial runoff can dampen or even reverse this coupling in spring and summer. In some cases, icemelt-influenced rivers exhibit stronger positive responses to climate patterns than their rain-driven counterparts. Our results suggest elevational variations in groundwater influx, total discharge, and watershed slope account for these patterns. However, while these factors may influence the degree of coupling between climatic drivers and water temperature, only snow and ice can reverse it. Since 1978, such reversals have been widespread, particularly during spring melt. Though we did not detect changes in this effect across historical observations, future reductions in snowpack and glacial mass are projected. Consequently, many rivers that now undergo the mildest seasonal temperature changes may be impacted most strongly.
+\clearpage
 
-The effects of melting snow and ice characterize
-
-degree to which any given river's temperature responds to climatic fluctuations can be described
-
-%experiment with vim marks
+\bibliography{manuscript}
+\bibliographystyle{apalike}
+\clearpage
 
 \section*{Appendix A}
 
-DFA plots here blargenshnargen
+\subsection*{Temperature DFA output and diagnostics}
+Model selection included four climate covariates (air temperature, precipitation, snowmelt, and hydrological drought), between 1 and 15 shared trends, four within-and-among-site error structures (see methods), and two models of unknown seasonal variation (fixed monthly factors and Fourier series). The most parsimonious model of river temperature was selected using the Akaike Information Criterion (AIC), and included air temperature, precipitation, and snowmelt as covariates. This model also included five shared trends and an independent and unequally distributed error structure among streams (i.e. diagonal and unequal variance-covariance matrix).
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/01_trends.pdf}}
+\textbf{Figure A1} Shared trends.
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/02_loadings.pdf}}
+\textbf{Figure A2} Factor loadings on shared trends.
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/03_fits.pdf}}
+\textbf{Figure A3} Model fits (gray line = overall; black line = trends-only).
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/04_residuals.pdf}}
+\textbf{Figure A4} Residuals.
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/05_acf.pdf}}
+\textbf{Figure A5} Autocovariance function (ACF).
+\end{center}
+
+Output from the discharge model looks very similar to this, and is omitted here for the sake of retaining a reasonable page count.
+\clearpage
 
 \section*{Appendix B}
 
-over-time plots here
+\subsection*{Testing for change in coupling over time}
+
+We used an additional DFA model to test for changes in $T_{air}\rightarrow T_{water}$ coupling over time, by dividing the 1978-2015 time series into 5 intervals and comparing central tendency and variance of effect sizes for each interval. Figures B1-B3 show mean effect size for each stream.
+
+To approximate estimates of variability over time, we performed the same analysis within a Bayesian framework, and obtained uncertainty estimates from the credible intervals of the effect size posteriors. This approach yielded no trends in variation over time, and is not visualized here (This will be included in the final version of this paper).
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/05a_temp_effSize_byMonth_acrossTime_may-aug.pdf}}
+\textbf{Figure B1} Mean $T_{air}\rightarrow T_{water}$ coupling over time. Each plot corresponds to an individual site. Y-label colors represent mean watershed elevation (bluer=higher).
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf}}
+\textbf{Figure B2} Mean $T_{air}\rightarrow T_{water}$ coupling over time. Each plot corresponds to an individual site. Y-label colors represent mean watershed elevation (bluer=higher).
+\end{center}
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/05c_temp_effSize_byMonth_acrossTime_MASO.pdf}}
+\textbf{Figure B3} Mean $T_{air}\rightarrow T_{water}$ coupling over time. Each plot corresponds to an individual site. Y-label colors represent mean watershed elevation (bluer=higher).
+\end{center}
 
 \end{document}
 
