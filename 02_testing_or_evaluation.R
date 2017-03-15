@@ -88,7 +88,7 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 5
+ntrends = 2
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
@@ -641,7 +641,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
 
 # dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_discharge/DISCHARGE_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
-dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
+# dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m_fixed_factors_atpcsn_1978-2015.rds')
 
 # cov_and_seas <- readRDS('../saved_structures/fixed_at.rds')
 # cc <- readRDS('../saved_structures/fixed.rds')
@@ -751,10 +751,14 @@ dfa <- readRDS('../round_13_byMo_allMos_scale_hiM/model_objects_temp/TEMP_DUE_5m
 # }
 # fits_plotter()
 
-# 5.1 - plot processes, loadings, fits, residuals, ACF, and get R^2 (TMB) ####
+# 5.1 - plot processes, loadings, fits, residuals, ACF, CCF, and get R^2 (TMB) ####
 library(viridis)
 
-process_plotter_TMB <- function(dfa_obj, ntrends){
+process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL){
+    #supply an integer to "chunk" in order to see the trend for the corresponding 4-year chunk of the time series
+    #i.e. chunk=1 would limit the x axis range to just the first four years.
+    xlm = c(1,int_dates[length(int_dates)])
+    if(!is.null(chunk)) xlm=c(chunk*48-47,chunk*48)
     if(ntrends<=4){
         par(mai=c(0.5,0.5,0.5,0.1), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
     } else par(mai=c(0,0,0,0), oma=c(0,3,0,0), mfrow=c(ntrends, 1))
@@ -763,10 +767,10 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
     for(i in 1:ntrends){
         plot(y_ts,dfa_obj$Estimates$u[i,], type="n", bty="L",
-             ylim=ylm, xlab='', xaxt="n", ylab='')
+             ylim=ylm, xlab='', xaxt="n", ylab='', xaxs='i', xlim=xlm)
         abline(h=0, col="gray")
         lines(y_ts,dfa_obj$Estimates$u[i,], lwd=2)
-        axis(2)
+        axis(2); axis(1, at=seq(1,xlm[2],12)); abline(v=seq(1,xlm[2],12), col='gray', lty=2)
         # mtext(paste("Process",i), side=3, line=-2)
         mtext(paste("Process",i), side=3, line=-2)
         xlbl = xlbl*c(rep(0,11),1)
@@ -780,7 +784,8 @@ process_plotter_TMB <- function(dfa_obj, ntrends){
 }
 # pdf('../manuscript/figures/diagnostic_plots/01_trends.pdf', width=7, height=5)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-# process_plotter_TMB(dfa, mm)
+process_plotter_TMB(dfa, mm, chunk=NULL)
+
 # dev.off()
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
@@ -796,7 +801,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     for(i in 1:ntrends) {
         plot(c(1:nn)[abs(Z_rot[,i])>minZ], as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]), type="h",
              lwd=2, xlab="", ylab="", xaxt="n", ylim=ylm, xlim=c(0.5,nn+0.5),
-             col='black', bty='L', yaxt='n')
+             bty='L', yaxt='n', col='black')
         axis(2, las=2)
         # mtext(paste("Process",i), side=3, line=-2)
         for(j in 1:nn) {
@@ -814,7 +819,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     }
 }
 # pdf('../manuscript/figures/diagnostic_plots/02_loadings.pdf', width=7, height=4)
-# loading_plotter_TMB(dfa, mm)
+loading_plotter_TMB(dfa, mm)
 # dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
@@ -871,6 +876,14 @@ ACF_plotter <- function(dfa_obj){
 # pdf('../manuscript/figures/diagnostic_plots/05_acf.pdf', width=7, height=7, onefile=TRUE)
 # ACF_plotter()
 # dev.off()
+
+#check out cross-correlations too, to see if there are lagged relationships between trends, effect sizes, and covariates.
+defpar = par(mfrow=c(2,1))
+ccf(as.vector(dfa$Estimates$u[1,]), cov_and_seas[13,])
+ccf(as.vector(dfa$Estimates$u[2,]), cov_and_seas[13,])
+ccf(as.vector(dfa$Estimates$u[1,]), colSums(cov_and_seas[15:26,]))
+ccf(as.vector(dfa$Estimates$u[2,]), colSums(cov_and_seas[15:26,]))
+par(defpar)
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
@@ -1074,7 +1087,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
     #green is high, black is low
 
     loadings <- dfa$Estimates$Z
-    pal <- colorRampPalette(c('black', 'green'))
+    pal <- colorRampPalette(c('orange', 'blue'))
 
     if(mode == 'exploration'){
         land_ind <- load_best[[1]]
@@ -1108,7 +1121,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-# load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
+load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
 load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model (abandoned, but there's some useful plotting stuff here) ####

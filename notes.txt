@@ -207,3 +207,23 @@ one graph clearly shows that ice buffering is strong in some months and not othe
 	interpret the Qvh20_T graphs. do the zeros delineate points where discharge and water pass off some kind of correlation to each other?
 	
 	extend the line graph out to the whole series and separate discharge/temp by watershed area over 1000
+	
+DANIEL MEETING =----------------------------------
+
+get down to one shared trend
+regress loadings from this against PC1, maybe PC2
+see what's driving the PCs
+
+he also wants me to include discharge as a covariate, but i don't think it's possible to achieve what he wants.
+
+see if i can prove that temperature correspondence increases with stream slope (i.e. with increased mixing). 
+
+achnowledge that sublimation may be affecting decreases in snowmelt as well (just mention this in the paper)
+
+maybe two trends if i need them
+
+see if the trend separates RD and SD based on lagged effect of air temp on water temp. the trend would be a wave, and the SD rivers would load strongly on the
+month or months immediately following the wave, while the RDs would load right onto the peaks
+
+ZOMG use cross correlation of states and precip/temp
+talk to vincent about how he interpreted cross correlation. does a significant ccf value at a particular lag imply correlation at that lag (almost certainly yes)
