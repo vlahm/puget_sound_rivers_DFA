@@ -227,3 +227,9 @@ month or months immediately following the wave, while the RDs would load right o
 
 ZOMG use cross correlation of states and precip/temp
 talk to vincent about how he interpreted cross correlation. does a significant ccf value at a particular lag imply correlation at that lag (almost certainly yes)
+
+READ: beechie and biehl 2008 (biological conservation)
+kathy so and so + julian olden (cited in my paper)
+olden paper in print on desk
+two emails from mike brett on 3/17
+

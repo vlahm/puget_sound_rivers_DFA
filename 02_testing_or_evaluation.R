@@ -627,6 +627,8 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda')
 # save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 
+# save.image('../manuscript/figures/diagnostic_plots/2trend.rda')
+
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
@@ -784,7 +786,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL){
 }
 # pdf('../manuscript/figures/diagnostic_plots/01_trends.pdf', width=7, height=5)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-process_plotter_TMB(dfa, mm, chunk=NULL)
+process_plotter_TMB(dfa, mm, chunk=8)
 
 # dev.off()
 
@@ -1121,7 +1123,7 @@ load_regress_plotter <- function(mmm, mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-load_regress_plotter(mm, 'indiv', 'PctIce2011Ws')
+load_regress_plotter(mm, 'indiv', 'ElevWs', 'WsAreaOver1000')
 load_regress_plotter(mm, 'exploration', , 'ElevWs')
 
 # 6 - best TEMP model (abandoned, but there's some useful plotting stuff here) ####
