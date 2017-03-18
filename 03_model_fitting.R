@@ -429,79 +429,89 @@ cov_and_seas <- rbind(cc,covs_z)
 
 #look inside function for details
 designer <- function(design, sections, focal_months){
-  interval_fac = month_fac = season_fac = NULL
+    interval_fac = month_fac = season_fac = NULL
 
-  #this function creates an appropriate covariate matrix (d) for multiple possible model
-  #designs. The 'sections' and 'focal months' arguments will be ignored if not applicable.
-  #design options are:
+    #this function creates an appropriate covariate matrix (d) for multiple possible model
+    #designs. The 'sections' and 'focal months' arguments will be ignored if not applicable.
+    #design options are:
 
-  #'just_effect', which produces a d matrix containing only the covariates, with no seasonal
-  #effects. (note that fixed factor effects are the only approach that can be applied via this
-  #function. seasonality could also be modeled as a sine wave (univariate vs. 12-variate), which
-  #would allow the estimation of covariate effect sizes AND covariate effect sizes by month,
-  #but with less accurate accounting for seasonal effects that are not of interest. Email me
-  #if you're interested in this approach.
+    #'just_effect', which produces a d matrix containing only the covariates, with no seasonal
+    #effects. (note that fixed factor effects are the only approach that can be applied via this
+    #function. seasonality could also be modeled as a sine wave (univariate vs. 12-variate), which
+    #would allow the estimation of covariate effect sizes AND covariate effect sizes by month,
+    #but with less accurate accounting for seasonal effects that are not of interest. Email me
+    #if you're interested in this approach.
 
-  if(design=='just_effect'){
-    out <- cov_and_seas[-(1:12),, drop=F]
-  }
-
-  #'effect_and_seasonality_without_interaction', which will account for seasonal regularities
-  #and then estimate average covariate effect size(s) (i.e. not per month, and not across time)
-
-  if(design=='effect_and_seasonality_without_interaction'){
-    out <- cov_and_seas
-  }
-
-  #'effect_byMonth', which will account for seasonal regularities and then estimate the effect
-  #of the FIRST covariate listed in cov_choices (section 1) for specified months
-  #(supplied via "focal months" argument; can be a subset
-  #like c(5,6,7,8) or all months: 1:12). Any other covariates will be included as individual rows and will
-  #serve to soak up additional variation. Average, non-time-or-month-specific effect sizes can be examined for
-  #these. This design will NOT estimate the average effect size for the first covariate listed.
-
-  if(design=='effect_byMonth' | design=='effect_byMonth_acrossTime'){
-    month_fac <- rep(0, 12)
-    month_fac[focal_months] <- month.abb[focal_months]
-    month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
-  }
-
-  if(design=='effect_byMonth'){
-    interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
-    # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
-    out <- rbind(cov_and_seas[-13,], t(interactions))
-  }
-
-  #finally, there's 'effect_byMonth_acrossTime', which will capture change in a covariate
-  #per month during specified time intervals (to do this for multiple covariates will
-  #almost certainly be too expensive). the intervals are supplied via the 'sections'
-  #argument. The number of sections you specify will determine how many even (as even as
-  #possible given the length of your series) intervals the dataset will be chopped into.
-  #for each interval, you'll get the effect size of the covariate for each focal month.
-  #WARNING: this setup assumes your time series begins in January (it will also be safe
-  #to ensure that it ends in december, though this may not be a requirement. untested.).
-  #as with 'effect_byMonth', only the first covariate listed in cov_choices will be structured
-  #for by-month-across-time examination.
-
-  if(design=='effect_byMonth_acrossTime'){
-    section_length <- ncol(covs_z) / sections
-
-    if(!(is.integer(section_length))){
-      values_to_add <- ncol(dat_z) - sections*floor(section_length)
-      message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
-                    'section(s) will be one observation longer'))
-      vals <- rep(floor(section_length), sections)
-      for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+    if(design=='just_effect'){
+        out <- cov_and_seas[-(1:12),, drop=F]
     }
 
-    interval_fac <- factor(sort(rep(1:sections, times=vals)))
+    #'effect_and_seasonality_without_interaction', which will account for seasonal regularities
+    #and then estimate average covariate effect size(s) (i.e. not per month, and not across time)
 
-    interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac:interval_fac - 1)
-    out <- rbind(cov_and_seas[-13,], t(interactions))
+    if(design=='effect_and_seasonality_without_interaction'){
+        out <- cov_and_seas
+    }
 
-  }
+    #'effect_byMonth', which will account for seasonal regularities and then estimate the effect
+    #of the FIRST covariate listed in cov_choices (section 1) for specified months
+    #(supplied via "focal months" argument; can be a subset
+    #like c(5,6,7,8) or all months: 1:12). Any other covariates will be included as individual rows and will
+    #serve to soak up additional variation. Average, non-time-or-month-specific effect sizes can be examined for
+    #these. This design will NOT estimate the average effect size for the first covariate listed.
 
-  return(out)
+    if(design %in% c('effect_byMonth','effect_byMonth_noSeas','effect_byMonth_acrossTime')){
+        month_fac <- rep(0, 12)
+        month_fac[focal_months] <- month.abb[focal_months]
+        month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
+    }
+
+    if(design=='effect_byMonth'){
+        interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
+        # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
+        out <- rbind(cov_and_seas[-13,], t(interactions))
+    }
+
+    #if you don't want to include a fixed factor to soak up additional unknown seasonal variation,
+    #specify 'effect_byMonth_noSeas'. This will still include covariate effects and will split
+    #the effect of the first covariate listed across the focal_months.
+
+    if(design=='effect_byMonth_noSeas'){
+        interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
+        # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
+        out <- rbind(cov_and_seas[-(1:13),], t(interactions))
+    }
+
+    #finally, there's 'effect_byMonth_acrossTime', which will capture change in a covariate
+    #per month during specified time intervals (to do this for multiple covariates will
+    #almost certainly be too expensive). the intervals are supplied via the 'sections'
+    #argument. The number of sections you specify will determine how many even (as even as
+    #possible given the length of your series) intervals the dataset will be chopped into.
+    #for each interval, you'll get the effect size of the covariate for each focal month.
+    #WARNING: this setup assumes your time series begins in January (it will also be safe
+    #to ensure that it ends in december, though this may not be a requirement. untested.).
+    #as with 'effect_byMonth', only the first covariate listed in cov_choices will be structured
+    #for by-month-across-time examination.
+
+    if(design=='effect_byMonth_acrossTime'){
+        section_length <- ncol(covs_z) / sections
+
+        if(!(is.integer(section_length))){
+            values_to_add <- ncol(dat_z) - sections*floor(section_length)
+            message(paste('NOTICE: fractional number of months in interval length. first',values_to_add,
+                          'section(s) will be one observation longer'))
+            vals <- rep(floor(section_length), sections)
+            for(i in 1:values_to_add) {vals[i] <- vals[i]+1}
+        }
+
+        interval_fac <- factor(sort(rep(1:sections, times=vals)))
+
+        interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac:interval_fac - 1)
+        out <- rbind(cov_and_seas[-13,], t(interactions))
+
+    }
+
+    return(out)
 }
 
 #regardless of design, I'm keeping the name "cov_and_seas" just so I don't break stuff
@@ -713,8 +723,12 @@ rownames(land) <- 1:nrow(land)
 #add watershed area over 1000m column
 WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
 land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+
 WsSlope <- read.csv('watershed_data/slope/slope.csv')
 land <- merge(land, WsSlope, by='siteCode', all.x=TRUE)
+
+pcascores <- read.csv('watershed_data/pca_scores.csv')
+land <- merge(land,pcascores, by.x='siteCode', by.y='X')
 
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -723,7 +737,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000','WsSlope')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2')
 
 #get the indices of each of these variables in the main land dataframe
 landcols <- rep(NA, length(landvars))
@@ -756,14 +770,14 @@ best_landvars <- function(response, top){
 #this converts the scaled effect sizes back to their original scales, based on the original
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
-#data, our only option is to log transform and report the effect sizes as such see section
+#data, our only option is to log transform and report the effect sizes as such. see section
 #1.3 for more.
 #I tried to make this function account for all the different covariate designs (except ..._acrossTime), but
 #there are tons of different contingencies to take into account, so I may have missed something.
-#if your effect size regressions don't look like what you expected, start here (again, I'm happy
-#to help). If you use design='effect_byMonth', this will
+#if your effect size regressions don't look like what you expected, start troubleshooting here
+#(again, I'm happy to help). If you use design='effect_byMonth', this will
 #assume you have seasonality method='fixed...'. it might also work with fourier. but you'll need
-#seasonality to be included.
+#seasonality to be included. If you used 'effect_byMonth_noSeas', you're fine.
 eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(design == 'effect_byMonth'){
@@ -775,22 +789,32 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
                                                           (nrow(seas)+length(cov_choices)-1+length(focal_months))]))
         z_effect_size <- cbind(z_eff_2, z_eff_1)
     } else {
-        if(design == 'effect_byMonth_acrossTime'){
-            stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
-                                   "if design='effect_byMonth_acrossTime'.")))
+        if(design == 'effect_byMonth_noSeas'){
+            z_eff_1 <- NULL
+            if(length(cov_choices) > 1){
+                z_eff_1 <- as.matrix(dfa$Estimates$D[,1:(length(cov_choices)-1)])
+            }
+            z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,length(cov_choices):
+                                                              (length(cov_choices)-1+length(focal_months))]))
+            z_effect_size <- cbind(z_eff_2, z_eff_1)
         } else {
-            if(nrow(all_cov) > 2){
-                # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
-                z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+            if(design == 'effect_byMonth_acrossTime'){
+                stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
+                                       "if design='effect_byMonth_acrossTime'.")))
             } else {
-                z_effect_size <- dfa$Estimates$D
+                if(nrow(all_cov) > 2){
+                    # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+                    z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+                } else {
+                    z_effect_size <- dfa$Estimates$D
+                }
             }
         }
     }
-    
+
     nstream <- nrow(z_effect_size)
     ncov <- ncol(z_effect_size)
-    
+
     #convert effects back to original scale (units response/units covar)
     #x/sd(response) = 1/sd(covar); x is the effect size scale factor
     rescaled_effect_size <- matrix(NA, nrow=nstream, ncol=ncov)
@@ -802,7 +826,7 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
             rescaled_effect_size[,j] <- z_effect_size[,j] * (sd_response/sd_covar)
         }
     }
-    
+
     return(rescaled_effect_size)
 }
 # rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
@@ -823,10 +847,10 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
     #if using 'indiv', must select a var name
     #col_scale determines which variable to color the points by
     #green is high, black is low
-    
+
     pal <- colorRampPalette(c('black', 'green'))
     ncovs = ncol(rescaled_effect_size)
-    
+
     if(mode == 'exploration'){
         land_ind <- eff_best[[1]]
         top <- nrow(land_ind)
@@ -1071,13 +1095,13 @@ covariates <- list(pc=covs_z2[2,, drop=FALSE],#, sn=rbind(covs_z2[3,]),
 #the 3 options below will not vary among the models in the loop. only change these between runs.
 
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
-#'effect_byMonth', and 'effect_byMonth_acrossTime'.
+#'effect_byMonth', 'effect_byMonth_noSeas', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
 design = 'effect_byMonth'
 #sections = number of intervals to divide the time series into, if examining change over time
 #(see "designer" function in section 3.1 for details).
 #value must be an integer. will be ignored unless design='effect_byMonth_acrossTime'.
-sections <- 5 
+sections <- 5
 #focal_months = the months to focus on for by-month effect size (1 is jan...).
 #if looking at effect_byMonth_acrossTime, including all months will be too expensive
 #(see "designer" function in section 3.1 for details).
@@ -1085,7 +1109,7 @@ sections <- 5
 #design='effect_byMonth' or 'effect_byMonth_acrossTime'. If the former, you can probably
 #afford to include all months. Otherwise it might get too costly. You can track this by
 #examining the parameter to data ratio in the output table.
-focal_months <- 1:12 
+focal_months <- 1:12
 
 # troubleshooting:
 # sss = 1 #uncomment to fix seasonality (must also comment **s below)

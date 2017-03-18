@@ -228,6 +228,15 @@ month or months immediately following the wave, while the RDs would load right o
 ZOMG use cross correlation of states and precip/temp
 talk to vincent about how he interpreted cross correlation. does a significant ccf value at a particular lag imply correlation at that lag (almost certainly yes)
 
+he also mentioned that air temperature shouldn't affect water temperature when water
+is frozen. not sure how/whether to account for this
+
+MIKE MEETING------------------------------------------
+include aspect as a watershed feature
+
+remove sites with dams? acknowledge dams some other way? find out where the dams are.
+    I think I should just add an outline to the points for the sites downstream of dams
+
 READ: beechie and biehl 2008 (biological conservation)
 kathy so and so + julian olden (cited in my paper)
 olden paper in print on desk

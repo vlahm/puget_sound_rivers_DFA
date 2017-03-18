@@ -88,7 +88,7 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 2
+ntrends = 1
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
@@ -102,7 +102,7 @@ na_thresh = 0.55 #exclude sites with >= this proportion of NA values.
 #run function transformables() to see whether your response needs to be transformed.
 transform = 'none'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
-#'effect_byMonth', and 'effect_byMonth_acrossTime'.
+#'effect_byMonth', 'effect_byMonth_noSeas', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
 design = 'effect_byMonth'
 #sections = number of intervals to divide the time series into, if examining change over time
@@ -486,7 +486,7 @@ designer <- function(design, sections, focal_months){
     #serve to soak up additional variation. Average, non-time-or-month-specific effect sizes can be examined for
     #these. This design will NOT estimate the average effect size for the first covariate listed.
 
-    if(design=='effect_byMonth' | design=='effect_byMonth_acrossTime'){
+    if(design %in% c('effect_byMonth','effect_byMonth_noSeas','effect_byMonth_acrossTime')){
         month_fac <- rep(0, 12)
         month_fac[focal_months] <- month.abb[focal_months]
         month_fac <- factor(rep(month_fac, length.out=ncol(covs_z)))
@@ -496,6 +496,16 @@ designer <- function(design, sections, focal_months){
         interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
         # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
         out <- rbind(cov_and_seas[-13,], t(interactions))
+    }
+
+    #if you don't want to include a fixed factor to soak up additional unknown seasonal variation,
+    #specify 'effect_byMonth_noSeas'. This will still include covariate effects and will split
+    #the effect of the first covariate listed across the focal_months.
+
+    if(design=='effect_byMonth_noSeas'){
+        interactions <- model.matrix( ~ t(covs_z)[,1]:month_fac - 1)
+        # interactions <- interactions[,c(5,4,8,1,9,7,6,2,12,11,10,3)] #sort by month instead of alphabetically
+        out <- rbind(cov_and_seas[-(1:13),], t(interactions))
     }
 
     #finally, there's 'effect_byMonth_acrossTime', which will capture change in a covariate
@@ -599,7 +609,7 @@ if(obs_err_var_struc %in% c('DE', 'DUE', 'UNC')){
 
 #run model with TMB
 dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
-              EstCovar=TRUE, Covars=cov_and_seas) 
+              EstCovar=TRUE, Covars=cov_and_seas)
 
 # saveRDS(dfa, '../saved_structures/best_sussol_UNC2mFIXEDatpc19782015.rds')
 
@@ -618,7 +628,7 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # save.image('../manuscript/figures/discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-# 
+#
 # save.image('../manuscript/figures/temp_due_4m_at_byMo_allMos.rda')
 # save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_may-aug.rda')
 # save.image('../manuscript/figures/temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
@@ -627,14 +637,16 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda')
 # save.image('../manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda')
 
-# save.image('../manuscript/figures/diagnostic_plots/2trend.rda')
+# save.image('../single_trend_exploration/1trend.rda')
+# save.image('../single_trend_exploration/1trendNoSeas.rda')
+# save.image('../single_trend_exploration/2trendNoSeas.rda')
 
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_11_newApproach_byMo_allMos/model_objects_discharge/DISCHARGE_DUE_4m_fixed_factors_atpc_1978-2015.rds')
-# 
+#
 # dfa <- readRDS('../round_12_byMoAcrossTime/may-aug/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/nov-feb/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
 # dfa <- readRDS('../round_12_byMoAcrossTime/marAprSepOct/model_objects_temp/TEMP_DUE_4m_fixed_factors_at_1978-2015.rds')
@@ -786,7 +798,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL){
 }
 # pdf('../manuscript/figures/diagnostic_plots/01_trends.pdf', width=7, height=5)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-process_plotter_TMB(dfa, mm, chunk=8)
+# process_plotter_TMB(dfa, mm, chunk=NULL)
 
 # dev.off()
 
@@ -821,7 +833,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     }
 }
 # pdf('../manuscript/figures/diagnostic_plots/02_loadings.pdf', width=7, height=4)
-loading_plotter_TMB(dfa, mm)
+# loading_plotter_TMB(dfa, mm)
 # dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
@@ -880,12 +892,12 @@ ACF_plotter <- function(dfa_obj){
 # dev.off()
 
 #check out cross-correlations too, to see if there are lagged relationships between trends, effect sizes, and covariates.
-defpar = par(mfrow=c(2,1))
-ccf(as.vector(dfa$Estimates$u[1,]), cov_and_seas[13,])
-ccf(as.vector(dfa$Estimates$u[2,]), cov_and_seas[13,])
-ccf(as.vector(dfa$Estimates$u[1,]), colSums(cov_and_seas[15:26,]))
-ccf(as.vector(dfa$Estimates$u[2,]), colSums(cov_and_seas[15:26,]))
-par(defpar)
+# defpar = par(mfrow=c(2,1))
+# ccf(cov_and_seas[1,], as.vector(dfa$Estimates$u[1,])) #13
+# ccf(colSums(cov_and_seas[3:14,]), as.vector(dfa$Estimates$u[1,])) #15:26
+# ccf(cov_and_seas[1,], as.vector(dfa$Estimates$u[2,])) #13
+# ccf(colSums(cov_and_seas[3:14,]), as.vector(dfa$Estimates$u[2,])) #15:26
+# par(defpar)
 
 get_R2 <- function(dfa_obj){
     R2 <- rep(NA, nrow(dat_z))
@@ -906,11 +918,15 @@ land <- land[land$siteCode %in% names(obs_ts),] #remove sites not in analysis
 land <- land[match(names(obs_ts), land$siteCode),] #sort landscape data by site order in model
 rownames(land) <- 1:nrow(land)
 
-#add watershed area over 1000m and mean watershed slope
+#add some synthetic variables to the landscape dataset
 WsAreaOver1000 <- read.csv('watershed_data/WsAreaOver1000.csv')
 land <- merge(land, WsAreaOver1000, by='siteCode', all.x=TRUE)
+
 WsSlope <- read.csv('watershed_data/slope/slope.csv')
 land <- merge(land, WsSlope, by='siteCode', all.x=TRUE)
+
+pcascores <- read.csv('watershed_data/pca_scores.csv')
+land <- merge(land,pcascores, by.x='siteCode', by.y='X')
 
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -919,7 +935,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000','WsSlope')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2')
 # landvars <- c('ElevWs','PctImp2006WsRp100',
 #               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
 #               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
@@ -958,14 +974,14 @@ best_landvars <- function(response, top){
 #this converts the scaled effect sizes back to their original scales, based on the original
 #SDs of the response and covariate(s). it cannot presently account for the effects of
 #transformation (and i doubt it can in general). if the model can't converge on untransformed
-#data, our only option is to log transform and report the effect sizes as such see section
+#data, our only option is to log transform and report the effect sizes as such. see section
 #1.3 for more.
 #I tried to make this function account for all the different covariate designs (except ..._acrossTime), but
 #there are tons of different contingencies to take into account, so I may have missed something.
-#if your effect size regressions don't look like what you expected, start here (again, I'm happy
-#to help). If you use design='effect_byMonth', this will
+#if your effect size regressions don't look like what you expected, start troubleshooting here
+#(again, I'm happy to help). If you use design='effect_byMonth', this will
 #assume you have seasonality method='fixed...'. it might also work with fourier. but you'll need
-#seasonality to be included.
+#seasonality to be included. If you used 'effect_byMonth_noSeas', you're fine.
 eff_rescaler <- function(all_cov, seas, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(design == 'effect_byMonth'){
@@ -977,15 +993,25 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
                               (nrow(seas)+length(cov_choices)-1+length(focal_months))]))
         z_effect_size <- cbind(z_eff_2, z_eff_1)
     } else {
-        if(design == 'effect_byMonth_acrossTime'){
-            stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
-                            "if design='effect_byMonth_acrossTime'.")))
+        if(design == 'effect_byMonth_noSeas'){
+            z_eff_1 <- NULL
+            if(length(cov_choices) > 1){
+                z_eff_1 <- as.matrix(dfa$Estimates$D[,1:(length(cov_choices)-1)])
+            }
+            z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,length(cov_choices):
+                                                              (length(cov_choices)-1+length(focal_months))]))
+            z_effect_size <- cbind(z_eff_2, z_eff_1)
         } else {
-            if(nrow(all_cov) > 2){
-                # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
-                z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+            if(design == 'effect_byMonth_acrossTime'){
+                stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
+                                "if design='effect_byMonth_acrossTime'.")))
             } else {
-                z_effect_size <- dfa$Estimates$D
+                if(nrow(all_cov) > 2){
+                    # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
+                    z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+nrow(covs_z))])
+                } else {
+                    z_effect_size <- dfa$Estimates$D
+                }
             }
         }
     }
