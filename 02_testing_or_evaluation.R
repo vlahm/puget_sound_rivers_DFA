@@ -73,7 +73,7 @@ y_choice = 'TEMP'
 #still be determined.
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
 #in a model yet, so there could be bugs)
-cov_choices = c('meantemp', 'precip', 'snowmelt')
+cov_choices = c('meantemp', 'precip')
 #region choices: '3' (lowland), '4' (upland), '3_4' (average of 3 and 4, or each separately)
 #regions 3 and 4 were discovered to be very similar early on, so most of this script will only work if
 #you choose '3_4' here and 'average_regions=TRUE'.
@@ -104,7 +104,7 @@ transform = 'none'
 #choose the covariate matrix design here. options are 'just_effect', 'effect_and_seasonality_without_interaction'
 #'effect_byMonth', 'effect_byMonth_noSeas', and 'effect_byMonth_acrossTime'.
 #(see "designer" function in section 3.1 for details)
-design = 'effect_byMonth'
+design = 'effect_byMonth_noSeas'
 #sections = number of intervals to divide the time series into, if examining change over time
 #(see "designer" function in section 3.1 for details)
 sections <- 5 #an integer. will be ignored if not applicable
@@ -639,7 +639,9 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 
 # save.image('../single_trend_exploration/1trend.rda')
 # save.image('../single_trend_exploration/1trendNoSeas.rda')
+# save.image('../single_trend_exploration/1trendNoSeasNoSnow.rda')
 # save.image('../single_trend_exploration/2trendNoSeas.rda')
+# save.image('../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 # 4.2 - or load desired model object ####
 
