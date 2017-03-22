@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-load('temp_due_5m_atpcsn_byMo_allMos.rda')
+load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -1226,6 +1226,11 @@ dev.off()
 
 #load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
 #will be screwed up.
+dams = read.csv('../../data/watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)[,c('siteCode','dam_upstream')]
+dams$siteCode[dams$siteCode=='AA'] <- 'ZA'
+land = merge(land, dams, by='siteCode')
+
+
 library(plotrix)
 #these are generated in the effect size v month plots
 disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_5m_atpcsn.rds')
@@ -1253,6 +1258,8 @@ elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
 elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 cols = rep('black', nrow(land))
 cols[elev_med] = 'gray75'; cols[elev_hi] = 'white'
+dam_col = rep('black',nrow(land))
+dam_col[land$dam_upstream != 0] <- 'darkgoldenrod2'
 for(i in c(0,2,4,6,8,11)){
     if(i == 0) {
     plot(1,1,axes=FALSE,,xlim=c(0,1),ylim=c(0,1),ann=FALSE,type='n')
@@ -1287,7 +1294,7 @@ for(i in c(0,2,4,6,8,11)){
         #                  # pch=4, cex=4, lwd=3, col='steelblue3')
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
-               pch=21, bg=cols, col='black',
+               pch=21, bg=cols, col=dam_col,
                # pch=land$siteCode, col=cols)
                cex=1.3)
                # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_

@@ -928,7 +928,10 @@ WsSlope <- read.csv('watershed_data/slope/slope.csv')
 land <- merge(land, WsSlope, by='siteCode', all.x=TRUE)
 
 pcascores <- read.csv('watershed_data/pca_scores.csv')
-land <- merge(land,pcascores, by.x='siteCode', by.y='X')
+land <- merge(land, pcascores, by.x='siteCode', by.y='X')
+
+PCoAscores <- read.csv('watershed_data/pcoa_scores.csv')
+land <- merge(land, PCoAscores, by.x='siteCode', by.y='X')
 
 #choose landscape variables of interest
 landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
@@ -937,7 +940,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2','PCo1','PCo2')
 # landvars <- c('ElevWs','PctImp2006WsRp100',
 #               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
 #               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
