@@ -940,7 +940,7 @@ landvars <- c('BFIWs','ElevWs','PctImp2006WsRp100',
               'PctUrbMd2011WsRp100','PctUrbHi2011WsRp100',
               'RdDensWsRp100','RunoffWs','OmWs',
               'RckDepWs','WtDepWs','PermWs','PopDen2010Ws',
-              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2','PCo1','PCo2')
+              'WsAreaSqKm','WsAreaOver1000','WsSlope','PC1','PC2','PCo1','PCo2','aspect')
 # landvars <- c('ElevWs','PctImp2006WsRp100',
 #               'PctGlacLakeFineWs','PctAlluvCoastWs','PctIce2011Ws',
 #               'PctCrop2011Ws', 'PctUrbOp2011WsRp100','PctUrbLo2011WsRp100',
