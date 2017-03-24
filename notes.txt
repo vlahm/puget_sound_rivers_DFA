@@ -242,3 +242,6 @@ kathy so and so + julian olden (cited in my paper)
 olden paper in print on desk
 two emails from mike brett on 3/17
 
+DECISIONS -----------------------------------------
+going to use the full 5-trend etc models for the Big5 plot (this should reflect the best information at our disposal)
+going to use the more understandable temp model for the other plot (this should reflect our best ability to discern whats going on)

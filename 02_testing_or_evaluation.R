@@ -64,7 +64,7 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'TEMP'
+y_choice = 'DISCHARGE'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt
 #if you're looking at effects by month, or by month over time (see 'design' option below),
@@ -88,7 +88,7 @@ method = 'fixed_individual'
 startyr = 1978
 endyr = 2015
 #model params (specific values only relevant for testing, not for parameter optimization loop)
-ntrends = 1
+ntrends = 2
 #error matrix can either hold the MARSS specifications or the TMB ones ('DE', 'DUE', 'EVCV', 'UNC')
 obs_err_var_struc = 'DUE'
 #UPDATE: Mark Schueurell no longer scales his response data. scaling forces the variance of
@@ -1041,7 +1041,7 @@ eff_rescaler <- function(all_cov, seas, scaled=scale){
 rescaled_effect_size <- eff_rescaler(cov_and_seas, cc)
 
 #grab top landscape vars that correlate with effect size, plot and get stats
-# eff_best <- best_landvars(rescaled_effect_size, 6)
+eff_best <- best_landvars(rescaled_effect_size, 6)
 
 #look inside function for details (be sure to change the y axis label to 'D log(resp)/D cov'
 #if you log transformed the response. (note that this may have been done by default in section 1.3
@@ -1102,7 +1102,7 @@ eff_regress_plotter <- function(mode, var=NA, col_scale='ElevWs'){
         }
     }
 }
-eff_regress_plotter('indiv', 'PctIce2011Ws', 'ElevWs')
+eff_regress_plotter('indiv', 'ElevWs', 'ElevWs')
 # eff_regress_plotter('exploration', , 'ElevWs')
 
 # 5.4 - process loading regressions (look inside functions for details) ####
