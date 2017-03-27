@@ -16,38 +16,19 @@
 \begin{document}
 \pagenumbering{gobble}
 % todo:
-% include snowmelt in model run. see if it's worth including with precip and temp as a climate predictor
-% introduce terminology:
-% responses = water temp, Q
-% climatic predictors = air temp, precip, drought
-% landscape predictors = many
 %include hydrograph figures from kathy liederman and julian olden to show
     %rain dom, rain and snow, snow dom
-%include the over-time plots in the supplemental information
-%in regression figure, line up left side of legend box with plot above
-    %make gray horiz line go only to topright corner of box
-    %make axis lines and plot borders cleaner (right now axis segments are darker)
-    %instead of elevation on x, use ice and color by elev (orange to blue) X no story
-    %for loadings, color by ice and make it darkgreen , midgreen, white X not without the above
-    % add % ice as one of the hidden trends
-%discharge regression combo plot is scrapped. no relationship with snowmelt?
-%discharge only really relevant in the Q v temp plot.
-%increase unit text size in fig 2
-%change area over 1000m to % area over 1000m and replot
 %change "dominated" to "dominant"
 %change "fall" to "autumn"
-%dont size points in figure 2. include size in legend in fig 3
-%adjust letter position in corners of fig 2 (anchoring)
 %see if its possible to directly compare Z and D
 %include the average effect size of tair on twater in 3a
 % can i say how much elevation would inflence temperature independent of snowmelt?
-%examine change over time in just the elwha
-%%%%why am i removing additional seasonal variation (fixed factor)???
-%probably get snowmelt out of the picture? it may be misleading and a source of criticism
-%explain why some SD rivers might have a larger effect than RD (related to slope, groundwater?)
-%get snowmelt out of there. it's a watershed trait. not a regional one
+%examine change over time in just the elwha (mike will ask about this)
+%explain why some SD rivers might have a larger effect than RD (related to slope, groundwater, dams?)
 %add discharge locations to the map?
 %probably should include a table of data sources and station ids
+% make sure figure captions are all formatted appropriately
+% look at differences in elwha pre and post dam
 
 \maketitle
 \vspace{10pc}
@@ -150,12 +131,12 @@ $$
 \end{blockarray}
 $$
 
-is the covariate matrix structure necessary to account for exogenous seasonal variation (rows 1-12), and overall effect of precipitation (row 13), while also yielding the by-month effect of air temperature (rows 13-24) on the response (\textbf{y}).
+\noindent
+is the covariate matrix structure necessary to account for seasonal variation of unknown origin (rows 1-12), and overall effect of precipitation (row 13), while also yielding the by-month effect of air temperature (rows 13-24) on the response (\textbf{y}; Eq. 2).
 
-Additional, non seasonal variation due to exogenous effects loads onto the shared trends, and a portion of remaining variation is absorbed by error matrix \textbf{v}. We fit models using four unique error structures (\textbf{R}), to allow for different suites of unknown drivers affecting rivers. We included shared variance and zero covariance, individual variance and zero covariance, shared variance and shared covariance, and unconstrained error. Details on these structures and their implications can be found in \citep{holmes2012marss}. The best models for water temperature and discharge were determined with AIC.
+Additional, non seasonal variation due to unknown factors manifests in the shared trends, and a portion of any residual variation is absorbed by error matrix \textbf{v}. We fit models using four unique error structures (\textbf{R}), to allow for multiple suites of unknown drivers affecting rivers. We included shared variance with zero covariance, individual variance with zero covariance, shared variance with shared covariance, and individual variance with individual covariance. Details on these structures and their implications can be found in \citep{holmes2012marss}. The best models for water temperature and discharge were determined via AIC. However, negligible likelihood improvements can be inflated when multiplied by thousands of data points, rendering untrustworthy common rules of thumb for accepting additional parameters under AIC \citep{burnham2003model}. Thus, we had reason to doubt that the "most parsimonious" model according to AIC alone was any better than a much simpler alternative. To manage this, we required that each additional trend, covariate, or seasonal structure improve the median coefficient of determination (R\textsuperscript{2}) by at least 1\% in order to justify accepting the added complexity.
 
 \subsection*{Landscape predictors and post-hoc regression}
-
 For post-hoc analyses, monitoring sites were separated into three classes based on relative areal coverage of perennial ice and/snow (hereinafter ``\% glaciation'') and mean elevation across their watersheds. The three classes are loosely based on the classification scheme and language of the Climate Impacts Group at the University of Washington \citep{mauger2015CIG}, and are here delineated according to Table 1.
 
 % \begin{table}
@@ -175,11 +156,15 @@ For post-hoc analyses, monitoring sites were separated into three classes based 
 \end{center}
 % \end{table}
 
-After model selection, climatic predictor effect sizes for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) data library \citep{hill2016stream} and the National Hydrography Dataset (NHDPlusV2; \citealt{mckay2012nhdplus}). Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), bedrock depth (cm), Base Flow Index (BFI; \%), runoff (mm mo\textsuperscript{-1}), percent perennial ice and snow coverage (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). Monitoring site elevation (m) and presence of upstream dams (as full/partial/no damming of upstream mainstem and major tributaries) were also included. Finally, we calculated \% area over 1000 m (km\textsuperscript{2}), mean slope (percent rise), and mean aspect (degree) by delineating watersheds from a digital elevation model in ArcMap version 10.4 \citep{arcviewenvironmental}.
+After model selection, climatic predictor effect sizes (\textbf{D}; Eq. 2) for each river were back-transformed to their original scales and regressed against landscape predictors in order to identify possible watershed-scale controls on coupling. To achieve this, we amassed an additional dataset of landscape features. These were collected individually for each of the watersheds corresponding to our 24 river sites, using the EPA's StreamCat (stream-catchment) data library \citep{hill2016stream} and the National Hydrography Dataset (NHDPlusV2; \citealt{mckay2012nhdplus}). Each site was mapped to an individual river reach, defined as a segment bounded on each end by a stream or river source, confluence, or mouth. The region contributing flow to this reach (its watershed) was then fetched, along with selected areal data, from the NHDPlusV2 database. Landscape attributes used as predictors were aggregated by watershed mean where applicable, and include elevation (m), total area (km\textsuperscript{2}), base flow index, soil permeability (cm hr\textsuperscript{-1}), water table depth (cm), bedrock depth (cm), Base Flow Index (BFI; \%), runoff (mm mo\textsuperscript{-1}), percent perennial ice and snow coverage (National Land Cover Database [NLDC] 2006 and 2011 average), riparian population density (people km\textsuperscript{-2} within 100m of streams; 2010 census), riparian road density (km km\textsuperscript{-2}; 2010 census), and percent riparian urban land (NLCD 2011). Monitoring site elevation (m) and presence of upstream dams (as full/partial/no damming of upstream mainstem and major tributaries) were also included. Finally, we calculated area above 1000 m (as \% watershed area), mean slope (\% rise), and mean aspect (degree) by delineating and summarizing watersheds from a digital elevation model in ArcMap v. 10.4 \citep{arcviewenvironmental}.
 
-\section*{Results}
+An additional set of post-hoc regressions was performed using factor loadings on shared trends (\textbf{Z}; Eq.2) as dependent variables, with landscape predictors again as independent variables. Here, the goal was to %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Mean monthly temperature trends for the three river classes, aggregated across all 38 years of data, deviated by a minimum of 1.0\degree C in December, and a maximum of 3.9\degree C in July (Fig. 2). SD rivers remained approximately two degrees colder than their RS counterparts through mid-late summer, and 3-4 degrees colder than RD throughout spring and summer. RD rivers were consistently warmest throughout the year. In January, RS reached a minimum of 4.4\degree C, and did not significantly differ from SD (Student's t: $p<0.01, F=11.9$). RD, meanwhile, only attained a minimum of 5.6\degree C. RS reached a peak summer temperature of 16.9\degree C in July, while RS and SD followed in August with peak temperatures of 15.5 and 13.5\degree C, respectively.
+To facilitate this, we used a reduced version of the full model. 
+
+\section*{Results} %%
+
+Mean monthly temperature trends for the three river classes, aggregated across all 38 years of data, deviated by a minimum of 1.0\degree C in December, and a maximum of 3.9\degree C in July (Fig. 2). SD rivers remained approximately two degrees colder than their RS counterparts through mid-late summer, and 3-4 degrees colder than RD throughout spring and summer. RD rivers were consistently warmest throughout the year. In January, RS reached a minimum of 4.4\degree C, and did not significantly differ from SD (Student's t: $p<0.01, F=11.9$). RD only attained a minimum of 5.6\degree C. RS reached a peak summer temperature of 16.9\degree C in July, while RS and SD followed in August with peak temperatures of 15.5 and 13.5\degree C, respectively.
 
 Meanwhile, the amplitude of T\textsubscript{air} oscillation exceeded that of any river class, dipping below T\textsubscript{water} in autumn to a minimum of 3.2\degree C in December, and rising above RS and SD in March to an August maximum of 17.4\degree C. T\textsubscript{air} did not overtake RD T\textsubscript{water} until August, by which time the latter had begun to decline.
 
@@ -195,15 +180,20 @@ Meanwhile, the amplitude of T\textsubscript{air} oscillation exceeded that of an
 \textbf{Figure 2} Monthly mean T\textsubscript{water} by river class, and T\textsubscript{air} and Q across classes, from 1978 to 2015. All depicted series represent discrete data. \setlength{\parskip}{6pt}\\[\baselineskip]
 % see appendix for standard deviations?
 
-The combined hydrograph of all rivers reveals two primary peaks, one beginning in late spring and the other extending from late fall to early winter, with a prominent trough in late summer. Spring peak discharge coincides noticeably with a separation in water temperature between SD and RS, while the summer trough coincides with separation of RD and T\textsubscript{air}. November marks both the autumn peak in discharge and the point at which T\textsubscript{air} falls below T\textsubscript{water}.
+The combined hydrograph of all rivers revealed two primary peaks, one beginning in late spring and the other extending from late fall to early winter, with a prominent trough in late summer. Spring peak discharge coincided noticeably with a separation in water temperature between SD and RS, while the summer trough coincided with separation of RD and T\textsubscript{air}. On average, November marked both the autumn peak in discharge and the point at which T\textsubscript{air} fell below T\textsubscript{water}.
 
-\sloppy
-DFA results, aggregated across months and years for each site, revealed a trend toward reduced $T_{air}\rightarrow T_{water}$ coupling with greater watershed elevation ($p=0.04, R^2=0.18$; Fig. 3a). On average, a 1\degree C change in T\textsubscript{air} corresponded to a $0.53\pm 0.03$\degree C change in T\textsubscript{water} at RD, a $0.51\pm 0.08$\degree C change at RS, and a $0.45\pm 0.17$\degree C change at SD sites. A similar trend was observed with respect to $Precip\rightarrow T_{water}$ coupling ($p=0.03, R^2=0.21$; Fig. 3b), where a monthly change in total precipitation of 1 cm corresponded to a $0.02\pm 0.009$\degree C change in T\textsubscript{water} for RD, $-0.003\pm 0.009$\degree C for RS, and $0.004\pm 0.02$\degree C for SD. There was no evidence of coupling between snowmelt and T\textsubscript{water} (Fig. 3c), but this predictor was included in the most parsimonious DFA model selected via AIC and R\textsuperscript{2} (See Appendix A.). It is of note that the strongest examples of $T_{air}\rightarrow T_{water}$ and $Precip\rightarrow T_{water}$ coupling were observed in the Duckabush River, while the weakest examples are from the Elwha River. Both rivers drain glaciers of the Olympic Mountain Range, and both are SD, though the Elwha's watershed is larger.
+There was also an apparent divergence in slope between RD and all snow-influenced rivers, beginning in early spring and culminating in June. Between June and July, RS and SD saw a large jump in temperature, which coincided with the decline in snowmelt.
 
-\begin{tikzpicture}
-    \draw (0, 0) node[inner sep=0] {\includegraphics[width=\textwidth]{figures/16_temp_all_reg.pdf}};
-    \draw (-4.1, -2.1) node[text width=9.5em] {\normalsize \textbf{Figure 3} Relationships between watershed elevation and climatic effects on T\textsubscript{water} \textbf{(a-c)}, and other watershed predictors and factor loadings on shared trends \textbf{(d-g)}. Points are sized by watershed area. Regression lines indicate slopes significant at $\alpha=0.05$.};
-\end{tikzpicture}
+DFA results, aggregated across months and years for each site, revealed a trend toward reduced $T_{air}\rightarrow T_{water}$ coupling with increasing watershed elevation ($p=0.04, R^2=0.18$; Fig. 3a). On average, a 1\degree C change in T\textsubscript{air} corresponded to a $0.53\pm 0.03$\degree C change in T\textsubscript{water} at RD, a $0.51\pm 0.08$\degree C change at RS, and a $0.45\pm 0.17$\degree C change at SD sites. A similar trend was observed with respect to $Precip\rightarrow T_{water}$ coupling ($p=0.03, R^2=0.21$; Fig. 3b), where a monthly change in total precipitation of 1 cm corresponded to a $0.02\pm 0.009$\degree C change in T\textsubscript{water} for RD, $-0.003\pm 0.009$\degree C for RS, and $0.004\pm 0.02$\degree C for SD. There was no evidence of coupling between snowmelt and T\textsubscript{water} (Fig. 3c), but this predictor was included in the most parsimonious DFA model selected via AIC and R\textsuperscript{2} (See Appendix A.). It is of note that the strongest examples of $T_{air}\rightarrow T_{water}$ and $Precip\rightarrow T_{water}$ coupling were observed in the Duckabush River, while the weakest examples are from the Elwha River. Both rivers drain glaciers of the Olympic Mountain Range, and both are SD, though the Elwha's watershed is larger.
+
+% \begin{tikzpicture}
+%     \draw (0, 0) node[inner sep=0] {\includegraphics[width=\textwidth]{figures/16_temp_all_reg.pdf}};
+%     \draw (-4.1, -2.1) node[text width=9.5em] {\normalsize \textbf{Figure 3} Relationships between watershed elevation and climatic effects on T\textsubscript{water} \textbf{(a-c)}, and other watershed predictors and factor loadings on shared trends \textbf{(d-g)}. Points are sized by watershed area. Regression lines indicate slopes significant at $\alpha=0.05$.};
+% \end{tikzpicture}
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/19_temp_simp_reg.pdf}}
+\textbf{Figure 4} Relationships between watershed elevation and climatic effects on T\textsubscript{water} \textbf{(a-c)}, and between watershed features and factor loadings on shared trends \textbf{(d-e)}. Regression lines indicate slopes significant at $\alpha=0.1$.
+\end{center}
 
 In addition to the three climate predictors above, the best T\textsubscript{water} model also included five shared trends. Of these, four correlated significantly with at least one known watershed predictor. Figure 3 depicts the strongest correlated variables with each trend (insets d-e). These are, in arbitrary order of relevance, mean water table depth ($p<0.001, R^2=0.60$; Fig. 3d), \% glaciation ($p<0.01, R^2=0.30$; Fig. 3e), BFI ($p=0.01, R^2=0.25$; Fig. 3f), and mean slope ($p<0.01, R^2=0.29$; Fig. 3g). The fifth shared trend was not correlated with any variables in the watershed predictor dataset.
 

@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
@@ -310,9 +310,14 @@ par(defpar)
 summary(mod)
 
 # 1.3 - TEMP eff size and loadings with PCs ####
+
+#load the full atpcsn model?
+
 land = readRDS('../../saved_structures/2trendNoSeasNoSnow_land.rds')
-dam_col = rep('black',nrow(land))
-dam_col[land$dam_upstream != 0] <- 'chocolate2'
+# dam_col = rep('black',nrow(land))
+# dam_col[land$dam_upstream != 0] <- 'chocolate2'
+dam_pch = rep(FALSE,nrow(land))
+dam_pch[land$dam_upstream != 0] <- TRUE
 
 dfa = readRDS('../../saved_structures/full_dfaOut.rds')
 land = readRDS('../../saved_structures/full_land.rds')
@@ -372,11 +377,12 @@ for(covr in 1:3){
     }
     print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.8, font=2, col='steelblue')
     points(landvar, res,
-           bg=cols, col=dam_col, cex=2,
+           bg=cols, col='black', cex=2,
            # bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
            pch=21,
            # pch=land$siteCode,
            lwd=1)
+    points(landvar[dam_pch], res[dam_pch], col='chocolate2', cex=2, lwd=1, pch=124)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
     #              rect.col=colorRampPalette(c('brown', 'white'))(10),
     #              align='r', gradient='y')
@@ -419,7 +425,7 @@ lines(x=c(-19.9,13.8), y=c(-.342,-.342), xpd=NA, lwd=2, col='gray70')
 # dev.off()
 plot(1,1,type='n',ann=FALSE,axes=FALSE)
 legend(x=.95, y=1.2, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated','Dam-influenced'),
-       xpd=NA, pt.bg=c('black','gray75','white','white'), pch=21, xjust=0.5,
+       xpd=NA, pt.bg=c('black','gray75','white','white'), pch=c(21,21,21,124), xjust=0.5,
        col=c('black','black','black','chocolate2'), cex=1.3, horiz=FALSE, bty='n')#, box.col='gray70', box.lwd=2)
 
 # pal <- colorRampPalette(c('sienna2', 'dodgerblue4'))
@@ -468,11 +474,13 @@ for(trnd in c(1,2)){
     }
     abline(mod, col='springgreen4', lty=2, lwd=3)
     points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
-           bg=cols, col=dam_col, cex=2,
+           bg=cols, col='black', cex=2,
            # bg=cols, col='black', cex=rescale(log(land2$WsAreaSqKm),c(1.2,3.2)),
            pch=21,
            # pch=land$siteCode,
            lwd=1)
+    points(landvar[[trnd]][dam_pch], dfa$Estimates$Z[,trnd][dam_pch], col='chocolate2', 
+           cex=2, lwd=1, pch=124)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
     #              rect.col=colorRampPalette(c('brown', 'white'))(10),
     #              align='r', gradient='y')
@@ -1438,8 +1446,10 @@ elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
 elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 cols = rep('black', nrow(land))
 cols[elev_med] = 'gray75'; cols[elev_hi] = 'white'
-dam_col = rep('black',nrow(land))
-dam_col[land$dam_upstream != 0] <- 'chocolate2'
+# dam_col = rep('black',nrow(land))
+# dam_col[land$dam_upstream != 0] <- 'chocolate2'
+dam_pch = rep(FALSE,nrow(land))
+dam_pch[land$dam_upstream != 0] <- TRUE
 for(i in c(0,2,4,6,8,11)){
     if(i == 0) {
     plot(1,1,axes=FALSE,,xlim=c(0,1),ylim=c(0,1),ann=FALSE,type='n')
@@ -1474,10 +1484,12 @@ for(i in c(0,2,4,6,8,11)){
         #                  # pch=4, cex=4, lwd=3, col='steelblue3')
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
-               pch=21, bg=cols, col=dam_col,
+               pch=21, bg=cols, col='black',
                # pch=land$siteCode, col=cols)
                cex=1.3)
                # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_
+        points(disch_moInts[,i][dam_pch], temp_moInts[,i][-c(6,17,18,20,22)][dam_pch],
+               pch='|', col='chocolate2', cex=1.3, lwd=1)
         print.letter(paste0(month.abb[i], sig), c(.9,.9), cex=1.2, font=2)
         if(i %in% c(2,4,8)){
             # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
@@ -1521,7 +1533,7 @@ mtext(bquote(paste(bold(Delta)*bold(T[water])~plain('(')*plain(degree)*plain('C)
 # legend(x=-.28, y=3.7, legend=c('Snow-fed'), xpd=NA, pt.bg=c('white'), pch=21,
 #        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.1,.4))
 legend(x=-.7, y=.67, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated','Dam-influenced'),
-       xpd=NA, pt.bg=c('black','gray75','white','white'), pch=21,
+       xpd=NA, pt.bg=c('black','gray75','white','white'), pch=c(21,21,21,124),
        col=c('black','black','black','chocolate2'), cex=1.3, horiz=FALSE, bty='n')
 legend(x=-.58, y=.595, legend=c(expression(paste(plain('Q, T'[water]))),
                              expression(paste(frac(1,Q), ' ,  ', frac(1,T[water])))),
