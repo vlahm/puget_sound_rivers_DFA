@@ -311,7 +311,7 @@ summary(mod)
 
 # 1.3 - TEMP eff size and loadings with PCs ####
 
-#load the full atpcsn model?
+#load the full atpcsn model
 
 land = readRDS('../../saved_structures/2trendNoSeasNoSnow_land.rds')
 # dam_col = rep('black',nrow(land))
@@ -324,6 +324,7 @@ land = readRDS('../../saved_structures/full_land.rds')
 
 # system('taskkill /f /im AcroRd32.exe')
 pdf('19_temp_simp_reg.pdf', width=7.5, height=5)
+# pdf('20_temp_simp_reg_NAMES.pdf', width=7.5, height=5)
 # layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(mfrow=c(2,3), oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 landvar=land$ElevWs
@@ -454,23 +455,23 @@ land_sub <- land[,landcols] #subset landscape variables by those used in the ana
 # elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 # cols = rep('black', nrow(land))
 # cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
-for(trnd in c(1,2)){
+for(trnd in c(2,1)){
     plot(landvar[[trnd]], dfa$Estimates$Z[,trnd], type='n', yaxt='n',
          xlab='', main='', ylab='', cex.lab=1, font=2, xaxt='n',bty='l')
     mod <- lm(dfa$Estimates$Z[,trnd] ~ landvar[[trnd]])
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
     sig <- NULL #turning off sig plotting
-    if(trnd == 1){
-        mtext(bquote(textstyle(bold('PC 1 '))*textstyle(plain('(50.8%)'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste('d',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
+    if(trnd == 2){
+        mtext(bquote(textstyle(bold('Principal axis 1 '))*textstyle(plain('(50.8%)'))), 1, cex=.8, font=2, line=2)
+        print.letter(paste('d',sig),c(.1,.9), cex=1.8, font=2, col='springgreen4')
         mtext(bquote(bold('Shared trend loadings')~
                          textstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
               side=2, cex=.8, line=1.8)#, adj=4)
     }
-    if(trnd == 2){
-        mtext(bquote(bold('PC 2 ')*textstyle(plain('(28.6%)'))), 1, cex=.8, font=2, line=2)
+    if(trnd == 1){
+        mtext(bquote(bold('Principal axis 2 ')*textstyle(plain('(28.6%)'))), 1, cex=.8, font=2, line=2)
         # mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
-        print.letter(paste('e',sig),c(.1,.9), cex=1.8, font=2, col='springgreen4')
+        print.letter(paste('e',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
     }
     abline(mod, col='springgreen4', lty=2, lwd=3)
     points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
@@ -491,6 +492,7 @@ for(trnd in c(1,2)){
 
 par(defpar)
 dev.off()
+# shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\20_temp_simp_reg_NAMES.pdf')
 shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\19_temp_simp_reg.pdf')
 
 #for results (loadings)
@@ -1563,6 +1565,7 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\15_disch_vs_a
 #load temp_due_5m_atpcsn_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge2.rds')
 dis <- readRDS('../../saved_structures/just_discharge.rds')
+dams <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/watershed_data/watershed_data_simp.csv")[-c(3,18),'dam_upstream']
 
 elev_hi = which(land$Ice06_11 >= 0.7)
 elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
@@ -1570,24 +1573,33 @@ elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 # cols = rep('black', nrow(land))
 # cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
 
+dam_ind = rep(FALSE,19) #dont use this for other stuff
+dam_ind[dams[-c(6,17,18,20,22)] != 0] <- TRUE #or this
+
 # png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
 pdf('12_air_water_discharge.pdf', width=7, height=6)
+# pdf('12b_air_water_discharge_expand.pdf', width=7, height=6)
 defpar <- par(mar=c(5,4,1,6))
-airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = numeric()
+airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = discharge_dam = numeric()
 for(i in 1:12){
     airtemps[i] <- mean(awd[[1]][seq(from=i, by=12, to=nrow(awd[[1]]))])
     watertemps_rain[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_lo]), na.rm=TRUE)
     watertemps_rs[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_med]), na.rm=TRUE)
     watertemps_snow[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_hi]), na.rm=TRUE)
     discharge[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
+    discharge_dam[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),dam_ind]), na.rm=TRUE)
 }
 plot(1:12, discharge, type='n', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='',
-     yaxs='i', ylim=c(0,4480), bty='o')
+     # yaxs='i', ylim=c(0,4480), bty='o')
+     yaxs='i', ylim=c(0,8000), bty='o')
 disch_col = adjustcolor('darkslategray4', alpha.f=0.35)
 axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis=adjustcolor('darkslategray4', alpha.f=1),
      col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
 # axis(4, tcl=0, col='white', labels='')
 polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),discharge,mean(c(discharge[1],discharge[12])),0), col=disch_col, border=NA)
+# lines(c(.58,1:12,12.4), c(mean(c(discharge_dam[1],discharge_dam[12])),
+#                           discharge_dam,mean(c(discharge_dam[1],discharge_dam[12]))),
+#       lwd=3, col='cadetblue', lty=1)
 lines(x=c(12.44,12.44),y=c(0,4018),
                          col='white', xpd=NA, lwd=1)
 lines(x=c(12.44,12.44),y=c(0,4018),
@@ -1627,7 +1639,7 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12_air_water_
 # chili3 = diff(chili2)
 min(chili3); max(chili3)
 
-# 21 - air water discharge (over time) ####
+# 21 - air water discharge (over time [never actually worked on this]) ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
 awd <- readRDS('../../saved_structures/air_water_discharge.rds')
