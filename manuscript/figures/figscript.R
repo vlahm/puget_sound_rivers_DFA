@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-load('temp_due_5m_atpcsn_byMo_allMos.rda')
+load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
@@ -366,7 +366,7 @@ for(covr in 1:3){
               2, cex=.8, line=1.5)
         axis(2, at=c(-.02,0,.02,.04), labels=c(-0.02,0.00,0.02,0.04), padj=.9, tck=-.02)
         # mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~textstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
-        mtext(bquote(textstyle(bold('Mean watershed elevation'))~textstyle(plain('(100 m)'))), 
+        mtext(bquote(textstyle(bold('Mean watershed elevation'))~textstyle(plain('(100 m)'))),
               side=1, cex=.8, line=2)
         abline(mod, col='steelblue', lty=2, lwd=3)
     }
@@ -378,8 +378,8 @@ for(covr in 1:3){
     }
     print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.8, font=2, col='steelblue')
     points(landvar, res,
-           bg=cols, col='black', cex=2,
-           # bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
+           # bg=cols, col='black', cex=2,
+           bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
            pch=21,
            # pch=land$siteCode,
            lwd=1)
@@ -475,12 +475,12 @@ for(trnd in c(2,1)){
     }
     abline(mod, col='springgreen4', lty=2, lwd=3)
     points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
-           bg=cols, col='black', cex=2,
-           # bg=cols, col='black', cex=rescale(log(land2$WsAreaSqKm),c(1.2,3.2)),
+           # bg=cols, col='black', cex=2,
+           bg=cols, col='black', cex=rescale(log(land2$WsAreaSqKm),c(1.2,3.2)),
            pch=21,
            # pch=land$siteCode,
            lwd=1)
-    points(landvar[[trnd]][dam_pch], dfa$Estimates$Z[,trnd][dam_pch], col='chocolate2', 
+    points(landvar[[trnd]][dam_pch], dfa$Estimates$Z[,trnd][dam_pch], col='chocolate2',
            cex=2, lwd=1, pch=124)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
     #              rect.col=colorRampPalette(c('brown', 'white'))(10),
@@ -1668,7 +1668,7 @@ mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
 par(defpar)
 # dev.off()
 
-# x - discharge eff size and loading regressions separated ####
+# 22 - discharge eff size and loading regressions separated [dont think i worked on this either] ####
 # pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
 # layout(matrix(c(1:5,8,6,7,9),nrow=3,byrow=TRUE))
 # par(oma=c(
@@ -1780,3 +1780,41 @@ mtext('Shared trends', side=2, outer=TRUE, cex=1, line=1, font=2)
 
 par(defpar)
 dev.off()
+
+# 23 - elwha before and after (temp) ####
+
+pre = obs_ts[1:396,23] #elwha temp data through 2010 (restoration began sept 2011)
+post2011 = obs_ts[397:408,23]
+post2012 = obs_ts[409:420,23]
+post2013 = obs_ts[421:432,23]
+post2014 = obs_ts[433:444,23]
+post2015 = obs_ts[445:456,23] #2015 only (ended aug 2014)
+prevec  = 1:12
+for(i in 1:12){
+    prevec[i] = mean(pre[seq(i,396-(12-i),12)], na.rm=TRUE)
+}
+plot(prevec, type='l')
+for(i in 1:5){
+    # browser()
+    chili = get(paste0('post201',i))
+    lines(chili, col=heat.colors(5)[i])
+}
+
+# 24 - elwha before and after (discharge) ####
+
+pre = obs_ts[1:396,18] #elwha temp data through 2010 (restoration began sept 2011)
+post2011 = obs_ts[397:408,18]
+post2012 = obs_ts[409:420,18]
+post2013 = obs_ts[421:432,18]
+post2014 = obs_ts[433:444,18]
+post2015 = obs_ts[445:456,18] #2015 only (ended aug 2014)
+prevec  = 1:12
+for(i in 1:12){
+    prevec[i] = mean(pre[seq(i,396-(12-i),12)], na.rm=TRUE)
+}
+plot(prevec, type='l', ylim=c(0,4000))
+for(i in 1:5){
+    browser()
+    chili = get(paste0('post201',i))
+    lines(chili, col=heat.colors(5)[i])
+}

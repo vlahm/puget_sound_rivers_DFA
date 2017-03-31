@@ -1,0 +1,210 @@
+\begin{thebibliography}{}
+
+\bibitem[ArcMap, 2016]{arcviewenvironmental}
+ArcMap (2016).
+\newblock Environmental systems research institute (esri).
+\newblock {\em Redlands, CA: \url{http://www.esri.com/}}.
+
+\bibitem[Boisneau et~al., 2008]{Boisneau2008}
+Boisneau, C., Moatar, F., Bodin, M., and Boisneau, P. (2008).
+\newblock {\em Does global warming impact on migration patterns and recruitment
+  of Allis shad (Alosa alosa L.) young of the year in the Loire River,
+  France?}, pages 179--186.
+\newblock Springer Netherlands, Dordrecht.
+
+\bibitem[Boscarino et~al., 2007]{boscarino2007effects}
+Boscarino, B.~T., Rudstam, L.~G., Mata, S., Gal, G., Johannsson, O.~E., and
+  Mills, E.~L. (2007).
+\newblock The effects of temperature and predator—prey interactions on the
+  migration behavior and vertical distribution of mysis relicta.
+\newblock {\em Limnology and Oceanography}, 52(4):1599--1613.
+
+\bibitem[Brutsaert, 1975]{brutsaert1975theory}
+Brutsaert, W. (1975).
+\newblock A theory for local evaporation (or heat transfer) from rough and
+  smooth surfaces at ground level.
+\newblock {\em Water resources research}, 11(4):543--550.
+
+\bibitem[Burnham and Anderson, 2003]{burnham2003model}
+Burnham, K.~P. and Anderson, D.~R. (2003).
+\newblock {\em Model selection and multimodel inference: a practical
+  information-theoretic approach}.
+\newblock Springer Science \& Business Media.
+
+\bibitem[Carter, 2005]{carter2005effects}
+Carter, K. (2005).
+\newblock The effects of temperature on steelhead trout, coho salmon, and
+  chinook salmon biology and function by life stage.
+\newblock {\em Implications for the Klamath River total maximum daily loads.
+  California Regional Water Quality Control Board. North Coast Region, Santa
+  Rosa, California}.
+
+\bibitem[Clarke et~al., 2015]{clarke2015projected}
+Clarke, G.~K., Jarosch, A.~H., Anslow, F.~S., Radi{\'c}, V., and Menounos, B.
+  (2015).
+\newblock Projected deglaciation of western canada in the twenty-first century.
+\newblock {\em Nature Geoscience}, 8(5):372--377.
+
+\bibitem[Eldridge, 1967]{eldridge1967water}
+Eldridge, E. (1967).
+\newblock Water temperature: influences, effects, and control.
+\newblock Technical report, Federal Water Pollution Control Administration,
+  Portland, Oreg.(USA). Northwest Region.
+
+\bibitem[Garner et~al., 2014]{garner2014river}
+Garner, G., Hannah, D.~M., Sadler, J.~P., and Orr, H.~G. (2014).
+\newblock River temperature regimes of england and wales: spatial patterns,
+  inter-annual variability and climatic sensitivity.
+\newblock {\em Hydrological Processes}, 28(22):5583--5598.
+
+\bibitem[Gower, 1966]{gowerDist}
+Gower, J.~C. (1966).
+\newblock Some distance properties of latent root and vector methods used in
+  multivariate analysis.
+\newblock {\em Biometrika}, 53(3/4):325--338.
+
+\bibitem[Harvey, 1990]{harvey1990forecasting}
+Harvey, A.~C. (1990).
+\newblock {\em Forecasting, structural time series models and the Kalman
+  filter}.
+\newblock Cambridge university press.
+
+\bibitem[Hill et~al., 2016]{hill2016stream}
+Hill, R.~A., Weber, M.~H., Leibowitz, S.~G., Olsen, A.~R., and Thornbrugh,
+  D.~J. (2016).
+\newblock The stream-catchment (streamcat) dataset: A database of watershed
+  metrics for the conterminous united states.
+\newblock {\em JAWRA Journal of the American Water Resources Association},
+  52(1):120--128.
+
+\bibitem[Holmes et~al., 2012]{holmes2012marss}
+Holmes, E.~E., Ward, E.~J., and Wills, K. (2012).
+\newblock Marss: Multivariate autoregressive state-space models for analyzing
+  time-series data.
+\newblock {\em The R Journal}, 4(1):11--19.
+
+\bibitem[Kristensen et~al., 2015]{kristensen2015tmb}
+Kristensen, K., Nielsen, A., Berg, C.~W., Skaug, H., and Bell, B. (2015).
+\newblock Tmb: automatic differentiation and laplace approximation.
+\newblock {\em arXiv preprint arXiv:1509.00660}.
+
+\bibitem[Kristensen et~al., 2016]{tmbPackage}
+Kristensen, K., Nielsen, A., Berg, C.~W., Skaug, H., and Bell, B.~M. (2016).
+\newblock {TMB}: Automatic differentiation and {L}aplace approximation.
+\newblock {\em Journal of Statistical Software}, 70(5):1--21.
+
+\bibitem[Lisi et~al., 2013]{lisi2013association}
+Lisi, P.~J., Schindler, D.~E., Bentley, K.~T., and Pess, G.~R. (2013).
+\newblock Association between geomorphic attributes of watersheds, water
+  temperature, and salmon spawn timing in alaskan streams.
+\newblock {\em Geomorphology}, 185:78--86.
+
+\bibitem[Lisi et~al., 2015]{lisi2015watershed}
+Lisi, P.~J., Schindler, D.~E., Cline, T.~J., Scheuerell, M.~D., and Walsh,
+  P.~B. (2015).
+\newblock Watershed geomorphology and snowmelt control stream thermal
+  sensitivity to air temperature.
+\newblock {\em Geophysical Research Letters}, 42(9):3380--3388.
+
+\bibitem[Mauger et~al., 2015]{mauger2015CIG}
+Mauger, G., Casola, J., Morgan, H., Strauch, R., Jones, B., Curry, B.,
+  Isaksen~Busch, T., et~al. (2015).
+\newblock State of knowledge: Climate change in puget sound.
+
+\bibitem[McCullough, 1999]{mccullough1999review}
+McCullough, D.~A. (1999).
+\newblock {\em A review and synthesis of effects of alterations to the water
+  temperature regime on freshwater life stages of salmonids, with special
+  reference to Chinook salmon}.
+\newblock US Environmental Protection Agency, Region 10.
+
+\bibitem[McKay et~al., 2012]{mckay2012nhdplus}
+McKay, L., Bondelid, T., Dewald, T., Johnston, J., Moore, R., and Rea, A.
+  (2012).
+\newblock Nhdplus version 2: user guide.
+\newblock {\em National Operational Hydrologic Remote Sensing Center,
+  Washington, DC}.
+
+\bibitem[Mote and Salathe, 2010]{mote2010future}
+Mote, P.~W. and Salathe, E.~P. (2010).
+\newblock Future climate in the pacific northwest.
+\newblock {\em Climatic Change}, 102(1-2):29--50.
+
+\bibitem[NOAA, 2017]{climateData}
+NOAA (2017).
+\newblock National centers for environmental information, climate at a glance:
+  U.s. time series.
+\newblock Data retrieved from: \url{http://www.ncdc.noaa.gov/cag/} on
+  11/10/2016.
+
+\bibitem[Poole and Berman, 2001]{poole2001ecological}
+Poole, G.~C. and Berman, C.~H. (2001).
+\newblock An ecological perspective on in-stream temperature: natural heat
+  dynamics and mechanisms of human-causedthermal degradation.
+\newblock {\em Environmental management}, 27(6):787--802.
+
+\bibitem[{R Core Team}, 2017]{Rmanual}
+{R Core Team} (2017).
+\newblock {\em R: A Language and Environment for Statistical Computing}.
+\newblock R Foundation for Statistical Computing, Vienna, Austria.
+
+\bibitem[Radeloff et~al., 2012]{radeloff2012economic}
+Radeloff, V.~C., Nelson, E., Plantinga, A.~J., Lewis, D.~J., Helmers, D.,
+  Lawler, J., Withey, J., Beaudry, F., Martinuzzi, S., Butsic, V., et~al.
+  (2012).
+\newblock Economic-based projections of future land use in the conterminous
+  united states under alternative policy scenarios.
+\newblock {\em Ecological Applications}, 22(3):1036--1049.
+
+\bibitem[Reidy~Liermann et~al., 2012]{reidy2012hydrogeomorphic}
+Reidy~Liermann, C., Olden, J.~D., Beechie, T., Kennard, M.~J., Skidmore, P.,
+  Konrad, C., and Imaki, H. (2012).
+\newblock Hydrogeomorphic classification of washington state rivers to support
+  emerging environmental flow management strategies.
+\newblock {\em River Research and Applications}, 28(9):1340--1358.
+
+\bibitem[USDA, 2017]{snowData}
+USDA (2017).
+\newblock National resources conservation service.
+\newblock Data retrieved from:
+  \url{https://www.nrcs.usda.gov/wps/portal/nrcs/detail/or/snow/?cid=nrcs142p2_046350}
+  on 1/23/2017.
+
+\bibitem[USGS, 2017]{USGSdischarge}
+USGS (2017).
+\newblock National water information system.
+\newblock Data retrieved from:
+  \url{http://www.ecy.wa.gov/programs/eap/fw_riv/index.html} on 1/30/2017.
+
+\bibitem[van Vliet et~al., 2013]{van2013global}
+van Vliet, M.~T., Franssen, W.~H., Yearsley, J.~R., Ludwig, F., Haddeland, I.,
+  Lettenmaier, D.~P., and Kabat, P. (2013).
+\newblock Global river discharge and water temperature under climate change.
+\newblock {\em Global Environmental Change}, 23(2):450--464.
+
+\bibitem[Von~Prause, 2017]{DoEwaterData}
+Von~Prause, M. (2017).
+\newblock River and stream water quality monitoring program.
+\newblock Data retrieved from Washington Department of Ecology:
+  \url{http://www.ecy.wa.gov/programs/eap/fw_riv/index.html} on 7/1/2016.
+
+\bibitem[Ward, 1985]{ward1985thermal}
+Ward, J. (1985).
+\newblock Thermal characteristics of running waters.
+\newblock In {\em Perspectives in Southern Hemisphere Limnology}, pages 31--46.
+  Springer.
+
+\bibitem[Zuur et~al., 2003a]{zuur2003dynamic}
+Zuur, A., Tuck, I., and Bailey, N. (2003a).
+\newblock Dynamic factor analysis to estimate common trends in fisheries time
+  series.
+\newblock {\em Canadian journal of fisheries and aquatic sciences},
+  60(5):542--552.
+
+\bibitem[Zuur et~al., 2003b]{zuur2003estimating}
+Zuur, A.~F., Fryer, R., Jolliffe, I., Dekker, R., and Beukema, J. (2003b).
+\newblock Estimating common trends in multivariate time series using dynamic
+  factor analysis.
+\newblock {\em Environmetrics}, 14(7):665--685.
+
+\end{thebibliography}
