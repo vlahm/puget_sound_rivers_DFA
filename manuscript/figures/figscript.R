@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
@@ -323,8 +323,8 @@ dfa = readRDS('../../saved_structures/full_dfaOut.rds')
 land = readRDS('../../saved_structures/full_land.rds')
 
 # system('taskkill /f /im AcroRd32.exe')
-pdf('19_temp_simp_reg.pdf', width=7.5, height=5)
-# pdf('20_temp_simp_reg_NAMES.pdf', width=7.5, height=5)
+# pdf('19_temp_simp_reg.pdf', width=7.5, height=5)
+pdf('20_temp_simp_reg_NAMES.pdf', width=7.5, height=5)
 # layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(mfrow=c(2,3), oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 landvar=land$ElevWs
@@ -380,8 +380,8 @@ for(covr in 1:3){
     points(landvar, res,
            # bg=cols, col='black', cex=2,
            bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
-           pch=21,
-           # pch=land$siteCode,
+           # pch=21,
+           pch=land$siteCode,
            lwd=1)
     points(landvar[dam_pch], res[dam_pch], col='chocolate2', cex=2, lwd=1, pch=124)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
@@ -492,8 +492,8 @@ for(trnd in c(2,1)){
 
 par(defpar)
 dev.off()
-# shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\20_temp_simp_reg_NAMES.pdf')
-shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\19_temp_simp_reg.pdf')
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\20_temp_simp_reg_NAMES.pdf')
+# shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\19_temp_simp_reg.pdf')
 
 #for results (loadings)
 # summary(mod)
@@ -1430,6 +1430,7 @@ temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
 # "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
 
 pdf('15_disch_vs_air_focal5.pdf', width=5, height=6.4)
+pdf('21_disch_vs_air_focal5_NAMES.pdf', width=5, height=6.4)
 # pal <- colorRampPalette(c('white', 'black'))
 pal <- colorRampPalette(c('black', 'white'))
 # pal <- colorRampPalette(c('black', 'white'))
@@ -1486,9 +1487,9 @@ for(i in c(0,2,4,6,8,11)){
         #                  # pch=4, cex=4, lwd=3, col='steelblue3')
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
-               pch=21, bg=cols, col='black',
-               # pch=land$siteCode, col=cols)
-               cex=1.3)
+               # pch=21, bg=cols, col='black',
+               pch=land$siteCode, col='black')
+               # cex=1.3)
                # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_
         points(disch_moInts[,i][dam_pch], temp_moInts[,i][-c(6,17,18,20,22)][dam_pch],
                pch='|', col='chocolate2', cex=1.3, lwd=1)
