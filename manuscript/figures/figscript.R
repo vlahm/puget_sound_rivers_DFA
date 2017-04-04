@@ -36,7 +36,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 
 #load all objects generated during the creation and postprocessing of the best model
 # load('temp_due_4m_at_byMo_allMos.rda')
-# load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
+load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
 # load('temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
 # load('temp_due_4m_at_byMo_acrossTime_MASO.rda')
 # load('discharge_due_4m_atpc_byMo_allMos.rda')
@@ -44,7 +44,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
