@@ -73,6 +73,12 @@ CIG state of knowledge: https://cig.uw.edu/wp-content/uploads/sites/2/2014/11/ps
 snow water equivalent: https://www.nrcs.usda.gov/wps/portal/nrcs/detail/or/snow/?cid=nrcs142p2_046350
 	>daily difference report>time period>monthly + end of period + custom + all months + jan 1, 1978 - dec 31, 2015 for sites=Trough, Park Creek Ridge, Yakima
 more details on streamcat data ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/Metadata/Runoff.html
+Discharge:
+almost everything in the legit folder: https://wa.water.usgs.gov/data/realtime/adr/interactive/
+15m combined: https://waecy.maps.arcgis.com/apps/Viewer/index.html?appid=832e254169e640fba6e117780e137e7b
+    or search by site number:
+    https://waterdata.usgs.gov/wa/nwis/uv?referred_module=sw&search_criteria=search_site_no&search_criteria=site_tp_cd&submitted_form=introduction
+15m by-water-year: https://fortress.wa.gov/ecy/eap/flows/regions/state.asp?stationfilter=1&region=2
 
 department of ecology ecy gis will have hax by state - this might work except that I need that piece of canada (or i could throw that point out of the set)
 NLCB?
