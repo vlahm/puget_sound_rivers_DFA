@@ -1,5 +1,9 @@
 \documentclass[notitlepage]{article}
 
+
+%add to appendix A: trends and loadings from 2-trend model
+
+
 \usepackage{color, listings, bm, amsmath, blkarray, gensymb, pdfpages}
 % \usepackage[percent]{overpic}
 \usepackage{tikz, lineno, natbib, url, csvsimple, lscape, longtable}
@@ -223,7 +227,7 @@ The process of selecting the best T\textsubscript{water} and discharge models in
 % \resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/03_fits.pdf}}
 \includepdf[pages={1-},scale=0.75]{figures/diagnostic_plots/03_fits.pdf}
 \end{center}
-\textbf{Figure A3} Model fits (green line = overall fit; blue line = trends-only fit, points = data).
+\textbf{Figure A3} Model fits (gray line = overall fit; green line = trends-only fit, points = data).
 
 \begin{center}
 % \resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/04_residuals.pdf}}
@@ -236,6 +240,16 @@ The process of selecting the best T\textsubscript{water} and discharge models in
 \includepdf[pages={1-},scale=0.75]{figures/diagnostic_plots/05_acf.pdf}
 \end{center}
 \textbf{Figure A5} Autocovariance function (ACF).
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/01_trends_simple.pdf}}
+\end{center}
+\textbf{Figure A6} Shared trends from simplified model (no seasonal fixed factor, no snowmelt predictor)
+
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{figures/diagnostic_plots/02_loadings_simple.pdf}}
+\end{center}
+\textbf{Figure A7} Factor loadings from simplified model (no seasonal fixed factor, no snowmelt predictor)
 
 \clearpage
 

@@ -776,9 +776,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL, mark_jans=TRUE){
     #mark_jans controls plotting of vertical lines on every january.
     xlm = c(1,int_dates[length(int_dates)])
     if(!is.null(chunk)) xlm=c(chunk*48-47,chunk*48)
-    if(ntrends<=4){
-        par(mai=c(0.5,0.5,0.5,0.1), oma=c(4,4,1,1), mfrow=c(ntrends, 1))
-    } else par(mai=c(0,0,0,0), oma=c(4,4,1,1), mfrow=c(ntrends, 1))
+    par(mai=c(0,0,0,0), oma=c(4,4,1,1), mfrow=c(ntrends, 1))
     xlbl <- int_dates
     y_ts <- int_dates
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -794,7 +792,7 @@ process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL, mark_jans=TRUE){
         }
         if(mark_jans) abline(v=seq(1,xlm[2],12), col='gray', lty=2)
         # mtext(paste("Process",i), side=3, line=-2)
-        mtext(paste("Process",i), side=3, line=-2, cex=.8)
+        mtext(paste("Process",i), side=3, line=-1, cex=.8)
         mtext(expression(paste('Standardized ',T[water])), side=2, line=2, outer=TRUE)
         mtext('Year', side=1, line=2.5, outer=TRUE)
         xlbl = xlbl*c(rep(0,11),1)
@@ -806,15 +804,13 @@ process_plotter_TMB <- function(dfa_obj, ntrends, chunk=NULL, mark_jans=TRUE){
     # mtext(expression(paste('Water ', degree, 'C (de-meaned)')),
     # side=2, line=-1.5, outer=TRUE)
 }
-# pdf('../manuscript/figures/diagnostic_plots/01_trends.pdf', width=7, height=5)
+# pdf('../manuscript/figures/diagnostic_plots/01_trends_simp.pdf', width=7, height=5)
 # png('../manuscript/figures/04_processes_and_loadings.png', width=7, height=6, units='in', res=96, type='cairo')
-process_plotter_TMB(dfa, mm, chunk=NULL, mark_jan=TRUE)
+process_plotter_TMB(dfa, mm, chunk=NULL, mark_jan=FALSE)
 # dev.off()
 
 loading_plotter_TMB <- function(dfa_obj, ntrends){
-    if(ntrends<=4){
-        par(mai=c(0.5,0.5,0.5,0.1), oma=c(4,4.5,1,1), mfrow=c(ntrends, 1))
-    } else par(mai=c(0,0,0,0), oma=c(4,4.5,1,1), mfrow=c(ntrends, 1))
+    par(mai=c(0,0,0,0), oma=c(4,4.5,1,1), mfrow=c(ntrends, 1))
     ylbl <- names(obs_ts)
     # clr <- viridis(nn) #colors may not line up with series plots in section 2
     ylm <- c(-1,1)*max(abs(dfa_obj$Estimates$u))
@@ -835,7 +831,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         # }
         axis(1, 1:nn, labels=colnames(obs_ts), outer=TRUE)
         abline(h=0, lwd=1.5, col="gray60", lty=2)
-        mtext(paste("Process",i),side=3,line=-2, col='gray30', cex=.8)
+        mtext(paste("Process",i),side=3,line=-1, col='gray30', cex=.8)
         mtext('Factor loading', side=2, line=3, outer=TRUE)
         mtext('River', side=1, line=2.5, outer=TRUE)
         # if(i==2){
@@ -845,6 +841,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     }
 }
 # pdf('../manuscript/figures/diagnostic_plots/02_loadings.pdf', width=7, height=4)
+# pdf('../manuscript/figures/diagnostic_plots/02_loadings_simp.pdf', width=7, height=4)
 loading_plotter_TMB(dfa, mm)
 # dev.off()
 
@@ -856,6 +853,7 @@ loading_plotter_TMB(dfa, mm)
 # png('../manuscript/figures/05_fits_and_residuals.png', width=7, height=6, units='in', res=96, type='cairo')
 fits_plotter_TMB <- function(dfa_obj){
     hiddenTrendOnly_fit <- dfa_obj$Estimates$Z %*% dfa_obj$Estimates$u
+    covariatesOnly_fit <- dfa_obj$Estimates$D %*% cov_and_seas
     par(mfcol=c(5,2), mar=c(0,0,0,0), oma=c(4.5,5.5,0,2))
     # par(mfrow=c(2,1), mar=c(.5,.5,.5,.5), oma=c(3,3,0,0))
     for(i in 1:ncol(obs_ts)){
@@ -871,8 +869,9 @@ fits_plotter_TMB <- function(dfa_obj){
         if(i %in% c(6:10,16:20,26:30,36:40,46:50,56:60)){
            mtext(rownames(dat_z)[i], 4, line=.5, las=2)
         }
-        lines(dfa_obj$Fits[i,], lwd=1, col='green')
-        lines(hiddenTrendOnly_fit[i,], col='blue', lwd=1)
+        lines(dfa_obj$Fits[i,], lwd=1, col='gray60')
+        # lines(covariatesOnly_fit[i,], col='dodgerblue2', lwd=1)
+        lines(hiddenTrendOnly_fit[i,], col='springgreen4', lwd=1)
         points(dat_z[i,], col='black', pch=20, cex=.5)
         if((i %% 5 == 0) | i == ncol(obs_ts)){
             axis(1, at=seq(1,nrow(obs_ts),48), 
@@ -897,8 +896,8 @@ residuals_plotter <- function(dfa_obj){
         plot(dat_z[i,] - dfa$Fits[i,], yaxt='n', xaxt='n',
              ylim=c(min(dat_z - dfa$Fits, na.rm=TRUE), max(dat_z - dfa$Fits, na.rm=TRUE)),
              # ylab='', pch=20, col='blue')
-             xlab='Month Index', ylab=rownames(dat_z)[i], pch=20, col='red')
-        abline(h=0, lwd=2, lty=2, col='gray60')
+             xlab='Month Index', ylab=rownames(dat_z)[i], pch=20, col='red3')
+        abline(h=0, lwd=2, lty=2, col='black')
         if(i %in% c(3,13,23,33,43,53,63)){
             mtext('Standardized residual error', 
                   side=2, line=3.5, outer=FALSE)
