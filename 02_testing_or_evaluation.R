@@ -829,7 +829,7 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
         #     if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt=90, adj=1, cex=lab_size)}
         #     if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt=90, adj=0, cex=lab_size)}
         # }
-        axis(1, 1:nn, labels=colnames(obs_ts), outer=TRUE)
+        axis(1, 1:nn, labels=colnames(obs_ts), outer=TRUE, cex.axis=.8)
         abline(h=0, lwd=1.5, col="gray60", lty=2)
         mtext(paste("Process",i),side=3,line=-1, col='gray30', cex=.8)
         mtext('Factor loading', side=2, line=3, outer=TRUE)
@@ -841,9 +841,9 @@ loading_plotter_TMB <- function(dfa_obj, ntrends){
     }
 }
 # pdf('../manuscript/figures/diagnostic_plots/02_loadings.pdf', width=7, height=4)
-# pdf('../manuscript/figures/diagnostic_plots/02_loadings_simp.pdf', width=7, height=4)
+pdf('../manuscript/figures/diagnostic_plots/02_loadings_simp.pdf', width=7, height=4)
 loading_plotter_TMB(dfa, mm)
-# dev.off()
+dev.off()
 
 # full_fit <- dfa$Estimates$Z %*% dfa$Estimates$u + dfa$Estimates$D %*% rbind(cc,covs_z)
 # identical(full_fit, dfa$Fits)
