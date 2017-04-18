@@ -1,0 +1,26 @@
+go through discussion and appendices and change all instances of "correction" to "tuning"
+
+\\citep{(.*?)}
+\\citealt{(.*?)}
+	(\1)
+\\textsubscript{(.*?)}
+	_\1
+$
+\clearpage
+\noindent
+
+\times (followed by a [space])
+	*
+\rightarrow
+	 -> (space before arrow)
+\\textrm{(.*?)}
+\\textbf{(.*?)}
+\\bm{(.*?)}
+	\1
+\\pm
+	 +/- (space before +)
+\\frac{(.*?)}{(.*?)}
+	\1/\2
+	
+then remove all backslashes?
+then you could change "degree" to [degree symbol] in word
