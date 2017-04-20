@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  18 APR 2017 03:07
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.1.9)  19 APR 2017 17:58
 entering extended mode
 **./manuscript.tex
 (manuscript.tex
@@ -653,150 +653,18 @@ ABD: EveryShipout initializing macros [1
 
 {C:/ProgramData/MiKTeX/2.9/pdftex/config/pdftex.map}] [1
 
-]
-
-Package natbib Warning: Citation `Boisneau2008' on page 2 undefined on input li
-ne 39.
-
-
-Package natbib Warning: Citation `mccullough1999review' on page 2 undefined on 
-input line 39.
-
-
-Package natbib Warning: Citation `boscarino2007effects' on page 2 undefined on 
-input line 39.
-
-
-Package natbib Warning: Citation `carter2005effects' on page 2 undefined on inp
-ut line 39.
-
-
-Package natbib Warning: Citation `eldridge1967water' on page 2 undefined on inp
-ut line 41.
-
-
-Package natbib Warning: Citation `poole2001ecological' on page 2 undefined on i
-nput line 41.
-
-
-Package natbib Warning: Citation `lisi2013association' on page 2 undefined on i
-nput line 41.
-
-
-Package natbib Warning: Citation `reidy2012hydrogeomorphic' on page 2 undefined
- on input line 43.
-
-
-Package natbib Warning: Citation `mauger2015CIG' on page 2 undefined on input l
-ine 43.
-
-
-Package natbib Warning: Citation `mote2010future' on page 2 undefined on input 
-line 45.
-
-
-Package natbib Warning: Citation `radeloff2012economic' on page 2 undefined on 
-input line 45.
-
-
-Package natbib Warning: Citation `ward1985thermal' on page 2 undefined on input
- line 50.
-
-
-Package natbib Warning: Citation `garner2014river' on page 2 undefined on input
- line 50.
-
-
-Package natbib Warning: Citation `lisi2015watershed' on page 2 undefined on inp
-ut line 50.
-
-
-Package natbib Warning: Citation `van2013global' on page 2 undefined on input l
-ine 50.
-
-[2
+] [2
 
 ]
-
-Package natbib Warning: Citation `DoEwaterData' on page 3 undefined on input li
-ne 56.
-
-
-Package natbib Warning: Citation `USGSdischarge' on page 3 undefined on input l
-ine 56.
-
-<figures/map/puget_sound_labeled.png, id=21, 614.295pt x 794.97pt>
+<figures/map/puget_sound_labeled.png, id=20, 614.295pt x 794.97pt>
 File: figures/map/puget_sound_labeled.png Graphic file (type png)
 
 <use figures/map/puget_sound_labeled.png>
 Package pdftex.def Info: figures/map/puget_sound_labeled.png used on input line
  59.
 (pdftex.def)             Requested size: 614.29349pt x 794.96806pt.
- [3]
-
-Package natbib Warning: Citation `climateData' on page 4 undefined on input lin
-e 63.
-
-
-Package natbib Warning: Citation `snowData' on page 4 undefined on input line 6
-3.
-
-[4 <./figures/map/puget_sound_labeled.png>]
-
-Package natbib Warning: Citation `zuur2003estimating' on page 5 undefined on in
-put line 66.
-
-
-Package natbib Warning: Citation `zuur2003dynamic' on page 5 undefined on input
- line 66.
-
-
-Package natbib Warning: Citation `kristensen2015tmb' on page 5 undefined on inp
-ut line 66.
-
-
-Package natbib Warning: Citation `Rmanual' on page 5 undefined on input line 66
-.
-
-
-Package natbib Warning: Citation `tmbPackage' on page 5 undefined on input line
- 66.
-
-
-Package natbib Warning: Citation `harvey1990forecasting' on page 5 undefined on
- input line 80.
-
-[5]
-
-Package natbib Warning: Citation `holmes2012marss' on page 6 undefined on input
- line 107.
-
-
-Package natbib Warning: Citation `burnham2003model' on page 6 undefined on inpu
-t line 107.
-
-[6]
-
-Package natbib Warning: Citation `mauger2015CIG' on page 7 undefined on input l
-ine 110.
-
-
-Package natbib Warning: Citation `hill2016stream' on page 7 undefined on input 
-line 129.
-
-
-Package natbib Warning: Citation `mckay2012nhdplus' on page 7 undefined on inpu
-t line 129.
-
-
-Package natbib Warning: Citation `arcviewenvironmental' on page 7 undefined on 
-input line 129.
-
-
-Package natbib Warning: Citation `gowerDist' on page 7 undefined on input line 
-131.
-
-[7] <figures/12_air_water_discharge.pdf, id=47, 505.89pt x 433.62pt>
+ [3] [4 <./figures/map/puget_sound_labeled.png>] [5] [6] [7]
+<figures/12_air_water_discharge.pdf, id=47, 505.89pt x 433.62pt>
 File: figures/12_air_water_discharge.pdf Graphic file (type pdf)
 
 <use figures/12_air_water_discharge.pdf>
@@ -840,42 +708,26 @@ Underfull \hbox (badness 10000) in paragraph at lines 176--178
 
  []
 
-[13 <./figures/15_disch_vs_air_focal5.pdf>] [14]
-
-Package natbib Warning: Citation `olden_hypoCold' on page 15 undefined on input
- line 191.
-
-
-Package natbib Warning: Citation `stanford2001revisiting' on page 15 undefined 
-on input line 191.
-
-
-Package natbib Warning: Citation `caissie2006thermal' on page 15 undefined on i
-nput line 193.
-
-
-Package natbib Warning: Citation `damsComplex' on page 15 undefined on input li
-ne 195.
-
-
-Package natbib Warning: Citation `WarmingPostDam' on page 15 undefined on input
- line 195.
-
-[15]
-
-Package natbib Warning: Citation `clarke2015projected' on page 16 undefined on 
-input line 201.
-
-[16] [17]
+[13 <./figures/15_disch_vs_air_focal5.pdf>] [14] [15] [16] [17]
 Overfull \hbox (2.99022pt too wide) in paragraph at lines 209--210
 \OT1/cmr/m/n/10 We thank Tim-o-thy Cline for the use of his TMB script, and Drs
 . Mark Scheuerell,
  []
 
-No file manuscript.bbl.
-[18
+(manuscript.bbl
+Missing character: There is no â in font cmr10!
+Missing character: There is no € in font cmr10!
+Missing character: There is no ” in font cmr10!
+ [18
 
-] <figures/diagnostic_plots/01_trends.pdf, id=127, 505.89pt x 361.35pt>
+] [19]
+Underfull \hbox (badness 1496) in paragraph at lines 183--188
+\OT1/cmr/m/n/10 from: $\OT1/cmtt/m/n/10 https : / / www . nrcs . usda . gov / w
+ps / portal / nrcs / detail / or / snow /
+ []
+
+[20]) [21]
+<figures/diagnostic_plots/01_trends.pdf, id=138, 505.89pt x 361.35pt>
 File: figures/diagnostic_plots/01_trends.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/01_trends.pdf>
@@ -883,17 +735,17 @@ Package pdftex.def Info: figures/diagnostic_plots/01_trends.pdf used on input l
 ine 221.
 (pdftex.def)             Requested size: 505.88875pt x 361.34912pt.
 
-<figures/diagnostic_plots/02_loadings.pdf, id=128, 505.89pt x 289.08pt>
+<figures/diagnostic_plots/02_loadings.pdf, id=139, 505.89pt x 289.08pt>
 File: figures/diagnostic_plots/02_loadings.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/02_loadings.pdf>
 Package pdftex.def Info: figures/diagnostic_plots/02_loadings.pdf used on input
  line 226.
 (pdftex.def)             Requested size: 505.88875pt x 289.07928pt.
- [19
+ [22
 
  <./figures/diagnostic_plots/01_trends.pdf>]
-<figures/diagnostic_plots/03_fits.pdf, id=137, 505.89pt x 505.89pt>
+<figures/diagnostic_plots/03_fits.pdf, id=148, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/03_fits.pdf>
@@ -907,7 +759,7 @@ Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf used on input lin
 e 232.
 (pdftex.def)             Requested size: 505.88875pt x 505.88875pt.
 
-<figures/diagnostic_plots/03_fits.pdf, id=140, page=1, 505.89pt x 505.89pt>
+<figures/diagnostic_plots/03_fits.pdf, id=151, page=1, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/03_fits.pdf, page 1>
@@ -920,7 +772,7 @@ File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf, page1 used on in
 put line 232.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [20 <./figures/diagnostic_plots/02_loadings.pdf>]
+ [23 <./figures/diagnostic_plots/02_loadings.pdf>]
 File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
  <use figures/diagnostic_plots/03_fits.pdf, page 1>
 Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf, page1 used on in
@@ -938,8 +790,8 @@ File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf, page1 used on in
 put line 232.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [21 <./figures/diagnostic_plots/03_fits.pdf>]
-<figures/diagnostic_plots/03_fits.pdf, id=159, page=2, 505.89pt x 505.89pt>
+ [24 <./figures/diagnostic_plots/03_fits.pdf>]
+<figures/diagnostic_plots/03_fits.pdf, id=171, page=2, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/03_fits.pdf, page 2>
@@ -958,8 +810,8 @@ File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf, page2 used on in
 put line 232.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [22 <./figures/diagnostic_plots/03_fits.pdf>]
-<figures/diagnostic_plots/03_fits.pdf, id=163, page=3, 505.89pt x 505.89pt>
+ [25 <./figures/diagnostic_plots/03_fits.pdf>]
+<figures/diagnostic_plots/03_fits.pdf, id=175, page=3, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/03_fits.pdf, page 3>
@@ -978,8 +830,8 @@ File: figures/diagnostic_plots/03_fits.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/03_fits.pdf, page3 used on in
 put line 232.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [23 <./figures/diagnostic_plots/03_fits.pdf>]
-<figures/diagnostic_plots/04_residuals.pdf, id=167, 505.89pt x 505.89pt>
+ [26 <./figures/diagnostic_plots/03_fits.pdf>]
+<figures/diagnostic_plots/04_residuals.pdf, id=179, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/04_residuals.pdf>
@@ -993,7 +845,7 @@ Package pdftex.def Info: figures/diagnostic_plots/04_residuals.pdf used on inpu
 t line 238.
 (pdftex.def)             Requested size: 505.88875pt x 505.88875pt.
 
-<figures/diagnostic_plots/04_residuals.pdf, id=170, page=1, 505.89pt x 505.89pt
+<figures/diagnostic_plots/04_residuals.pdf, id=182, page=1, 505.89pt x 505.89pt
 >
 File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
  <use figures/diagnostic_plots/04_residuals.pdf, page 1>
@@ -1006,7 +858,7 @@ File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/04_residuals.pdf, page1 used 
 on input line 238.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [24]
+ [27]
 File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/04_residuals.pdf, page 1>
@@ -1025,8 +877,8 @@ File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/04_residuals.pdf, page1 used 
 on input line 238.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [25 <./figures/diagnostic_plots/04_residuals.pdf>]
-<figures/diagnostic_plots/04_residuals.pdf, id=184, page=2, 505.89pt x 505.89pt
+ [28 <./figures/diagnostic_plots/04_residuals.pdf>]
+<figures/diagnostic_plots/04_residuals.pdf, id=195, page=2, 505.89pt x 505.89pt
 >
 File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
  <use figures/diagnostic_plots/04_residuals.pdf, page 2>
@@ -1045,8 +897,8 @@ File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/04_residuals.pdf, page2 used 
 on input line 238.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [26 <./figures/diagnostic_plots/04_residuals.pdf>]
-<figures/diagnostic_plots/04_residuals.pdf, id=188, page=3, 505.89pt x 505.89pt
+ [29 <./figures/diagnostic_plots/04_residuals.pdf>]
+<figures/diagnostic_plots/04_residuals.pdf, id=199, page=3, 505.89pt x 505.89pt
 >
 File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
  <use figures/diagnostic_plots/04_residuals.pdf, page 3>
@@ -1065,8 +917,8 @@ File: figures/diagnostic_plots/04_residuals.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/04_residuals.pdf, page3 used 
 on input line 238.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [27 <./figures/diagnostic_plots/04_residuals.pdf>]
-<figures/diagnostic_plots/05_acf.pdf, id=192, 505.89pt x 505.89pt>
+ [30 <./figures/diagnostic_plots/04_residuals.pdf>]
+<figures/diagnostic_plots/05_acf.pdf, id=204, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/05_acf.pdf>
@@ -1080,7 +932,7 @@ Package pdftex.def Info: figures/diagnostic_plots/05_acf.pdf used on input line
  244.
 (pdftex.def)             Requested size: 505.88875pt x 505.88875pt.
 
-<figures/diagnostic_plots/05_acf.pdf, id=195, page=1, 505.89pt x 505.89pt>
+<figures/diagnostic_plots/05_acf.pdf, id=207, page=1, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/05_acf.pdf, page 1>
@@ -1093,7 +945,7 @@ File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/05_acf.pdf, page1 used on inp
 ut line 244.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [28]
+ [31]
 File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/05_acf.pdf, page 1>
@@ -1112,8 +964,8 @@ File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/05_acf.pdf, page1 used on inp
 ut line 244.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [29 <./figures/diagnostic_plots/05_acf.pdf>]
-<figures/diagnostic_plots/05_acf.pdf, id=208, page=2, 505.89pt x 505.89pt>
+ [32 <./figures/diagnostic_plots/05_acf.pdf>]
+<figures/diagnostic_plots/05_acf.pdf, id=220, page=2, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/05_acf.pdf, page 2>
@@ -1132,8 +984,8 @@ File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/05_acf.pdf, page2 used on inp
 ut line 244.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [30 <./figures/diagnostic_plots/05_acf.pdf>]
-<figures/diagnostic_plots/05_acf.pdf, id=213, page=3, 505.89pt x 505.89pt>
+ [33 <./figures/diagnostic_plots/05_acf.pdf>]
+<figures/diagnostic_plots/05_acf.pdf, id=224, page=3, 505.89pt x 505.89pt>
 File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/05_acf.pdf, page 3>
@@ -1152,8 +1004,8 @@ File: figures/diagnostic_plots/05_acf.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/diagnostic_plots/05_acf.pdf, page3 used on inp
 ut line 244.
 (pdftex.def)             Requested size: 379.41655pt x 379.41655pt.
- [31 <./figures/diagnostic_plots/05_acf.pdf>]
-<figures/diagnostic_plots/01_trends_simp.pdf, id=217, 505.89pt x 361.35pt>
+ [34 <./figures/diagnostic_plots/05_acf.pdf>]
+<figures/diagnostic_plots/01_trends_simp.pdf, id=228, 505.89pt x 361.35pt>
 File: figures/diagnostic_plots/01_trends_simp.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/01_trends_simp.pdf>
@@ -1161,21 +1013,16 @@ Package pdftex.def Info: figures/diagnostic_plots/01_trends_simp.pdf used on in
 put line 249.
 (pdftex.def)             Requested size: 505.88875pt x 361.34912pt.
 
-<figures/diagnostic_plots/02_loadings_simp.pdf, id=218, 505.89pt x 289.08pt>
+<figures/diagnostic_plots/02_loadings_simp.pdf, id=229, 505.89pt x 289.08pt>
 File: figures/diagnostic_plots/02_loadings_simp.pdf Graphic file (type pdf)
 
 <use figures/diagnostic_plots/02_loadings_simp.pdf>
 Package pdftex.def Info: figures/diagnostic_plots/02_loadings_simp.pdf used on 
 input line 254.
 (pdftex.def)             Requested size: 505.88875pt x 289.07928pt.
- [32 <./figures/diagnostic_plots/01_trends_simp.pdf> <./figures/diagnostic_plot
+ [35 <./figures/diagnostic_plots/01_trends_simp.pdf> <./figures/diagnostic_plot
 s/02_loadings_simp.pdf>]
-
-Package natbib Warning: Citation `eric_ward_2017_375646' on page 33 undefined o
-n input line 266.
-
-
-<figures/05a_temp_effSize_byMonth_acrossTime_may-aug.pdf, id=232, 1011.78pt x 6
+<figures/05a_temp_effSize_byMonth_acrossTime_may-aug.pdf, id=243, 1011.78pt x 6
 50.43pt>
 File: figures/05a_temp_effSize_byMonth_acrossTime_may-aug.pdf Graphic file (typ
 e pdf)
@@ -1190,7 +1037,7 @@ d el-e-va-tion (bluer=higher).
  []
 
 
-<figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf, id=233, 1011.78pt x 6
+<figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf, id=244, 1011.78pt x 6
 50.43pt>
 File: figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf Graphic file (typ
 e pdf)
@@ -1198,7 +1045,7 @@ e pdf)
 Package pdftex.def Info: figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pd
 f used on input line 274.
 (pdftex.def)             Requested size: 1011.77753pt x 650.4284pt.
- [33
+ [36
 
  <./figures/05a_temp_effSize_byMonth_acrossTime_may-aug.pdf>]
 Overfull \hbox (6.13026pt too wide) in paragraph at lines 276--277
@@ -1207,7 +1054,7 @@ d el-e-va-tion (bluer=higher).
  []
 
 
-<figures/05c_temp_effSize_byMonth_acrossTime_MASO.pdf, id=244, 1011.78pt x 650.
+<figures/05c_temp_effSize_byMonth_acrossTime_MASO.pdf, id=256, 1011.78pt x 650.
 43pt>
 File: figures/05c_temp_effSize_byMonth_acrossTime_MASO.pdf Graphic file (type p
 df)
@@ -1221,8 +1068,8 @@ Overfull \hbox (6.13026pt too wide) in paragraph at lines 281--282
 d el-e-va-tion (bluer=higher). 
  []
 
-[34 <./figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf> <./figures/05c_
-temp_effSize_byMonth_acrossTime_MASO.pdf>] [35]
+[37 <./figures/05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf> <./figures/05c_
+temp_effSize_byMonth_acrossTime_MASO.pdf>] [38]
 Overfull \hbox (93.40402pt too wide) in alignment at lines 287--287
  [] [] [] [] [] [] [] [] [] [] [] 
  []
@@ -1233,18 +1080,24 @@ Overfull \hbox (93.40402pt too wide) in alignment at lines 287--287
  []
 
 
-Package longtable Warning: Column widths have changed
-(longtable)                in table 1 on input line 287.
+Overfull \hbox (93.40402pt too wide) in alignment at lines 287--287
+ [] [] [] [] [] [] [] [] [] [] [] 
+ []
 
-[36
+
+Overfull \hbox (93.40402pt too wide) in alignment at lines 287--287
+ [] [] [] [] [] [] [] [] [] [] [] 
+ []
+
+[39
 
 ]
-Overfull \hbox (110.64009pt too wide) in alignment at lines 289--289
+Overfull \hbox (111.19565pt too wide) in alignment at lines 289--289
  [] [] [] [] [] [] [] [] [] [] [] [] 
  []
 
 
-Overfull \hbox (110.64009pt too wide) in alignment at lines 289--289
+Overfull \hbox (111.19565pt too wide) in alignment at lines 289--289
  [] [] [] [] [] [] [] [] [] [] [] [] 
  []
 
@@ -1258,44 +1111,35 @@ Overfull \hbox (111.19565pt too wide) in alignment at lines 289--289
  [] [] [] [] [] [] [] [] [] [] [] [] 
  []
 
+[40
 
-Package longtable Warning: Column widths have changed
-(longtable)                in table 2 on input line 289.
-
-[37
-
-]
-
-Package natbib Warning: There were undefined citations.
-
-
-Package longtable Warning: Table widths have changed. Rerun LaTeX.
-
-(manuscript.aux) ) 
+] (manuscript.aux) ) 
 Here is how much of TeX's memory you used:
- 16079 strings out of 493329
- 305472 string characters out of 3139067
- 374040 words of memory out of 3000000
- 19268 multiletter control sequences out of 15000+200000
- 14580 words of font info for 51 fonts, out of 3000000 for 9000
+ 16163 strings out of 493329
+ 307596 string characters out of 3139067
+ 375623 words of memory out of 3000000
+ 19348 multiletter control sequences out of 15000+200000
+ 14916 words of font info for 53 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,19n,54p,1930b,512s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/c
-mbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pf
-b><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Pr
-ogram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Fi
-les/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Program Files/MiKTe
-X 2.9/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Program Files/MiKTeX 2.9/f
-onts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type
-1/public/amsfonts/cm/cmr12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/
-amsfonts/cm/cmr17.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/
-cm/cmr7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmss8.p
-fb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/P
-rogram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Fi
-les/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on manuscript.pdf (38 pages, 999784 bytes).
+<C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm
+/cmbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.
+pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/
+Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmitt10.pfb><C:/Program
+ Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files/M
+iKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Program Files/MiKTeX 2.9
+/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Program Files/MiKTeX 2.9/fonts/
+type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/pub
+lic/amsfonts/cm/cmr12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfo
+nts/cm/cmr17.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cm
+r7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmss8.pfb><C
+:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Progra
+m Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files/M
+iKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb><C:/Program Files/MiKTeX 2.
+9/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on manuscript.pdf (41 pages, 1044682 bytes).
 PDF statistics:
- 318 PDF objects out of 1000 (max. 8388607)
+ 335 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  163 words of extra memory for PDF output out of 10000 (max. 10000000)
 
