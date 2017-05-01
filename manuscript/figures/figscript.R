@@ -43,9 +43,9 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('discharge_due_5m_atpcsn_byMo_allMos.rda')
 # load('temp_due_5m_atpcsn_byMo_allMos.rda')
-load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
+# load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -309,7 +309,7 @@ par(defpar)
 #for results (loadings)
 summary(mod)
 
-# 1.3 - TEMP eff size and loadings with PCs ####
+# 1.3 - TEMP eff size and loadings with PCs (this is the real shiz) ####
 
 #load the full atpcsn model
 
@@ -324,7 +324,7 @@ land = readRDS('../../saved_structures/full_land.rds')
 
 # system('taskkill /f /im AcroRd32.exe')
 # pdf('19_temp_simp_reg.pdf', width=7.5, height=5)
-pdf('20_temp_simp_reg_NAMES.pdf', width=7.5, height=5)
+# pdf('20_temp_simp_reg_NAMES.pdf', width=7.5, height=5)
 # layout(matrix(c(1:6,9,7,8),nrow=3,byrow=TRUE))
 defpar = par(mfrow=c(2,3), oma=c(0,0,1,1), mar=c(4,3.5,0,0))
 landvar=land$ElevWs
@@ -378,10 +378,10 @@ for(covr in 1:3){
     }
     print.letter(paste(letters[covr],sig), c(.9,.9), cex=1.8, font=2, col='steelblue')
     points(landvar, res,
-           # bg=cols, col='black', cex=2,
-           bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
-           # pch=21,
-           pch=land$siteCode,
+           bg=cols, col='black', cex=2,
+           # bg=cols, col='black', cex=rescale(log(land$WsAreaSqKm),c(1.2,3.2)),
+           pch=21,
+           # pch=land$siteCode,
            lwd=1)
     points(landvar[dam_pch], res[dam_pch], col='chocolate2', cex=2, lwd=1, pch=124)
     # color.legend(xl=4,xr=4.4,yb=0.5, yt=0.6, legend=c('147', '1349'),
@@ -464,19 +464,22 @@ for(trnd in c(2,1)){
     if(trnd == 2){
         mtext(bquote(textstyle(bold('Principal axis 1 '))*textstyle(plain('(50.8%)'))), 1, cex=.8, font=2, line=2)
         print.letter(paste('d',sig),c(.1,.9), cex=1.8, font=2, col='springgreen4')
-        mtext(bquote(bold('Shared trend loadings')~
+        mtext(bquote(bold('Shared trend 1 loadings')~
                          textstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
               side=2, cex=.8, line=1.8)#, adj=4)
     }
     if(trnd == 1){
         mtext(bquote(bold('Principal axis 2 ')*textstyle(plain('(28.6%)'))), 1, cex=.8, font=2, line=2)
+        mtext(bquote(bold('Shared trend 2 loadings')~
+                         textstyle(plain('(')*plain(Delta)*plain(T[water])~plain(Delta)*plain('?'^-1)*plain(')'))),
+              side=2, cex=.8, line=1.8)#, adj=4)
         # mtext(bquote(bold('Total runoff ')*scriptstyle(plain('(mm ')*plain(mo^-1)*plain(')'))), 1, cex=.8, font=2, line=2)
         print.letter(paste('e',sig),c(.9,.9), cex=1.8, font=2, col='springgreen4')
     }
     abline(mod, col='springgreen4', lty=2, lwd=3)
     points(landvar[[trnd]], dfa$Estimates$Z[,trnd],
-           # bg=cols, col='black', cex=2,
-           bg=cols, col='black', cex=rescale(log(land2$WsAreaSqKm),c(1.2,3.2)),
+           bg=cols, col='black', cex=2,
+           # bg=cols, col='black', cex=rescale(log(land2$WsAreaSqKm),c(1.2,3.2)),
            pch=21,
            # pch=land$siteCode,
            lwd=1)
@@ -1416,6 +1419,7 @@ dev.off()
 
 #load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
 #will be screwed up.
+#also, might only get one shot at a successful plot for this one before you have to clear the env and rerun
 dams = read.csv('../../data/watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)[,c('siteCode','dam_upstream')]
 dams$siteCode[dams$siteCode=='AA'] <- 'ZA'
 land = merge(land, dams, by='siteCode')
@@ -1429,8 +1433,8 @@ temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
 # [20] "V"  "W"  "X"  "Z"  "ZA"
 # "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
 
-pdf('15_disch_vs_air_focal5.pdf', width=5, height=6.4)
-pdf('21_disch_vs_air_focal5_NAMES.pdf', width=5, height=6.4)
+# pdf('15_disch_vs_air_focal5.pdf', width=5, height=6.4)
+# pdf('21_disch_vs_air_focal5_NAMES.pdf', width=5, height=6.4)
 # pal <- colorRampPalette(c('white', 'black'))
 pal <- colorRampPalette(c('black', 'white'))
 # pal <- colorRampPalette(c('black', 'white'))
@@ -1487,9 +1491,9 @@ for(i in c(0,2,4,6,8,11)){
         #                  # pch=4, cex=4, lwd=3, col='steelblue3')
         #                  pch=24, cex=3, lwd=1, col='black', bg='white')
         points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
-               # pch=21, bg=cols, col='black',
-               pch=land$siteCode, col='black')
-               # cex=1.3)
+               pch=21, bg=cols, col='black',
+               # pch=land$siteCode, col='black')
+               cex=1.3)
                # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_
         points(disch_moInts[,i][dam_pch], temp_moInts[,i][-c(6,17,18,20,22)][dam_pch],
                pch='|', col='chocolate2', cex=1.3, lwd=1)
@@ -1561,6 +1565,163 @@ par(defpar)
 dev.off()
 shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\15_disch_vs_air_focal5.pdf')
 
+# 19.1 - DISCHARGE vs. TEMP (big five - presentation arrangement) ####
+
+#load discharge_due_5m_atpcsn_byMo_allMos.rda in the setup section, or else names
+#will be screwed up.
+#also, might only get one shot at a successful plot for this one before you have to clear the env and rerun
+dams = read.csv('../../data/watershed_data/watershed_data_simp.csv', stringsAsFactors=FALSE)[,c('siteCode','dam_upstream')]
+dams$siteCode[dams$siteCode=='AA'] <- 'ZA'
+land = merge(land, dams, by='siteCode')
+
+
+library(plotrix)
+#these are generated in the effect size v month plots
+disch_moInts <- readRDS('../../saved_structures/moInts_discharge_due_5m_atpcsn.rds')
+temp_moInts <- readRDS('../../saved_structures/moInts_temp_due_5m_atpcsn.rds')
+# "A"  "B"  "C"  "E"  "F"  "G"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "S"  "T"  "U"
+# [20] "V"  "W"  "X"  "Z"  "ZA"
+# "A"  "B"  "C"  "E"  "F"  "H"  "I"  "J"  "L"  "M"  "N"  "O"  "P"  "Q"  "R"  "U"  "W"  "Z"  "ZA"
+
+pdf('22_disch_vs_air_focal5_PRES.pdf', width=5, height=6.4)
+# pal <- colorRampPalette(c('white', 'black'))
+pal <- colorRampPalette(c('black', 'white'))
+# pal <- colorRampPalette(c('black', 'white'))
+# brks = as.numeric(cut(land$WsAreaSqKm, breaks=10))
+# brks = as.numeric(cut(land$WsAreaOver1000*100, breaks=10))
+# brks = as.numeric(cut(land$ElevWs, breaks=10))
+brks = as.numeric(cut(land$Ice06_11, breaks=10))
+# cols = pal(length(unique(brks)))
+# cols = as.character(factor(brks, labels=cols))
+# layout(matrix(c(1,2,3,4), ncol=2, byrow=T), heights=c(1,1,1,1))
+# layout(matrix(c(1,1,2,3,4,5), ncol=2, byrow=T), heights=c(.2,1,1,1,1))
+# respect=c(matrix(1,ncol=2,nrow=3))
+defpar <- par(mfrow=c(3,2), oma=c(5,5,1,1), mar=c(.5,.5,0,0))
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+cols = rep('black', nrow(land))
+cols[elev_med] = 'gray75'; cols[elev_hi] = 'white'
+# dam_col = rep('black',nrow(land))
+# dam_col[land$dam_upstream != 0] <- 'chocolate2'
+dam_pch = rep(FALSE,nrow(land))
+dam_pch[land$dam_upstream != 0] <- TRUE
+for(i in c(0,2,4,6,8,11)){
+    if(i == 0) {
+        ymin=-.07
+        ymax=max(temp_moInts[-c(6,17,18,20,22)])
+        plot(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],
+             yaxt='n', xaxt='n', bty='o', type='n', fg='gray60',
+             xlim=c(-.15, max(disch_moInts)),
+             ylim=c(ymin, ymax), yaxs='i')
+        polygon(x=c(0,0.4,0.4,0), y=c(0,0,ymax,ymax),
+                col=adjustcolor('darkred', alpha.f=0.2), border=FALSE)
+        polygon(x=c(0,-.5,-.5,0), y=c(0,0,ymin,ymin),
+                col=adjustcolor('navy', alpha.f=0.15), border=FALSE)
+        axis(2, las=2, line=0, col='gray60')
+        # print.letter('Example', c(.8,.9), cex=1.2, font=2)
+    }
+    if(i != 0){
+        ymin=-.07
+        ymax=max(temp_moInts[-c(6,17,18,20,22)])
+        mod <- lm(temp_moInts[,i][-c(6,17,18,20,22)] ~ disch_moInts[,i])
+        sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
+        sig = NULL #suppressing sig plotting
+        plot(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],
+             yaxt='n', xaxt='n', bty='o', type='n', fg='gray60',
+             xlim=c(-.15, max(disch_moInts)),
+             ylim=c(ymin, ymax), yaxs='i')
+        polygon(x=c(0,0.4,0.4,0), y=c(0,0,ymax,ymax),
+                col=adjustcolor('darkred', alpha.f=0.2), border=FALSE)
+        polygon(x=c(0,-.5,-.5,0), y=c(0,0,ymin,ymin),
+                col=adjustcolor('navy', alpha.f=0.15), border=FALSE)
+        if(i %in% c(4,5)) abline(mod, col='gray30', lty=2, lwd=1)
+        # abline(h=0, lty=3, col='gray50')
+        # points(mean(disch_moInts[elev_lo,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='black')
+        # points(mean(disch_moInts[elev_med,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_lo]),
+        #                  pch=24, cex=3, lwd=1, col='black', bg='gray75')
+        # points(mean(disch_moInts[elev_hi,i]),
+        #                  mean(temp_moInts[-c(6,17,18,20,22),i][elev_hi]),
+        #                  # pch=4, cex=4, lwd=3, col='steelblue3')
+        #                  pch=24, cex=3, lwd=1, col='black', bg='white')
+        points(disch_moInts[,i], temp_moInts[,i][-c(6,17,18,20,22)],# cex=1.5,
+               pch=21, bg=cols, col='black',
+               # pch=land$siteCode, col='black')
+               cex=1.3)
+               # cex=rescale(log(land$elevation_),c(1.2,3.2))) #WtDepWs WsAreaSqKm BFIWs WsSlope elevation_
+        points(disch_moInts[,i][dam_pch], temp_moInts[,i][-c(6,17,18,20,22)][dam_pch],
+               pch='|', col='chocolate2', cex=1.3, lwd=1)
+        print.letter(paste0(month.abb[i], sig), c(.9,.9), cex=1.2, font=2)
+        if(i %in% c(4,8)){
+            # axis(4, las=2, line=.6, at=c(-.5,0,.5,1),
+            #           labels=c('-0.5', sprintf('%4s', c('0.0','0.5','1.0'))))
+            axis(2, las=2, line=0, col='gray60')
+            # lines(x=c(-.167,-.167), y=c(-.62,1.3))
+        }
+        # if(i %in% 7:12) mtext(month.abb[i], 4, line=1, las=2)
+        if(i %in% c(8,11)){
+            axis(1, col='gray60')
+            # lines(x=c(-.165,.308), y=c(-.62,-.62), xpd=NA)
+        }
+        # if(i == 8){
+        #     axis(1, col='gray60', at=c(-.1,0,.1,.2))
+        # }
+    }
+}
+# lines(x=c(0,0), y=c(-0.8, 23.04), xpd=NA, col='gray50', lty=3, lwd=1)
+mtext(bquote(paste(bolditalic('ln')*bold(Delta)*bold('Q')~plain('(CFS)'))),# / ')
+      # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
+      # ~bold(Delta)~bold('precip. (cm)'), sep='')),
+      side=1, outer=TRUE, line=3)
+mtext(bquote(paste(bold(Delta)*bold(T[water])~plain('(')*plain(degree)*plain('C)'))),# / ')
+      # ~bold(Delta)~bold('air')~bold(degree)~bold('C'), sep='')),
+      # ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
+      side=2, outer=TRUE, line=3)
+# legend(x=-.02, y=24.1, legend='', pch=4, pt.cex=4, pt.lwd=3,
+#        col=c('orange2','steelblue3'), xpd=NA, horiz=TRUE, bty='n')
+# legend(x=.06, y=24.1, legend='', pch=4, pt.cex=4, pt.lwd=3,
+#        col=c('steelblue3'), xpd=NA, horiz=TRUE, bty='n')
+# legend(x=-.5, y=24.8, legend='', xpd=NA,
+#        fill=adjustcolor('navy', alpha.f=0.2), bty='n', border=NA, cex=2)
+# text(-.135,24.05,'+air -Q -water',xpd=NA)
+# legend(x=.21, y=24.8, legend='', xpd=NA,
+#        fill=adjustcolor('darkred', alpha.f=0.2), bty='n', border=NA, cex=2)
+# text(.189,24.05,'+air +Q +water',xpd=NA)
+# legend(x=-.68, y=3.7, legend=c('Rain-fed'), xpd=NA, pt.bg=c('black'), pch=21,
+#        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.1,.4))
+# legend(x=-.52, y=3.7, legend=c('Rain-and-snow'), xpd=NA, pt.bg=c('gray75'), pch=21,
+#        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.05,.4))
+# legend(x=-.28, y=3.7, legend=c('Snow-fed'), xpd=NA, pt.bg=c('white'), pch=21,
+#        col='black', cex=1.5, horiz=TRUE, bty='n', adj=c(.1,.4))
+# legend(x=-.7, y=.67, legend=c('Rain-dominated','Rain-and-snow','Snow-dominated','Dam-influenced'),
+#        xpd=NA, pt.bg=c('black','gray75','white','white'), pch=c(21,21,21,124),
+#        col=c('black','black','black','chocolate2'), cex=1.3, horiz=FALSE, bty='n')
+# legend(x=-.58, y=.595, legend=c(expression(paste(plain('Q, T'[water]))),
+#                              expression(paste(frac(1,Q), ' ,  ', frac(1,T[water])))),
+#        xpd=NA, fill=c(adjustcolor('darkred', alpha.f=0.2),
+#                       adjustcolor('navy', alpha.f=0.15)),
+#        border='transparent', cex=1.3, horiz=FALSE, bty='n', adj=c(0,.4))
+# legend(x=0.08, y=3.75, legend=c(expression(paste(plain('' %up% 'Q, '%up% 'T'[water]))),
+#                             expression(paste(plain('' %down% 'Q, '%down% 'T'[water])))),
+#        xpd=NA, fill=c(adjustcolor('darkred', alpha.f=0.2),
+#                       adjustcolor('navy', alpha.f=0.15)),
+#        border='black', cex=1.2, horiz=FALSE, bty='n', adj=c(0,.4))
+# text(-.66, .52, expression(paste(plain('T'[air]))),
+#      xpd=NA, cex=1.5)
+# text(-.59, .52, expression(paste(plain('' %prop% ''))),
+#      xpd=NA, cex=2.5)
+# text(0.01, 3.58, expression(paste(plain('' %up% 'T'[air]) %=>% '')),
+#      xpd=NA, cex=1.6)
+# text(0.03,23.65,'(Centroids)',xpd=NA)
+# legend.gradient(pts=cbind(x=c(-.04,.04,.04,-.04), y=c(22,22,24,24)), cols=c('black','white'),
+#                 limits=c('Rainfed', 'Snowfed'), title='X = mean')
+par(defpar)
+dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\22_disch_vs_air_focal5_PRES.pdf')
+
 # 20 - air water discharge (average) ####
 
 #load temp_due_5m_atpcsn_byMo_allMos.rda for this one
@@ -1578,7 +1739,7 @@ dam_ind = rep(FALSE,19) #dont use this for other stuff
 dam_ind[dams[-c(6,17,18,20,22)] != 0] <- TRUE #or this
 
 # png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
-pdf('12_air_water_discharge.pdf', width=7, height=6)
+# pdf('12_air_water_discharge.pdf', width=7, height=6)
 # pdf('12b_air_water_discharge_expand.pdf', width=7, height=6)
 defpar <- par(mar=c(5,4,1,6))
 airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = discharge_dam = numeric()
@@ -1591,8 +1752,8 @@ for(i in 1:12){
     discharge_dam[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),dam_ind]), na.rm=TRUE)
 }
 plot(1:12, discharge, type='n', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='',
-     # yaxs='i', ylim=c(0,4480), bty='o')
-     yaxs='i', ylim=c(0,8000), bty='o')
+     yaxs='i', ylim=c(0,4480), bty='o')
+     # yaxs='i', ylim=c(0,8000), bty='o')
 disch_col = adjustcolor('darkslategray4', alpha.f=0.35)
 axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis=adjustcolor('darkslategray4', alpha.f=1),
      col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
