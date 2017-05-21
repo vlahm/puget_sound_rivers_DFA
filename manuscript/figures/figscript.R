@@ -43,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_may-aug.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
-load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
@@ -1136,9 +1136,10 @@ dev.off()
 # saveRDS(moInts, '../../saved_structures/moInts_discharge_due_4m_at.rds')
 # saveRDS(moInts, '../../saved_structures/moInts_temp_due_4m_at.rds')
 
-#save stuff for air water discharge plot
+#save stuff for air water discharge (precip snowmelt) plot
 # saveRDS(list(covs, obs_ts), '../../saved_structures/air_water_discharge.rds') # from temp_due_4m_at_byMo_allMos.rda
 # saveRDS(list(covs[,1,drop=FALSE], obs_ts), '../../saved_structures/air_water_discharge2.rds') # from temp_due_5m_atpcsn_byMo_allMos.rda
+# saveRDS(covs[,2:3], '../../saved_structures/precip_snowmelt.rds') # from temp_due_5m_atpcsn_byMo_allMos.rda
 # saveRDS(obs_ts, '../../saved_structures/just_discharge.rds') #from discharge, for awd plot
 
 # 16 - DISCHARGE vs. TEMP ####
@@ -1801,6 +1802,85 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12_air_water_
 # chili3 = diff(chili2)
 min(chili3); max(chili3)
 
+# 20.1 - air water discharge precip snowmelt (average) ####
+
+#load temp_due_5m_atpcsn_byMo_allMos.rda for this one
+awd <- readRDS('../../saved_structures/air_water_discharge2.rds')
+pcsn <- readRDS('../../saved_structures/precip_snowmelt.rds')
+dis <- readRDS('../../saved_structures/just_discharge.rds')
+dams <- read.csv("C:/Users/Mike/git/stream_nuts_DFA/data/watershed_data/watershed_data_simp.csv")[-c(3,18),'dam_upstream']
+
+elev_hi = which(land$Ice06_11 >= 0.7)
+elev_med = which(land$Ice06_11 < 0.7 & land$ElevWs > 600)
+elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
+# cols = rep('black', nrow(land))
+# cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
+
+dam_ind = rep(FALSE,19) #dont use this for other stuff
+dam_ind[dams[-c(6,17,18,20,22)] != 0] <- TRUE #or this
+
+# png('12c_air_water_discharge_precip_melt.png', width=8, height=6, units='in', res=96, type='cairo')
+# pdf('12c_air_water_discharge_precip_melt.pdf', width=7, height=6)
+defpar <- par(mar=c(5,4,1,6))
+airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = discharge_dam = precip = snowmelt = numeric()
+for(i in 1:12){
+    airtemps[i] <- mean(awd[[1]][seq(from=i, by=12, to=nrow(awd[[1]]))])
+    watertemps_rain[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_lo]), na.rm=TRUE)
+    watertemps_rs[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_med]), na.rm=TRUE)
+    watertemps_snow[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),elev_hi]), na.rm=TRUE)
+    discharge[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
+    discharge_dam[i] <- mean(as.matrix(dis[seq(from=i, by=12, to=nrow(awd[[1]])),dam_ind]), na.rm=TRUE)
+    precip[i] <- mean(as.matrix(pcsn[seq(from=i, by=12, to=nrow(awd[[1]])),1]), na.rm=TRUE)
+    snowmelt[i] <- mean(as.matrix(pcsn[seq(from=i, by=12, to=nrow(awd[[1]])),2]), na.rm=TRUE)
+}
+plot(1:12, discharge, type='n', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='',
+     yaxs='i', ylim=c(0,25), bty='o')
+# yaxs='i', ylim=c(0,8000), bty='o')
+disch_col = adjustcolor('blue', alpha.f=0.35)
+axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8, col.axis='black',
+     col.ticks='black')
+# axis(4, tcl=0, col='white', labels='')
+lines(c(.58,1:12,12.4), c(mean(c(precip[1],precip[12])),precip,mean(c(precip[1],precip[12]))),
+      lwd=3, col='blue', lty=4)
+lines(c(.58,1:12,12.4), c(mean(c(snowmelt[1],snowmelt[12])),snowmelt,mean(c(snowmelt[1],snowmelt[12]))),
+      lwd=3, col='red', lty=5)
+# polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),discharge,mean(c(discharge[1],discharge[12])),0), col=disch_col, border=NA)
+# lines(c(.58,1:12,12.4), c(mean(c(discharge_dam[1],discharge_dam[12])),
+#                           discharge_dam,mean(c(discharge_dam[1],discharge_dam[12]))),
+#       lwd=3, col='cadetblue', lty=1)
+# lines(x=c(12.44,12.44),y=c(0,4018),
+#       col='white', xpd=NA, lwd=1)
+# lines(x=c(12.44,12.44),y=c(0,4018),
+#       col=adjustcolor('darkslategray4', alpha.f=.35), xpd=NA, lwd=1)
+mtext('Mean Precip, melt (cm)', 4, font=2, las=3, line=2.5, col='black')
+mtext(expression(paste(~bold('Mean temperature')~bold('(')*bold(degree)*bold('C)'))),
+      line=1.4, side=2)
+for(i in 1:12) lines(x=c(i,i),y=c(0,discharge[i]), , col='white', lty='29')
+par(new=T)
+plot(1:12, airtemps, xaxt='n', xlab='', bty='c',
+     ylab='', yaxs='i', type='n', ylim=c(3,17.6), yaxt='n')
+mtext(expression(paste(~bold('Month'))), 1, line=1.5)
+axis(2, las=2, at=c(10,12,14,16), cex.axis=.8, hadj=.3, tck=-.01)
+axis(2, las=2, at=c(4,6,8), cex.axis=.8, hadj=-.5, tck=-.01)
+# for(i in 1:12) lines(x=c(i,i),y=c(0,max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i])), lty='19')
+# for(i in c(1:6,11,12)){
+#     lines(x=c(i,i),y=c(max(watertemps_rain[i],watertemps_rs[i],watertemps_snow[i]),
+#                        min(discharge[i])), lty='29', col='white')
+# }
+lines(c(.58,1:12,12.4), c(mean(c(airtemps[1],airtemps[12])),airtemps,mean(c(airtemps[1],airtemps[12]))),
+      lwd=3, col='darkgreen', lty=1)
+points(1:12, watertemps_rain, col='black', bg='black', pch=21, cex=1.3)
+points(1:12, watertemps_rs, bg='gray75', col='black', pch=22, cex=1.3)
+points(1:12, watertemps_snow, bg='white', col='black', pch=24, cex=1.3, lwd=1)
+axis(1, at=1:12, labels=month.abb, cex.axis=.8, padj=-1.5, tck=-.01)
+legend(x=1.6, y=17.4, legend=c('Rain-dominated', 'Rain-and-snow', 'Snow-dominated'),
+       pch=c(21,22,24), col='black', bty='n', pt.bg=c('black','gray75','white'), cex=.8)
+legend(2.2,15.9,legend=c('Air','Precip','Melt'), lty=1, lwd=2, col=c('darkgreen','blue','red'), 
+       bty='n', seg.len=2.5, x.intersp=.8, cex=.8)
+
+par(defpar)
+dev.off()
+shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12c_air_water_precip_melt.pdf')
 # 21 - air water discharge (over time [never actually worked on this]) ####
 
 #load temp_due_4m_at_byMo_allMos.rda for this one
