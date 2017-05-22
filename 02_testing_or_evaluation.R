@@ -643,6 +643,8 @@ dfa <- runDFA(obs=dat_z, NumStates=mm, ErrStruc=obs_err_var_struc,
 # save.image('../single_trend_exploration/2trendNoSeas.rda')
 # save.image('../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
+# saveRDS(yy, '../saved_structures/raw_waterTemp.rds')
+
 # 4.2 - or load desired model object ####
 
 #load best temp model and all associated mumbo jumbo
