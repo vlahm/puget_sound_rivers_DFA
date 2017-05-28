@@ -1,7 +1,6 @@
 #Puget Sound rivers DFA
 #Mike Vlah (vlahm13@gmail.com)
 #created: 1/13/17
-#plots of best temperature model: temp_due_2m_fixed_at_1978-2015
 
 #before making figures from a particular model run, gotta run through the
 #02_testing_or_evaluation.R script and save the image as an .rda file. Instructions are there.
@@ -44,8 +43,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-load('temp_due_5m_atpcsn_byMo_allMos.rda')
-# load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
+load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -2079,7 +2078,7 @@ points(1:12, watertemps_snow, bg='white', col='black', pch=24, cex=1.3, lwd=1)
 axis(1, at=1:12, labels=month.abb, cex.axis=.8, padj=-1.5, tck=-.01)
 legend(x=1.6, y=17.4, legend=c('Rain-dominated', 'Rain-and-snow', 'Snow-dominated'),
        pch=c(21,22,24), col='black', bty='n', pt.bg=c('black','gray75','white'), cex=.8)
-legend(2.2,15.9,legend=c('Air','Precip','Melt'), lty=1, lwd=2, col=c('darkgreen','blue','red'), 
+legend(2.2,15.9,legend=c('Air','Precip','Melt'), lty=1, lwd=2, col=c('darkgreen','blue','red'),
        bty='n', seg.len=2.5, x.intersp=.8, cex=.8)
 
 par(defpar)
@@ -2128,17 +2127,17 @@ axis(4, las=1, tck=-.01, hadj=.3, cex.axis=.8) #col.axis=adjustcolor('darkslateg
      #col.ticks=adjustcolor('darkslategray4', alpha.f=.7))
 # axis(4, tcl=0, col='white', labels='')
 # polygon(x=c(0,.57,1:12,12.5,13), y=c(0,mean(c(discharge[1],discharge[12])),
-#                                      discharge,mean(c(discharge[1],discharge[12])),0), 
+#                                      discharge,mean(c(discharge[1],discharge[12])),0),
 #         col=disch_col, border=NA)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(discharge_rain[1],discharge_rain[12])),
         discharge_rain,mean(c(discharge_rain[1],discharge_rain[12]))),
       col='black', lwd=2, lty=5)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(discharge_rs[1],discharge_rs[12])),
         discharge_rs,mean(c(discharge_rs[1],discharge_rs[12]))),
       col='gray70', lwd=2, lty=5)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(discharge_snow[1],discharge_snow[12])),
         discharge_snow,mean(c(discharge_snow[1],discharge_snow[12]))),
       col='cyan2', lwd=2, lty=5)
@@ -2167,22 +2166,22 @@ axis(2, las=2, at=c(4,6,8), cex.axis=.8, hadj=-.5, tck=-.01)
 # }
 lines(c(.58,1:12,12.4), c(mean(c(airtemps[1],airtemps[12])),airtemps,mean(c(airtemps[1],airtemps[12]))),
       lwd=2, col='chocolate2', lty=3)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(watertemps_rain[1],watertemps_rain[12])),
         watertemps_rain,mean(c(watertemps_rain[1],watertemps_rain[12]))),
       col='black', lwd=2, lty=1)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(watertemps_rs[1],watertemps_rs[12])),
         watertemps_rs,mean(c(watertemps_rs[1],watertemps_rs[12]))),
       col='gray70', lwd=2, lty=1)
-lines(c(.58,1:12,12.4), 
+lines(c(.58,1:12,12.4),
       c(mean(c(watertemps_snow[1],watertemps_snow[12])),
         watertemps_snow,mean(c(watertemps_snow[1],watertemps_snow[12]))),
       col='cyan2', lwd=2, lty=1)
 axis(1, at=1:12, labels=month.abb, cex.axis=.8, padj=-1.5, tck=-.01)
 legend(x=.6, y=17.6, legend=c('RD discharge', 'RS discharge', 'SD discharge',
                                'RD temp.', 'RS temp.', 'SD temp.', 'Air temp.'),
-       bty='n', col=c('black','gray70','cyan2','black','gray70','cyan2','chocolate2'), 
+       bty='n', col=c('black','gray70','cyan2','black','gray70','cyan2','chocolate2'),
        lty=c(5,5,5,1,1,1,3), lwd=2, cex=.7, seg.len=2.5)
 
 par(defpar)
