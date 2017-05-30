@@ -18,10 +18,13 @@ library(imputeTS)
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda') #best discharge model
 # load('temp_due_5m_atpcsn_byMo_allMos.rda') #best temp model
 load('single_trend_exploration/2trendNoSeasNoSnow.rda') #simplified 2-trend temp model
+# load('temp_due_5m_atpcsn_byMo_allMos.rda') #best temp model
+# load('discharge_due_5m_atpcsn_byMo_allMos.rda') #best discharge model
 
 # 1 - determine variance explained by trends and full model ####
 
 trendFit = dfa$Estimates$Z %*% dfa$Estimates$u
+covFit = dfa$Estimates$D %*% cov_and_seas
 fullFit = dfa$Fits
 data = dat_z
 
@@ -36,6 +39,7 @@ get_R2 <- function(fit){
 
 fullR2 = get_R2(fullFit)
 trendR2 = get_R2(trendFit)
+covR2 = get_R2(covFit)
 
 # 2 - wavelet ####
 

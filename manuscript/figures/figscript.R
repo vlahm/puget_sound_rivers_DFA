@@ -25,6 +25,7 @@ library(viridis)
 library(plotrix)
 library(stringr)
 library(RColorBrewer)
+library(imputeTS)
 
 print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
     tmp <- par("usr")
@@ -43,8 +44,8 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-# load('temp_due_5m_atpcsn_byMo_allMos.rda')
-load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
+load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
 #NOTE: WsAreaOver1000 is probably a better metric
@@ -538,13 +539,14 @@ elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 cols = rep('black', nrow(land))
 cols[elev_med] = 'gray60'; cols[elev_hi] = 'white'
 for(covr in 1:3){
-    if(covr==3) landvar=chili$PCo2
+    if(covr == 3) landvar=chili$PCo2
     res = rescaled_effect_size[,covr]
     # if(covr==3){res = res * 2.54}
     plot(landvar, res, type='n', yaxt='n',
          # xlab='Watershed area over 1000m (%)', main='',
          xlab='', main='', ylab='', cex.lab=1.3, cex.axis=1, font=2, xaxt='n',bty='l')
     mod <- lm(res ~ landvar)
+    print(summary(mod))
     sig <- ifelse(summary(mod)$coefficients[2,4]<=0.1, '*', '')
     sig = NULL #turning off sig plotting
     if(covr == 1){
@@ -563,7 +565,7 @@ for(covr in 1:3){
         # mtext(bquote(textstyle(bold('Perennial watershed ice/snow coverage'))~textstyle(plain('(%)'))), side=1, cex=.8, line=1.7)
         # mtext(bquote(textstyle(bold('Mean watershed elevation'))~textstyle(plain('(100 m)'))),
               # side=1, cex=.8, line=2)
-        abline(mod, col='steelblue', lty=2, lwd=3)
+        # abline(mod, col='steelblue', lty=2, lwd=3)
         mtext(bquote(bold('Principal axis 1 ')*textstyle(plain('(50.8%)'))), 1, cex=.8, font=2, line=2)
     }
     if(covr == 3){
@@ -692,11 +694,11 @@ for(trnd in c(2,1)){
 
 par(defpar)
 dev.off()
-shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\20_temp_simp_reg_NAMES.pdf')
+# shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\20_temp_simp_reg_NAMES.pdf')
 # shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\19_temp_simp_reg.pdf')
 
 #for results (loadings)
-# summary(mod)
+summary(mod)
 
 # 3 - TEMP loading regression ####
 
@@ -2022,7 +2024,7 @@ elev_lo = which(land$Ice06_11 < 0.7 & land$ElevWs <= 600)
 dam_ind = rep(FALSE,19) #dont use this for other stuff
 dam_ind[dams[-c(6,17,18,20,22)] != 0] <- TRUE #or this
 
-# png('12c_air_water_discharge_precip_melt.png', width=8, height=6, units='in', res=96, type='cairo')
+# png('12c_air_water_discharge_precip_melt.png', width=8, height=6, units='in', res=300, type='cairo')
 # pdf('12c_air_water_discharge_precip_melt.pdf', width=7, height=6)
 defpar <- par(mar=c(5,4,1,6))
 airtemps = watertemps_rain =watertemps_rs = watertemps_snow = discharge = discharge_dam = precip = snowmelt = numeric()
@@ -2193,34 +2195,64 @@ shell('C:\\Users\\Mike\\git\\stream_nuts_DFA\\manuscript\\figures\\12_air_water_
 # chili2 = apply(chili,1,range)
 # chili3 = diff(chili2)
 min(chili3); max(chili3)
-# 21 - air water discharge (over time [never actually worked on this]) ####
+# 21 - air water precip (over time) ####
 
-#load temp_due_4m_at_byMo_allMos.rda for this one
-awd <- readRDS('../../saved_structures/air_water_discharge.rds')
+#load temp_due_5m_atpcsn_byMo_allMos.rda for this one
+awd <- readRDS('../../saved_structures/air_water_discharge2.rds')
+pcsn <- readRDS('../../saved_structures/precip_snowmelt.rds')
 
-# png('12_air_water_discharge.png', width=8, height=6, units='in', res=96, type='cairo')
-# pdf('12_air_water_discharge.pdf', width=8, height=6)
-defpar <- par(mar=c(5,4,1,6))
-airtemps = watertemps = discharge = numeric()
-for(i in 1:12){
-    airtemps[i] <- mean(awd[[1]][seq(from=i, by=12, to=nrow(awd[[1]]))])
-    watertemps[i] <- mean(as.matrix(awd[[2]][seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
-    discharge[i] <- mean(as.matrix(obs_ts[seq(from=i, by=12, to=nrow(awd[[1]])),]), na.rm=TRUE)
+temps = readRDS('../../saved_structures/raw_waterTemp.rds')
+for(i in 2:ncol(temps)){
+    temps[,i] = ts(temps[,i], frequency=12, start=c(1978,1))
 }
-plot(1:12, airtemps, xaxt='n', xlab=expression(paste(~bold('Month'))),
-     ylab='')
-points(1:12, watertemps, pch=20)
-axis(1, at=1:12, labels=month.abb)
-legend('left', legend=c('Air', 'Water', 'Discharge'), pch=c(1,20,17), bty='n',
-       col=c('black','black','gray60'))
+
+ints = trnd = temps
+for(i in 2:ncol(temps)){
+    ints[,i] = na.seasplit(temps[,i], 'interpolation')
+    trnd[,i] = decompose(ints[,i])$trend
+}
+airT = decompose(ts(awd[[1]], frequency=12, start=c(1978,1)))$trend
+precip = decompose(ts(pcsn[,1], frequency=12, start=c(1978,1)))$trend
+Smelt = decompose(ts(pcsn[,2], frequency=12, start=c(1978,1)))$trend
+
+# png('23_air_water_precip.png', width=8, height=6, units='in', res=300, type='cairo')
+pdf('23_air_water_precip.pdf', width=7, height=6)
+
+defpar = par(mar=c(5,5,2,5))
+plot(7:450, main='', ylab=expression(paste(~bold('Temperature (')~bold(degree)*bold('C)'))),
+     xlab=expression(bold('Time')), xaxt='n',
+     ylim=c(min(trnd[,-1], na.rm=T),max(trnd[,-1], na.rm=T)), type='n', las=1)
+for(i in 2:ncol(temps)){
+    if(i==3) lines(162:450, trnd[162:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==9) lines(196:450, trnd[196:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==11) lines(76:450, trnd[76:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==16) lines(184:450, trnd[184:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==18) lines(184:450, trnd[184:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==21) lines(184:450, trnd[184:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==24) lines(196:450, trnd[196:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(i==25) lines(7:200, trnd[7:200,i], col=adjustcolor('darkblue', alpha.f=0.2))
+    if(!(i %in% c(3,9,11,16,18,21,24,25))) lines(trnd[7:450,i], col=adjustcolor('darkblue', alpha.f=0.2))
+}
+lines(7:450, airT[7:450], lwd=1)
 par(new=T)
-plot(1:12, discharge, type='b', pch=17, col='gray60', xaxt='n', yaxt='n', xlab='', ylab='')
-axis(4, las=1)
-mtext('Mean discharge (CFS)', 4, font=2, las=3, line=3)
-mtext(expression(paste(~bold('Mean temperature')~bold(degree)~bold('C'))),
-      line=2, side=2)
+plot(7:450, precip[7:450], ann=FALSE, axes=FALSE, type='l', col='red', 
+     ylim=c(min(precip, na.rm=T),21), lwd=1)
+axis(4, las=2)
+mtext(expression(bold('Precipitation (cm)')), 4, line=3)
+yrs = substr(trnd[,1],1,4)
+axis(1, at=seq(1,456,12), labels=seq(1978,2015,1))
+legend(330,21.5,legend=c(expression(plain('T'[water])),
+                        expression(plain('T'[air])), 'Precip.'),
+       col=c(adjustcolor('darkblue', alpha.f=0.5), 'black', 'red'),
+       lty=1, lwd=2, bty='n')
 par(defpar)
-# dev.off()
+dev.off()
+
+# plot(1:444, airT[7:450], type='l')
+# chilidog = 1:444
+# mod = lm(airT[7:450] ~ chilidog)
+# summary(mod)
+# abline(mod)
 
 # 22 - discharge eff size and loading regressions separated [dont think i worked on this either] ####
 # pdf('01b_discharge_effect_size_reg.pdf', width=8, height=3.75)
