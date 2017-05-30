@@ -117,12 +117,18 @@ for(i in 2:ncol(trnds)){
 }
 
 #write output table
-# options(scipen=100)
-# output2 = as.data.frame(round(output, 2))
-# output2 = as.data.frame(cbind(row.names(output2), output2$Slope, output2$Lower_95, output2$Upper_95, 
-#                               output2$`Kendall Tau`, output2$z, output2$p_value))
+# rownames(output) = colnames(temps)[-1]
+chili = output
+for(j in 1:ncol(output)){
+    for(i in 1:nrow(output)){
+        chili[i,j] = sprintf('%+1.3f', output[i,j])
+    }
+} #this doesnt render automatically in excel. gotta redo the 3-digit, +/- thing
+# output2 = as.data.frame()
+# output2 = as.data.frame(cbind(row.names(output2), output2$Slope, output2$Lower_95, output2$Upper_95,
+                              # output2$`Kendall Tau`, output2$z, output2$p_value))
 # colnames(output2) = c('Site','Slope','Lower 95','Upper 95','Kendall Tau','z','p value')
-# write.csv(output2, '../manuscript/figures/mann_kendall.csv', row.names=FALSE)
+write.csv(chili, '../manuscript/figures/mann_kendall.csv', row.names=TRUE)
 
 #MK tests on predictors (used in paper) ####
 
@@ -147,24 +153,33 @@ snowMK = kendallTrendTest(Smelt[7:450], season=c(7:12,rep(1:12, times=36),1:6),
                          year=c(rep(1978,6),rep(1979:2014, each=12),rep(2015,6)),
                          independent.obs=FALSE)
 
-output = matrix(NA, nrow=7, ncol=3, 
+covs_out = matrix(NA, nrow=7, ncol=3, 
                 dimnames=list(c('Kendall Tau','Slope','Lower_95','Upper_95','int','z','p_value'),
                 c('T_air','precip','snowmelt')))
 
-output[6,1] = airMK$statistic
-output[7,1] = airMK$p.value
-output[c(1,2,5),1] = airMK$estimate
-output[3:4,1] = airMK$interval$limits
-output[6,2] = precipMK$statistic
-output[7,2] = precipMK$p.value
-output[c(1,2,5),2] = precipMK$estimate
-output[3:4,2] = precipMK$interval$limits
-output[6,3] = snowMK$statistic
-output[7,3] = snowMK$p.value
-output[c(1,2,5),3] = snowMK$estimate
-output[3:4,3] = snowMK$interval$limits
+covs_out[6,1] = airMK$statistic
+covs_out[7,1] = airMK$p.value
+covs_out[c(1,2,5),1] = airMK$estimate
+covs_out[3:4,1] = airMK$interval$limits
+covs_out[6,2] = precipMK$statistic
+covs_out[7,2] = precipMK$p.value
+covs_out[c(1,2,5),2] = precipMK$estimate
+covs_out[3:4,2] = precipMK$interval$limits
+covs_out[6,3] = snowMK$statistic
+covs_out[7,3] = snowMK$p.value
+covs_out[c(1,2,5),3] = snowMK$estimate
+covs_out[3:4,3] = snowMK$interval$limits
 
 #write output table
-options(scipen=100)
-output2 = as.data.frame(round(output, 3))
-write.csv(output2, '../manuscript/figures/mann_kendall.csv', row.names=TRUE)
+# options(scipen=100)
+chili2 = covs_out
+for(j in 1:ncol(covs_out)){
+    for(i in 1:nrow(covs_out)){
+        chili2[i,j] = sprintf('%+1.3f', covs_out[i,j])
+    }
+} 
+# covs_out2 = as.data.frame(round(covs_out, 3))
+write.csv(t(chili2), '../manuscript/figures/mann_kendall_covs.csv', row.names=TRUE)
+
+#write combined output table
+# comb = rbind(t(covs_out2), output2)

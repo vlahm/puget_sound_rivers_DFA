@@ -18,8 +18,8 @@ library(imputeTS)
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda') #best discharge model
 # load('temp_due_5m_atpcsn_byMo_allMos.rda') #best temp model
 load('single_trend_exploration/2trendNoSeasNoSnow.rda') #simplified 2-trend temp model
-# load('temp_due_5m_atpcsn_byMo_allMos.rda') #best temp model
-# load('discharge_due_5m_atpcsn_byMo_allMos.rda') #best discharge model
+# load('manuscript/figures/temp_due_5m_atpcsn_byMo_allMos.rda') #best temp model
+# load('manuscript/figures/discharge_due_5m_atpcsn_byMo_allMos.rda') #best discharge model
 
 # 1 - determine variance explained by trends and full model ####
 
@@ -50,12 +50,18 @@ covR2 = get_R2(covFit)
 
 #for reals
 trends = data.frame(date=yy$date, trnd1=dfa$Estimates$u[1,], trnd2=dfa$Estimates$u[2,])
-wav1 = analyze.wavelet(trends, 'trnd1')
-wav2 = analyze.wavelet(trends, 'trnd2')
+wav1 = analyze.wavelet(trends, 'trnd1', dj=1/200)
+wav2 = analyze.wavelet(trends, 'trnd2', dj=1/200)
 
-#plot wavelet power spectrua
-wt.image(wav1)
-wt.image(wav2)
+#plot wavelet power spectra
+# png('24_wav1.png', width=8, height=6, units='in', res=300, type='cairo')
+pdf('manuscript/figures/24_wav1.pdf', width=7, height=6)
+wt.image(wav1, show.date=TRUE)
+dev.off()
+# png('24b_wav2.png', width=8, height=6, units='in', res=300, type='cairo')
+pdf('manuscript/figures/24b_wav2.pdf', width=7, height=6)
+wt.image(wav2, show.date=TRUE)
+dev.off()
 
 #clean trend 2
 rec = reconstruct(wav2, sel.period=12, legend.coords = "bottomleft")
@@ -71,5 +77,6 @@ plot(year_mean, type='n', xaxs='i',
      xaxt='n', las=2, xlab='')
 axis(1, 1:12, labels=month.abb)
 polygon(x=c(1:12,12:1), y=c(year_mean+year_sd, rev(year_mean-year_sd)),
-        col='gray70', border=NA)
+        col='gray85', border=NA)
 lines(year_mean, col='blue', lwd=2)
+
