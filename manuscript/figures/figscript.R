@@ -36,7 +36,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 
 #load all objects generated during the creation and postprocessing of the best model
 # load('temp_due_4m_at_byMo_allMos.rda')
-# load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
+load('temp_due_4m_at_byMo_acrossTime_may-aug.rda')
 # load('temp_due_4m_at_byMo_acrossTime_nov-feb.rda')
 # load('temp_due_4m_at_byMo_acrossTime_MASO.rda')
 # load('discharge_due_4m_atpc_byMo_allMos.rda')
@@ -44,7 +44,7 @@ print.letter <- function(label="(a)",xy=c(0.1,0.925),...) {
 # load('discharge_due_4m_atpc_byMo_acrossTime_nov-feb.rda')
 # load('discharge_due_4m_atpc_byMo_acrossTime_MASO.rda')
 # load('discharge_due_5m_atpcsn_byMo_allMos.rda')
-load('temp_due_5m_atpcsn_byMo_allMos.rda')
+# load('temp_due_5m_atpcsn_byMo_allMos.rda')
 # load('../../single_trend_exploration/2trendNoSeasNoSnow.rda')
 
 #add percent watershed ice cover data from 2006, average with those from 2011.
@@ -812,12 +812,13 @@ dev.off()
 
 # 6 - TEMP effect size by month over time ####
 
-# pdf('05a_temp_effSize_byMonth_acrossTime_may-aug.pdf', width=14, height=9)
+pdf('05a_temp_effSize_byMonth_acrossTime_may-aug.pdf', width=14, height=9)
 # pdf('05b_temp_effSize_byMonth_acrossTime_nov-feb.pdf', width=14, height=9)
-pdf('05c_temp_effSize_byMonth_acrossTime_MASO.pdf', width=14, height=9)
+# pdf('05c_temp_effSize_byMonth_acrossTime_MASO.pdf', width=14, height=9)
 
 # landcov = land$Ice06_11
-landcov = land$WsAreaOver1000*100
+landcov = land$PCo1
+# landcov = land$WsAreaOver1000*100
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
@@ -860,7 +861,8 @@ for(i in covOrder){ #rivers
                 col='gray85', border=NA)
         if(cn %in% c(9,17)) axis(1)
         # if(cn==1) axis(4, line=-1.5, labels=FALSE)
-        if(cn==10) axis(2, at=c(0,.4,.8, 1.2), line=-.9, las=2)
+        if(cn==10) axis(2, at=c(-.2,.4,1.0), line=-.9, las=2)
+        # if(cn==10) axis(2, at=c(-.6,0,.6, 1.2), line=-.9, las=2)
         if(cn %in% 1:9) mtext(land$siteCode[i], 2, las=2, col=snowcols[i], font=2)
         if(cn %in% 10:17) mtext(land$siteCode[i], 4, las=2, col=snowcols[i], font=2)
         for(j in 1:dim(moSectInts)[2]){ #months
@@ -869,9 +871,9 @@ for(i in covOrder){ #rivers
     }
 }
 
-# legend(3, 11, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #may-aug
-# legend(3, 20, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #nov-feb
-legend(3, 32, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #MASO
+legend(3, 11, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #may-aug
+# legend(3, 20, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #nov-feb
+# legend(3, 32, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #MASO
        col=mopal, horiz=TRUE, xpd=NA, xjust=0.5)
 mtext(expression(paste(bold(Delta)~bold('water')~bold(degree)~bold('C')
                        ~bold(Delta)~bold('air')~bold(degree)~bold('C')^-1, sep='')),
@@ -1211,7 +1213,8 @@ library(viridis)
 pdf('08c_discharge_effSize_byMonth_acrossTime_MASO.pdf', width=14, height=9)
 
 # landcov = land$Ice06_11
-landcov = land$WsAreaOver1000*100
+# landcov = land$WsAreaOver1000*100
+landcov = land$PCo1
 
 csi <- dfa$Estimates$D
 csi_names <- rownames(cov_and_seas)
@@ -1249,13 +1252,8 @@ for(i in covOrder){ #rivers
         plot(1:sct, moSectInts[i,1,], type='n',
              ylim=c(min(moSectInts[,,]), max(moSectInts[,,])),
              bty='n', xaxt='n', yaxt='n')
-        if(cn %in% 1:9){
-            polygon(x=c(.95,.95,sct+2,sct+2), y=c(0,overall_mean,overall_mean,0),
-                    col='gray75', border=NA)
-        } else {
-            polygon(x=c(.8,.8,sct+.05,sct+.05), y=c(0,overall_mean,overall_mean,0),
-                    col='gray75', border=NA)
-        }
+        polygon(x=c(1,1,sct,sct), y=c(0,overall_mean,overall_mean,0),
+                col='gray85', border=NA)
         if(cn %in% c(9,17)) axis(1)
         # if(cn==1) axis(4, line=-1.5, labels=FALSE)
         if(cn==10) axis(2, at=c(-.1,0,.1,.2), line=-1.1, las=2)
@@ -1280,11 +1278,11 @@ for(i in covOrder){ #rivers
     # }
 }
 
-# legend(3, 3.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #may-aug
-# legend(3, 2.7, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #nov-dec
-legend(3, 6.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=2, #MASO
+# legend(3, 3.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #may-aug
+# legend(3, 2.7, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #nov-dec
+legend(3, 6.2, legend=c(mos[1:(length(mos)-1)], 'All other months'), lty=1, lwd=3, #MASO
        col=mopal, horiz=TRUE, xpd=NA, xjust=0.5)
-mtext(expression(paste(italic('ln')~bold(Delta)~bold('Q (cfs) / ')
+mtext(expression(paste(italic('ln')~bold(Delta)~bold('Q (CFS) / ')
                        ~bold(Delta)~bold('precip. (cm)'), sep='')),
       side=2, outer=TRUE, line=3)
 mtext('Time series quintile (1978-2015)', side=1, outer=TRUE, line=3, font=2)

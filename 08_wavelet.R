@@ -68,15 +68,16 @@ rec = reconstruct(wav2, sel.period=12, legend.coords = "bottomleft")
 cleaned = rec$series$trnd2.r
 plot(cleaned, type='l')
 
+pdf('manuscript/figures/25_wavClean.pdf', width=7, height=6)
 ind = rep(1:12, times=38)
 year_mean = tapply(cleaned, ind, mean)
 year_sd = tapply(cleaned, ind, sd)
 plot(year_mean, type='n', xaxs='i',
      ylim=c(min(year_mean-year_sd),max(year_mean+year_sd)),
-     ylab=expression(paste(bold('z-scored temperature (')~bold(degree)*bold('C)'))),
-     xaxt='n', las=2, xlab='')
+     ylab=expression(paste(bold('Standardized')~bold(T[water])~bold('(')*bold(degree)*bold('C)'))),
+     xaxt='n', las=2, xlab=expression(bold('Time')))
 axis(1, 1:12, labels=month.abb)
 polygon(x=c(1:12,12:1), y=c(year_mean+year_sd, rev(year_mean-year_sd)),
         col='gray85', border=NA)
 lines(year_mean, col='blue', lwd=2)
-
+dev.off()
