@@ -1,0 +1,1 @@
+this folder is used to contain files generated during model fitting.
