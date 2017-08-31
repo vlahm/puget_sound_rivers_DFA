@@ -30,7 +30,7 @@ x<sub>t</sub> (the common trends at time t) depends on x from the previous time 
 
 ## Report
 
-![map](manuscript/figures/map/map.png) 
+![map](manuscript/figures/map/puget_sound.png) 
 
 This is the Puget Sound region of western Washington state, with water temperature monitoring sites as red dots. The colored topography shows the area across which historical air temperature readings have been averaged.
 
