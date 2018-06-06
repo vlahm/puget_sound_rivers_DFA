@@ -1,0 +1,16 @@
+where did the snow/ice 06-11 come from?
+    manuscript/figures
+    almost identical
+    values in apendix table are wrong; use the data files to be safe
+
+slope different from some other slope
+    use watershed_data/slope/slope.csv
+
+site elev different from whats on the 2016 dataset
+
+
+high-low ice dont add up
+    Q is R and R is Q!
+    look at the official map
+
+AA and AZ are the same thing
