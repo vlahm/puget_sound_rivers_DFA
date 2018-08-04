@@ -24,7 +24,7 @@
 rm(list=ls()); cat('\014') #clear env and console
 
 # 0 - setup ####
-setwd('C:/Users/Mike/git/stream_nuts_DFA/data/')
+setwd('C:/Users/vlahm/Desktop/git/puget_sound_rivers_DFA/data/')
 # setwd('~/git/puget_sound_rivers_DFA/data')
 # setwd('Z:/stream_nuts_DFA/data/')
 # setwd("C:/Users/vlahm/Desktop/stream_nuts_DFA/data")
@@ -60,7 +60,7 @@ if (is.null(dev.list()) == TRUE){
 
 # response choices: COND FC NH3_N NO2_NO3 OP_DIS OXYGEN PH PRESS SUSSOL TEMP TP_P TURB
 # also DISCHARGE (from USGS)
-y_choice = 'TEMP'
+y_choice = 'NO2_NO3'
 # cov choices: meantemp meantemp_anom precip precip_anom hydroDrought hydroDrought_anom
 # maxtemp maxtemp_anom hdd hdd_anom, snowmelt
 #(snowmelt only available 1978-2015. also I haven't actually used snowmelt
@@ -248,6 +248,10 @@ if(y_choice %in% c('SUSSOL', 'TURB')){
   yts <- ts(obs_ts[70:189,c('J','L','M')], start=10, frequency=12)
   obs_ts[70:189,c('J','L','M')] <- data.frame(round(na.seasplit(yts, 'interpolation')))
 }
+if(y_choice == 'NO2_NO3'){
+  yts <- ts(obs_ts, start=10, frequency=12)
+  obs_ts <- data.frame(na.seasplit(yts, 'interpolation'))
+}
 
 #make sure it worked as expected
 # defpar <- par(mfrow=c(3,1))
@@ -271,7 +275,7 @@ transformables <- function(){
     qqline(x, col='red', lwd=2)
   }
 }
-# transformables()
+transformables()
 
 # Transform nonnormal responses (all but OXYGEN, PRESS, PH, TEMP will be transformed)
 # backtransformation of boxcox and power does not work as intended, so our only current option
@@ -388,7 +392,7 @@ ccgen <- function(meth=method){
 
     cc <- Reduce(function(x,y) {cbind(x,y)},
                  eval(parse(text=paste0('list(',
-                                        paste(rep('year_block', nyears,), sep=', ', collapse=', '),
+                                        paste(rep('year_block', nyears), sep=', ', collapse=', '),
                                         ')'))))
     rownames(cc) <- month.abb
   } else { #fourier method
@@ -778,29 +782,29 @@ best_landvars <- function(response, top){
 #(again, I'm happy to help). If you use design='effect_byMonth', this will
 #assume you have seasonality method='fixed...'. it might also work with fourier. but you'll need
 #seasonality to be included. If you used 'effect_byMonth_noSeas', you're fine.
-eff_rescaler <- function(all_cov, seas, scaled=scale){
+eff_rescaler <- function(all_cov, seas, ncov, scaled=scale){
     #get covariate effect sizes (D coefficients) from model, isolated from seasonal effects
     if(design == 'effect_byMonth'){
         z_eff_1 <- NULL
-        if(length(cov_choices) > 1){
-            z_eff_1 <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+length(cov_choices)-1)])
+        if(ncov > 1){
+            z_eff_1 <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):(nrow(seas)+ncov-1)])
         }
-        z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,(nrow(seas)+length(cov_choices)):
-                                                          (nrow(seas)+length(cov_choices)-1+length(focal_months))]))
+        z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,(nrow(seas)+ncov):
+                (nrow(seas)+ncov-1+length(focal_months))]))
         z_effect_size <- cbind(z_eff_2, z_eff_1)
     } else {
         if(design == 'effect_byMonth_noSeas'){
             z_eff_1 <- NULL
-            if(length(cov_choices) > 1){
-                z_eff_1 <- as.matrix(dfa$Estimates$D[,1:(length(cov_choices)-1)])
+            if(ncov > 1){
+                z_eff_1 <- as.matrix(dfa$Estimates$D[,1:(ncov-1)])
             }
-            z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,length(cov_choices):
-                                                              (length(cov_choices)-1+length(focal_months))]))
+            z_eff_2 <- as.matrix(rowMeans(dfa$Estimates$D[,ncov:
+                    (ncov-1+length(focal_months))]))
             z_effect_size <- cbind(z_eff_2, z_eff_1)
         } else {
             if(design == 'effect_byMonth_acrossTime'){
                 stop(writeLines(paste0("Not built to produce correct output for eff_regress_plotter\n",
-                                       "if design='effect_byMonth_acrossTime'.")))
+                    "if design='effect_byMonth_acrossTime'.")))
             } else {
                 if(nrow(all_cov) > 2){
                     # z_effect_size <- as.matrix(dfa$Estimates$D[,(nrow(seas)+1):ncol(dfa$Estimates$D)])
@@ -1165,7 +1169,8 @@ model_out <-
 
     #landscape variable correlations
     if(!is.null(covs_z)){
-      rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]]) #effect sizes on original scale
+      rescaled_effect_size <- eff_rescaler(cov_and_seas, seasonality[[sss]],
+          ncov=nrow(covs_z)) #effect sizes on original scale
       eff_best <- best_landvars(rescaled_effect_size, 6) #vars best correlated with effect size
     }
     loadings <- dfa$Estimates$Z
